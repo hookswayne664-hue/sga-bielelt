@@ -619,51 +619,7 @@ function lSum(){
   const totalU=S.units.filter(u=>!u.isAdmin&&!u.disabled).length;
   const sub=new Set(entries.map(e=>e.unit)).size;
   let h="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгээгүй</div></div></div>";
-  if(!inds.length){document.getElementById("sRes").innerHTML=h+"<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
-  h+="<div class='tw'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт / Дундаж</th><th>Бөглөлт</th></tr>";
-  inds.forEach(ind=>{
-    const vals=entries.map(e=>e.values[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
-    const nums=vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));
-    let total="—";
-    if(ind.type==="text")total=vals.length?vals.length+" хариу":"—";
-    else if(ind.type==="pct"&&nums.length)total=(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1)+"%";
-    else if(nums.length)total="<b>"+fN(nums.reduce((a,b)=>a+b,0))+"</b>";
-    const fc=vals.length,pct=sub?Math.round(fc/sub*100):0;
-    h+="<tr><td style='font-size:12px;color:var(--tx2)'>"+ind.id+"</td><td>"+ind.name+"</td><td style='text-align:right;font-size:15px'>"+total+"</td><td><span style='font-size:12px;color:"+(fc>0?"var(--gr)":"var(--rd)")+"'>"+fc+"/"+sub+"</span> <div class='pb' style='width:60px;display:inline-block;vertical-align:middle'><div class='pf' style='width:"+pct+"%'></div></div></td></tr>";
-  });
-  h+="</table></div>";
-  if(!entries.length)h+="<div class='empty' style='margin-top:12px'>Энэ хугацаанд мэдээ байхгүй байна</div>";
-  document.getElementById("sRes").innerHTML=h;
-}
-
-// ---- AI ----
-function tAI(c){
-  const P=getPer();c.innerHTML="";const card=mk("div","card");card.innerHTML="<h2>✨ AI Тайлан</h2>";
-  const fr=mk("div","fr");
-  const fi1=mk("div","fi");fi1.innerHTML="<label>Төлөвлөгөө / Албан даалгавар</label>";const s1=mk("select");s1.id="aP";S.plans.forEach(p=>{const o=mk("option");o.textContent=p;s1.appendChild(o);});fi1.appendChild(s1);fr.appendChild(fi1);
-  const fi2=mk("div","fi");fi2.innerHTML="<label>Тайлант хугацаа</label><input id='aPer' value='"+P.q[0]+"'>";fr.appendChild(fi2);
-  card.appendChild(fr);
-  const fi3=mk("div","fi fr one");fi3.style.marginBottom="10px";fi3.innerHTML="<label>Нэмэлт мэдээлэл / Өмнөх тайланы хэлбэр</label><textarea id='aEx' placeholder='Өмнөх биелэлтийн хэлбэр...'></textarea>";card.appendChild(fi3);
-  const btn=mk("button","btn bp");btn.textContent="✨ Биелэлт бичих";btn.onclick=gAI;card.appendChild(btn);
-  const res=mk("div");res.id="aRes";res.style.marginTop="14px";card.appendChild(res);
-  c.appendChild(card);
-}
-
-async function gAI(){
-  const plan=document.getElementById("aP")?.value,per=document.getElementById("aPer")?.value,extra=document.getElementById("aEx")?.value||"";
-  const out=document.getElementById("aRes");out.innerHTML="<div style='text-align:center;color:var(--tx2);padding:32px'>⏳ AI бичиж байна...</div>";
-  const ri=S.inds.filter(i=>i.plans&&i.plans.includes(plan));
-  const agg={};
-  S.units.filter(u=>!u.isAdmin).forEach(u=>{const e=S.data.find(d=>d.unit===u.code&&d.period===per);if(e)ri.forEach(i=>{if(e.values[i.id]){if(!agg[i.id])agg[i.id]={name:i.name,type:i.type,vals:[]};agg[i.id].vals.push(e.values[i.id]);}});});
-  const lines=Object.values(agg).map(g=>{const nums=g.vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));if(g.type==="text")return g.name+": "+g.vals.join("; ");if(g.type==="pct"&&nums.length)return g.name+": дундаж "+(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1)+"%";if(nums.length)return g.name+": нийт "+nums.reduce((a,b)=>a+b,0).toLocaleString("en-US");return g.name+": "+g.vals.join(", ");}).join("\n");
-  const prompt="Та Шүүхийн шийдвэр гүйцэтгэх байгууллагын \""+plan+"\" биелэлтийг монгол хэлээр бичнэ үү.\n\nТайлант хугацаа: "+per+"\n\nЦугласан мэдээ:\n"+(lines||"(мэдээ байхгүй)")+"\n\n"+(extra?"Загвар:\n"+extra+"\n\n":"")+"Биелэлтийг албан ёсны хэлбэрт бичнэ үү.";
-  try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
-    const d=await r.json();aiTxt=d.content?.[0]?.text||"Алдаа";
-    out.innerHTML="<div class='aio'>"+aiTxt+"</div><div class='brow'></div>";
-    const br=out.lastChild;
-    const b1=mk("button","btn bs");b1.textContent="✅ Архивлах";b1.onclick=archAI;br.appendChild(b1);
-    const b2=mk("button","btn bi");b2.textContent="🖨️ Хэвлэх";b2.onclick=()=>{const plan2=document.getElementById("aP")?.value,per2=document.getElementById("aPer")?.value;const w=window.open("","_blank");const h2="<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Taillan</title><style>body{font-family:Arial;font-size:13px;line-height:1.8;padding:40px}h2,h3{text-align:center}.sigs{display:flex;justify-content:space-between;margin-top:50px}</style></head><body><h2>ШИЙДВЭР ГҮИЦЭТГЭЛЭЭН АЛБ</h2><h3>"+plan2+" БИЕЛЭЛТ</h3><p style='text-align:center'>Хугацаа: "+per2+" | Огноо: "+new Date().toLocaleDateString("mn-MN")+"</p><div>"+aiTxt.replace(/\n/g,"<br>")+"</div><div class='sigs'><div>Боловсруулсан: ___________</div><div>Хянасан: ___________</div><div>Баталсан: ___________</div></div></body></html>";w.document.open();w.document.write(h2);w.document.close();w.print();};br.appendChild(b2);
+  if(!inds.length){document.getElementById("sRes").innerHTML=h+"+<p style=\'margin-top:60px\'><b>Баталсан:</b>&nbsp;&nbsp;&nbsp;Албан тушаал, цол ____________________ &nbsp;&nbsp; Гарын үсэг ____________ &nbsp;&nbsp; Нэр ____________________</p><p style=\'margin-top:30px\'><b>Хянасан:</b>&nbsp;&nbsp;&nbsp;&nbsp;Албан тушаал, цол ____________________ &nbsp;&nbsp; Гарын үсэг ____________ &nbsp;&nbsp; Нэр ____________________</p><p style=\'margin-top:30px\'><b>Боловсруулсан:</b>&nbsp;Албан тушаал, цол ____________________ &nbsp;&nbsp; Гарын үсэг ____________ &nbsp;&nbsp; Нэр ____________________</p></body></html>";w.document.open();w.document.write(h2);w.document.close();w.print();};br.appendChild(b2);
     const b3=mk("button","btn bx");b3.textContent="📋 Хуулах";b3.onclick=()=>navigator.clipboard.writeText(aiTxt).then(()=>toast("Copied","ts"));br.appendChild(b3);
   }catch(e){out.innerHTML="<div class='aio'>Error: "+e.message+"</div>";}
 }
