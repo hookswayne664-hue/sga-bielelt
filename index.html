@@ -475,28 +475,26 @@ td:last-child{text-align:right}
   <tr><th>Үзүүлэлт</th><th style="text-align:right">Утга</th></tr>
   `+rh+`
 </table>
-<table class="sig-table">
-  <tr>
-    <td class="sig-label">Баталсан:</td>
-    <td class="sig-cell">Албан тушаал, цол ________________</td>
-    <td class="sig-cell">Гарын үсэг ________</td>
-    <td class="sig-cell">Нэр ________________</td>
-  </tr>
-  <tr><td colspan="4" style="height:20px"></td></tr>
-  <tr>
-    <td class="sig-label">Хянасан:</td>
-    <td class="sig-cell">Албан тушаал, цол ________________</td>
-    <td class="sig-cell">Гарын үсэг ________</td>
-    <td class="sig-cell">Нэр ________________</td>
-  </tr>
-  <tr><td colspan="4" style="height:20px"></td></tr>
-  <tr>
-    <td class="sig-label">Боловсруулсан:</td>
-    <td class="sig-cell">Албан тушаал, цол ________________</td>
-    <td class="sig-cell">Гарын үсэг ________</td>
-    <td class="sig-cell">Нэр ________________</td>
-  </tr>
-</table>
+<div style="margin-top:50px">
+  <div style="margin-bottom:30px">
+    <span style="font-weight:bold">Баталсан:</span>
+    &nbsp;&nbsp;&nbsp; Албан тушаал, цол _____________________
+    &nbsp;&nbsp;&nbsp; Гарын үсэг ____________
+    &nbsp;&nbsp;&nbsp; Нэр _____________________
+  </div>
+  <div style="margin-bottom:30px">
+    <span style="font-weight:bold">Хянасан:</span>
+    &nbsp;&nbsp;&nbsp;&nbsp; Албан тушаал, цол _____________________
+    &nbsp;&nbsp;&nbsp; Гарын үсэг ____________
+    &nbsp;&nbsp;&nbsp; Нэр _____________________
+  </div>
+  <div style="margin-bottom:30px">
+    <span style="font-weight:bold">Боловсруулсан:</span>
+    &nbsp; Албан тушаал, цол _____________________
+    &nbsp;&nbsp;&nbsp; Гарын үсэг ____________
+    &nbsp;&nbsp;&nbsp; Нэр _____________________
+  </div>
+</div>
 </body></html>`;
   w.document.open();w.document.write(html);w.document.close();w.print();
 }
