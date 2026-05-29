@@ -452,11 +452,11 @@ function prtDoc(unit,period,rows){
   const w=window.open("","_blank");
   const rh=rows.filter(r=>r[1]).map(r=>"<tr><td>"+r[0]+"</td><td style='text-align:right'>"+r[1]+"</td></tr>").join("");
   const html="<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Medee</title><style>body{font-family:Arial;font-size:13px;padding:30px}h2,h3{text-align:center}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #000;padding:7px 10px}th{background:#f0f0f0;text-align:left}.sigs{display:flex;justify-content:space-between;margin-top:50px}</style></head><body>"
-    +"<h2>ШИЙДВЭР ГҮИЦЭТГЭЛЭЭН АЛБ</h2>"
+    +"<h2>ШИЙДВЭР ГҮЙЦЭТГЭХ АЛБ</h2>"
     +"<h3>ТООН МЭДЭЭ</h3>"
     +"<p style='text-align:center'>Нэгж: <b>"+unit+"</b> | Хугацаа: <b>"+period+"</b> | Огноо: <b>"+new Date().toLocaleDateString("mn-MN")+"</b></p>"
     +"<table><tr><th>Үзүүлэлт</th><th style='text-align:right'>Утга</th></tr>"+rh+"</table>"
-    +"<div class='sigs'><div>Боловсруулсан: ___________</div><div>Хянасан: ___________</div><div>Батласан: ___________</div></div>"
+    +"<div class='sigs'><div>Боловсруулсан: ___________</div><div>Хянасан: ___________</div><div>Баталсан: ___________</div></div>"
     +"</body></html>";
   w.document.open();w.document.write(html);w.document.close();w.print();
 }
@@ -642,7 +642,7 @@ async function gAI(){
     out.innerHTML="<div class='aio'>"+aiTxt+"</div><div class='brow'></div>";
     const br=out.lastChild;
     const b1=mk("button","btn bs");b1.textContent="✅ Архивлах";b1.onclick=archAI;br.appendChild(b1);
-    const b2=mk("button","btn bi");b2.textContent="🖨️ Хэвлэх";b2.onclick=()=>{const plan2=document.getElementById("aP")?.value,per2=document.getElementById("aPer")?.value;const w=window.open("","_blank");const h2="<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Taillan</title><style>body{font-family:Arial;font-size:13px;line-height:1.8;padding:40px}h2,h3{text-align:center}.sigs{display:flex;justify-content:space-between;margin-top:50px}</style></head><body><h2>ШИЙДВЭР ГҮИЦЭТГЭЛЭЭН АЛБ</h2><h3>"+plan2+" БИЕЛЭЛТ</h3><p style='text-align:center'>Хугацаа: "+per2+" | Огноо: "+new Date().toLocaleDateString("mn-MN")+"</p><div>"+aiTxt.replace(/\n/g,"<br>")+"</div><div class='sigs'><div>Боловсруулсан: ___________</div><div>Хянасан: ___________</div><div>Батласан: ___________</div></div></body></html>";w.document.open();w.document.write(h2);w.document.close();w.print();};br.appendChild(b2);
+    const b2=mk("button","btn bi");b2.textContent="🖨️ Хэвлэх";b2.onclick=()=>{const plan2=document.getElementById("aP")?.value,per2=document.getElementById("aPer")?.value;const w=window.open("","_blank");const h2="<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Taillan</title><style>body{font-family:Arial;font-size:13px;line-height:1.8;padding:40px}h2,h3{text-align:center}.sigs{display:flex;justify-content:space-between;margin-top:50px}</style></head><body><h2>ШИЙДВЭР ГҮИЦЭТГЭЛЭЭН АЛБ</h2><h3>"+plan2+" БИЕЛЭЛТ</h3><p style='text-align:center'>Хугацаа: "+per2+" | Огноо: "+new Date().toLocaleDateString("mn-MN")+"</p><div>"+aiTxt.replace(/\n/g,"<br>")+"</div><div class='sigs'><div>Боловсруулсан: ___________</div><div>Хянасан: ___________</div><div>Баталсан: ___________</div></div></body></html>";w.document.open();w.document.write(h2);w.document.close();w.print();};br.appendChild(b2);
     const b3=mk("button","btn bx");b3.textContent="📋 Хуулах";b3.onclick=()=>navigator.clipboard.writeText(aiTxt).then(()=>toast("Copied","ts"));br.appendChild(b3);
   }catch(e){out.innerHTML="<div class='aio'>Error: "+e.message+"</div>";}
 }
