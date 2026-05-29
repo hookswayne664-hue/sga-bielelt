@@ -466,7 +466,7 @@ td:last-child{text-align:right}
 .sig-label{font-weight:bold;white-space:nowrap;width:120px}
 .sig-cell{border-bottom:1px solid #000;min-width:120px}
 </style></head><body>
-<h1>ШИЙДВЭР ГҮЙЦЭТГЭХ АЛБ</h1>
+<h1>ШИЙДВЭР ГҮЙЦЭТГЭХ АЛБА</h1>
 <h2>ТООН МЭДЭЭ</h2>
 <div class="meta">
   <b>Нэгж:</b> `+unit+` &nbsp;&nbsp; <b>Хугацаа:</b> `+period+` &nbsp;&nbsp; <b>Огноо:</b> `+new Date().toLocaleDateString("mn-MN")+`
@@ -475,9 +475,34 @@ td:last-child{text-align:right}
   <tr><th>Үзүүлэлт</th><th style="text-align:right">Утга</th></tr>
   `+rh+`
 </table>
-<p style="margin-top:60px;margin-bottom:0"><b>Баталсан:</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Албан тушаал, цол ________________________ &nbsp;&nbsp; Гарын үсэг _____________ &nbsp;&nbsp; Нэр _______________________</p>
-<p style="margin-top:30px;margin-bottom:0"><b>Хянасан:</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Албан тушаал, цол ________________________ &nbsp;&nbsp; Гарын үсэг _____________ &nbsp;&nbsp; Нэр _______________________</p>
-<p style="margin-top:30px;margin-bottom:0"><b>Боловсруулсан:</b> Албан тушаал, цол ________________________ &nbsp;&nbsp; Гарын үсэг _____________ &nbsp;&nbsp; Нэр _______________________</p>
+<table style="margin-top:50px;width:100%;border:none;border-collapse:collapse">
+  <tr style="height:40px">
+    <td style="white-space:nowrap;font-weight:bold;width:130px">Баталсан:</td>
+    <td style="border-bottom:1px solid #000;width:220px">&nbsp;</td>
+    <td style="white-space:nowrap;padding-left:16px">Гарын үсэг</td>
+    <td style="border-bottom:1px solid #000;width:120px">&nbsp;</td>
+    <td style="white-space:nowrap;padding-left:16px">Нэр</td>
+    <td style="border-bottom:1px solid #000">&nbsp;</td>
+  </tr>
+  <tr style="height:10px"><td colspan="6"></td></tr>
+  <tr style="height:40px">
+    <td style="white-space:nowrap;font-weight:bold">Хянасан:</td>
+    <td style="border-bottom:1px solid #000">&nbsp;</td>
+    <td style="white-space:nowrap;padding-left:16px">Гарын үсэг</td>
+    <td style="border-bottom:1px solid #000">&nbsp;</td>
+    <td style="white-space:nowrap;padding-left:16px">Нэр</td>
+    <td style="border-bottom:1px solid #000">&nbsp;</td>
+  </tr>
+  <tr style="height:10px"><td colspan="6"></td></tr>
+  <tr style="height:40px">
+    <td style="white-space:nowrap;font-weight:bold">Боловсруулсан:</td>
+    <td style="border-bottom:1px solid #000">&nbsp;</td>
+    <td style="white-space:nowrap;padding-left:16px">Гарын үсэг</td>
+    <td style="border-bottom:1px solid #000">&nbsp;</td>
+    <td style="white-space:nowrap;padding-left:16px">Нэр</td>
+    <td style="border-bottom:1px solid #000">&nbsp;</td>
+  </tr>
+</table>
 </body></html>`;
   w.document.open();w.document.write(html);w.document.close();w.print();
 }
@@ -668,7 +693,7 @@ async function gAI(){
       const plan2=document.getElementById("aP")?.value,per2=document.getElementById("aPer")?.value;
       const w=window.open("","_blank");
       const rh2="<p style='margin-top:60px'><b>Баталсан:</b>&nbsp;&nbsp;Албан тушаал, цол ____________________ &nbsp; Гарын үсэг ____________ &nbsp; Нэр ____________________</p><p style='margin-top:30px'><b>Хянасан:</b>&nbsp;&nbsp;Албан тушаал, цол ____________________ &nbsp; Гарын үсэг ____________ &nbsp; Нэр ____________________</p><p style='margin-top:30px'><b>Боловсруулсан:</b>&nbsp;Албан тушаал, цол ____________________ &nbsp; Гарын үсэг ____________ &nbsp; Нэр ____________________</p>";
-      const html2="<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Taillan</title><style>body{font-family:Arial;font-size:13px;line-height:1.8;padding:40px}h1,h2{text-align:center}</style></head><body><h1>ШИЙДВЭР ГҮЙЦЭТГЭХ АЛБ</h1><h2>"+plan2+" БИЕЛЭЛТ</h2><p style='text-align:center'>Хугацаа: "+per2+" | Огноо: "+new Date().toLocaleDateString("mn-MN")+"</p><div>"+aiTxt.replace(/\n/g,"<br>")+"</div>"+rh2+"</body></html>";
+      const html2="<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Taillan</title><style>body{font-family:Arial;font-size:13px;line-height:1.8;padding:40px}h1,h2{text-align:center}</style></head><body><h1>ШИЙДВЭР ГҮЙЦЭТГЭХ АЛБА</h1><h2>"+plan2+" БИЕЛЭЛТ</h2><p style='text-align:center'>Хугацаа: "+per2+" | Огноо: "+new Date().toLocaleDateString("mn-MN")+"</p><div>"+aiTxt.replace(/\n/g,"<br>")+"</div>"+rh2+"</body></html>";
       w.document.open();w.document.write(html2);w.document.close();w.print();
     };
     br.appendChild(b2);
