@@ -240,6 +240,8 @@ const DPLANS=["АД №01","АД №02","ХЗДХС АД №01","Эрс сайж
 let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0};
 let fbDB=null,aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";
 
+async function loadSheetJS(){if(window.XLSX)return;await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+
 async function initFB(){
   try{
     const{initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
@@ -310,14 +312,14 @@ function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];
   if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
   tabs.push({id:"chat",l:"💬 Чат"});
-  if(isA){tabs.push({id:"monitor",l:"🔍 Хяналт"});tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
+  if(isA){tabs.push({id:"monitor",l:"🔍 Хяналт"});tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
   const tb=document.getElementById("TB");tb.innerHTML="";
   tabs.forEach(t=>{const d=mk("div","tab"+(S.tab===t.id?" on":""));d.textContent=t.l;if(t.id==="chat"){const b=mk("span","tbadge");b.id="tbadge";b.style.display="none";b.textContent="0";d.appendChild(b);}d.onclick=()=>renderTab(t.id);tb.appendChild(d);});
 }
 function renderTab(id){S.tab=id;renderTabs();const c=document.getElementById("MC");
   if(id==="data")tData(c);else if(id==="mydata")tMyData(c);else if(id==="chat")tChat(c);
   else if(id==="monitor")tMonitor(c);else if(id==="summary")tSummary(c);
-  else if(id==="ai")tAI(c);else if(id==="archive")tArchive(c);else if(id==="config")tConfig(c);
+  else if(id==="ai")tAI(c);else if(id==="files")tFiles(c);else if(id==="archive")tArchive(c);else if(id==="config")tConfig(c);
 }
 
 // DATA ENTRY
@@ -571,6 +573,9 @@ function tAI(c){
   const fi2=mk("div","fi");fi2.innerHTML="<label>Тайлант хугацаа</label><input id='aPer' value='"+P.q[0]+"'>";fr.appendChild(fi2);
   card.appendChild(fr);
   const fi3=mk("div","fi fr one");fi3.style.marginBottom="10px";fi3.innerHTML="<label>Нэмэлт мэдээлэл / Загвар</label><textarea id='aEx' placeholder='Өмнөх биелэлтийн хэлбэр...'></textarea>";card.appendChild(fi3);
+  const ffi=mk("div","fi fr one");ffi.style.marginBottom="10px";ffi.innerHTML="<label>📎 Файлын сангаас ашиглах (заавал биш)</label>";
+  const fSel=mk("select");fSel.id="aFile";const fO=mk("option");fO.value="";fO.textContent="— Файл сонгохгүй —";fSel.appendChild(fO);ffi.appendChild(fSel);card.appendChild(ffi);
+  loadFileSelect();
   const btn=mk("button","btn bp");btn.textContent="✨ Биелэлт бичих";btn.onclick=gAI;card.appendChild(btn);
   const res=mk("div");res.id="aRes";res.style.marginTop="14px";card.appendChild(res);c.appendChild(card);
 }
@@ -579,8 +584,23 @@ async function gAI(){
   const out=document.getElementById("aRes");out.innerHTML="<div style='text-align:center;color:var(--tx2);padding:32px'>⏳ AI бичиж байна...</div>";
   const ri=S.inds.filter(i=>i.plans&&i.plans.includes(plan));const agg={};
   S.units.filter(u=>!u.isAdmin).forEach(u=>{const e=S.data.find(d=>d.unit===u.code&&d.period===per);if(e)ri.forEach(i=>{if(e.values[i.id]){if(!agg[i.id])agg[i.id]={name:i.name,type:i.type,vals:[]};agg[i.id].vals.push(e.values[i.id]);}});});
+  let fileData="";
+  const fkey=document.getElementById("aFile")?.value;
+  if(fkey&&fbDB&&window._get){
+    try{
+      const snap=await window._get(window._r(fbDB,"files/"+fkey));
+      if(snap.exists()){
+        const f=snap.val();
+        fileData="\n\nХАВСАРГАСАН ФАЙЛЫН МЭДЭЭ ("+f.name+"):\n";
+        Object.entries(f.sheets||{}).forEach(([sn,rows])=>{
+          fileData+="Sheet: "+sn+"\n";
+          rows.slice(0,50).forEach(row=>{fileData+=row.filter(v=>v!=="").join(" | ")+"\n";});
+        });
+      }
+    }catch{}
+  }
   const lines=Object.values(agg).map(g=>{const nums=g.vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));if(g.type==="text")return g.name+": "+g.vals.join("; ");if(nums.length)return g.name+": нийт "+nums.reduce((a,b)=>a+b,0).toLocaleString("en-US");return g.name+": "+g.vals.join(", ");}).join("\n");
-  const prompt="Шүүхийн шийдвэр гүйцэтгэх байгууллагын \""+plan+"\" биелэлтийг монгол хэлээр бичнэ үү.\n\nТайлант хугацаа: "+per+"\n\nЦугласан тоон мэдээ:\n"+(lines||"(мэдээ байхгүй)")+"\n\n"+(extra?"Өмнөх биелэлтийн загвар:\n"+extra+"\n\n":"")+"ЧУХАЛ ШААРДЛАГА: Markdown (#, ##, **, __, ---, |) тэмдэгт огт ашиглахгүй. Зөвхөн цэвэр монгол текстээр, Монгол улсын албан хэрэг хөтлөлтийн стандарт MNS 5140:2021-ийн дагуу, дугаарласан хэсгүүдтэй, товч тодорхой, албан ёсны хэлбэрт бичнэ үү.";
+  const prompt="Шүүхийн шийдвэр гүйцэтгэх байгууллагын \""+plan+"\" биелэлтийг монгол хэлээр бичнэ үү.\n\nТайлант хугацаа: "+per+"\n\nЦугласан тоон мэдээ:\n"+(lines||"(мэдээ байхгүй)")+"\n\n"+(extra?"Өмнөх биелэлтийн загвар:\n"+extra+"\n\n":"")+(fileData)+"\n\nЧУХАЛ ШААРДЛАГА: Markdown (#, ##, **, __, ---, |) тэмдэгт огт ашиглахгүй. Зөвхөн цэвэр монгол текстээр, Монгол улсын албан хэрэг хөтлөлтийн стандарт MNS 5140:2021-ийн дагуу, дугаарласан хэсгүүдтэй, товч тодорхой, албан ёсны хэлбэрт бичнэ үү.";
   try{
     const apiKey=localStorage.getItem("sga_ai_key")||"";
     if(!apiKey){aiTxt="⚠️ API түлхүүр үг тохируулаагүй байна. Тохиргоо → AI тохиргоо хэсэгт оруулна уу.";out.innerHTML="<div class='aio'>"+aiTxt+"</div>";return;}
@@ -611,6 +631,79 @@ async function archAI(){
   if(!aiTxt)return;const plan=document.getElementById("aP")?.value,per=document.getElementById("aPer")?.value;
   const entry={plan,period:per,text:aiTxt,date:new Date().toLocaleString("mn-MN"),author:S.user.name};
   S.archives.push(entry);api("saveArchive",{entry:JSON.stringify(entry)});toast("✅ Архивлагдлаа!","ts");
+}
+
+
+function tFiles(c){
+  c.innerHTML="";const card=mk("div","card");
+  card.innerHTML="<h2>📎 Файлын сан</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:14px'>Excel файл хадгалж AI-д ашиглуулна. Нэрэнд хугацааг оруулна уу: <b>2026_05_7хоног.xlsx</b></p>";
+  const sub=mk("div","sub");sub.innerHTML="<h3>📤 Файл нэмэх</h3>";
+  const fr=mk("div","fr");
+  const fi1=mk("div","fi");fi1.innerHTML="<label>Тайлбар нэр</label><input id='fName' placeholder='2026 оны 5-р сарын 7 хоног'>";fr.appendChild(fi1);
+  const fi2=mk("div","fi");fi2.innerHTML="<label>Excel файл (.xlsx, .xls, .csv)</label>";
+  const finp=mk("input");finp.type="file";finp.id="fFile";finp.accept=".xlsx,.xls,.csv";finp.style.cssText="width:100%;padding:6px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx)";fi2.appendChild(finp);fr.appendChild(fi2);
+  sub.appendChild(fr);
+  const bUp=mk("button","btn bp");bUp.style.marginTop="8px";bUp.textContent="📤 Хадгалах";bUp.onclick=uploadFile;sub.appendChild(bUp);
+  const upRes=mk("div");upRes.id="upRes";upRes.style.marginTop="8px";sub.appendChild(upRes);
+  card.appendChild(sub);
+  const listDiv=mk("div");listDiv.id="fileList";card.appendChild(listDiv);
+  c.appendChild(card);loadFileList();
+}
+
+async function uploadFile(){
+  const name=document.getElementById("fName").value.trim();
+  const fileEl=document.getElementById("fFile");
+  const res=document.getElementById("upRes");
+  if(!name){toast("Нэр оруулна уу","te");return;}
+  if(!fileEl.files.length){toast("Файл сонгоно уу","te");return;}
+  if(!fbDB||!window._set){toast("Firebase холбогдоогүй","te");return;}
+  res.innerHTML="<span style='color:var(--or)'>⏳ Уншиж байна...</span>";
+  try{
+    await loadSheetJS();
+    const file=fileEl.files[0];
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:"array"});
+    const sheets={};
+    wb.SheetNames.forEach(sn=>{sheets[sn]=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:"",raw:false});});
+    const entry={name,filename:file.name,sheets,date:new Date().toLocaleString("mn-MN"),author:S.user.name};
+    await window._set(window._r(fbDB,"files/f"+Date.now()),entry);
+    res.innerHTML="<span style='color:var(--gr)'>✅ Хадгалагдлаа!</span>";
+    document.getElementById("fName").value="";fileEl.value="";
+    loadFileList();toast("✅ Файл хадгалагдлаа","ts");
+  }catch(e){res.innerHTML="<span style='color:var(--rd)'>❌ Алдаа: "+e.message+"</span>";}
+}
+
+async function loadFileList(){
+  const el=document.getElementById("fileList");if(!el)return;
+  if(!fbDB||!window._get){el.innerHTML="<div class='empty'>Firebase холбогдоогүй</div>";return;}
+  el.innerHTML="<div style='color:var(--tx2);font-size:12px;padding:12px'>⏳ Ачаалж байна...</div>";
+  try{
+    const snap=await window._get(window._r(fbDB,"files"));
+    if(!snap.exists()){el.innerHTML="<div class='empty'>Файл байхгүй байна</div>";return;}
+    const files=[];snap.forEach(ch=>{files.push({key:ch.key,...ch.val()});});
+    files.sort((a,b)=>b.key>a.key?-1:1);
+    el.innerHTML="<div style='font-size:13px;font-weight:700;margin:14px 0 10px;color:var(--tx2)'>Хадгалагдсан файлууд ("+files.length+")</div>";
+    files.forEach(f=>{
+      const d=mk("div");d.style.cssText="background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap";
+      const info=mk("div");info.style.flex="1";
+      info.innerHTML="<div style='font-weight:600;color:var(--bl2)'>📄 "+f.name+"</div>"
+        +"<div style='font-size:11px;color:var(--tx3);margin-top:2px'>"+f.filename+" · "+f.date+" · "+f.author+"</div>"
+        +"<div style='font-size:11px;color:var(--tx2);margin-top:2px'>Sheets: "+Object.keys(f.sheets||{}).join(", ")+"</div>";
+      d.appendChild(info);
+      const bDel=mk("button","btn bd_");bDel.textContent="🗑️";
+      bDel.onclick=(()=>{const key=f.key;return async()=>{if(!confirm("Устгах уу?"))return;await window._set(window._r(fbDB,"files/"+key),null);loadFileList();toast("Устгагдлаа","ts");};})();
+      d.appendChild(bDel);el.appendChild(d);
+    });
+  }catch(e){el.innerHTML="<div class='empty'>Алдаа: "+e.message+"</div>";}
+}
+
+async function loadFileSelect(){
+  const sel=document.getElementById("aFile");if(!sel||!fbDB||!window._get)return;
+  try{
+    const snap=await window._get(window._r(fbDB,"files"));
+    if(!snap.exists())return;
+    snap.forEach(ch=>{const f=ch.val();const o=mk("option");o.value=ch.key;o.textContent=f.name+" ("+f.filename+")";sel.appendChild(o);});
+  }catch{}
 }
 
 // ARCHIVE
