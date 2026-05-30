@@ -112,7 +112,7 @@ tr:hover td{background:var(--bg3)}
 </div>
 <div class="toast" id="tst"></div>
 <script>
-const SU="https://script.google.com/macros/s/AKfycbyQiqM_tR91U163Xwn1NCCYTxq5zJrVNaydfDdVk-TpZFMCltHoKjXss_WApp9Bt_0/exec";
+const SU="https://script.google.com/macros/s/AKfycbxjMMVts6APH_br0i6-AOLlKDNa2v94ueUVWQjcDOF-9VkPiHVBd-nsSoRxXynrajft/exec";
 const FC={apiKey:"AIzaSyDkxCrZG8aQ96mA02s72M3Pb7i23Nt2MW8",authDomain:"shga-bilelt.firebaseapp.com",databaseURL:"https://shga-bilelt-default-rtdb.firebaseio.com",projectId:"shga-bilelt",storageBucket:"shga-bilelt.firebasestorage.app",messagingSenderId:"44190929136",appId:"1:44190929136:web:ca772578c0b6446805b235"};
 function fN(v){const n=parseInt((v+"").replace(/,/g,""));return isNaN(n)?"":n.toLocaleString("en-US");}
 function fV(v,t){if(v===undefined||v===null||v==="")return"";if(t==="money")return fN(v)+"₮";if(t==="pct")return(parseFloat(v)||0).toFixed(1)+"%";if(t==="text")return v;return fN(v);}
@@ -431,7 +431,18 @@ function tMyData(c){
       tr.innerHTML="<td>"+e.period+"</td><td>"+(e.freq==="week"?"7 хоног":e.freq==="month"?"Сар":"Улирал")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e.date||"")+"</td><td></td>";
       const btn=mk("button","btn bi");btn.textContent="🖨️ Хэвлэх";
       btn.onclick=(()=>{const idx=i;return()=>{const inds=S.inds.filter(ind=>ind.freq===mine[idx].freq);showPrintModal(S.user.name,mine[idx].period,inds.map(ind=>[ind.name,fV(mine[idx].values[ind.id],ind.type)]));};})();
-      tr.lastElementChild.appendChild(btn);tbl.appendChild(tr);
+      tr.lastElementChild.appendChild(btn);
+      const bdel=mk("button","btn bd_");bdel.textContent="🗑️ Устгах";
+      bdel.onclick=(()=>{const idx=i;return()=>{
+        if(!confirm("Энэ мэдээг устгах уу?"))return;
+        const entry=mine[idx];
+        const si=S.data.findIndex(d=>d.unit===entry.unit&&d.period===entry.period&&d.freq===entry.freq);
+        if(si>=0){S.data.splice(si,1);try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
+        api("deleteData",{unit:entry.unit,period:entry.period});
+        toast("✅ Устгагдлаа","ts");tMyData(document.getElementById("MC"));}
+      };})();
+      tr.lastElementChild.appendChild(bdel);
+      tbl.appendChild(tr);
     });
     tw.appendChild(tbl);card.appendChild(tw);
   }
