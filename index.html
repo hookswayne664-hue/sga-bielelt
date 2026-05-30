@@ -374,12 +374,12 @@ function showPrintModal(unit,period,rows){
   const overlay=mk("div","modal-overlay");
   const box=mk("div","modal-box");
   box.innerHTML="<h3>🖨️ Гарын үсгийн мэдээлэл бөглөнө үү</h3>"
-    +"<div class='mfi'><label>Баталсан — Албан тушаал, цол</label><input id='s_bt' placeholder='Жишээ: Байгууллагын дарга, хурандаа'></div>"
-    +"<div class='mfi'><label>Баталсан — Нэр</label><input id='s_bn' placeholder='Овог Нэр'></div>"
-    +"<div class='mfi'><label>Хянасан — Албан тушаал, цол</label><input id='s_ht' placeholder='Жишээ: Дэд дарга, дэд хурандаа'></div>"
-    +"<div class='mfi'><label>Хянасан — Нэр</label><input id='s_hn' placeholder='Овог Нэр'></div>"
-    +"<div class='mfi'><label>Боловсруулсан — Албан тушаал, цол</label><input id='s_bt2' placeholder='Жишээ: Мэргэжилтэн, дэслэгч'></div>"
-    +"<div class='mfi' style='margin-bottom:20px'><label>Боловсруулсан — Нэр</label><input id='s_bn2' placeholder='Овог Нэр'></div>"
+    +"<div class='mfi'><label>ТАНИЛЦСАН — Албан тушаал, цол, нэр</label><input id='s_bt' placeholder='ДАРГА, ХУРАНДАА'></div>"
+    +"<div class='mfi'><label>ТАНИЛЦСАН — Нэр</label><input id='s_bn' placeholder='Э.БЯМБАЖАВ'></div>"
+    +"<div class='mfi'><label>ХЯНАСАН — Албан тушаал, цол, нэр</label><input id='s_ht' placeholder='ДЭД ДАРГА, ДЭД ХУРАНДАА'></div>"
+    +"<div class='mfi'><label>ХЯНАСАН — Нэр</label><input id='s_hn' placeholder='Э.БЯМБАЖАВ'></div>"
+    +"<div class='mfi'><label>БОЛОВСРУУЛСАН — Албан тушаал, цол, нэр</label><input id='s_bt2' placeholder='МЭРГЭЖИЛТЭН, ДЭСЛЭГЧ'></div>"
+    +"<div class='mfi' style='margin-bottom:20px'><label>БОЛОВСРУУЛСАН — Нэр</label><input id='s_bn2' placeholder='Э.БЯМБАЖАВ'></div>"
     +"<div style='display:flex;gap:10px'></div>";
   const btnRow=box.lastChild;
   const bPrint=mk("button","btn bp");bPrint.style.flex="1";bPrint.textContent="🖨️ Хэвлэх";
@@ -413,9 +413,9 @@ function doPrint(unit,period,rows,bt,bn,ht,hn,bt2,bn2){
     +"<div class='meta'><b>Нэгж:</b> "+unit+" &nbsp;&nbsp; <b>Хугацаа:</b> "+period+" &nbsp;&nbsp; <b>Огноо:</b> "+new Date().toLocaleDateString("mn-MN")+"</div>"
     +"<table><tr><th>Үзүүлэлт</th><th style='text-align:right'>Утга</th></tr>"+rh+"</table>"
     +"<div class='sig'>"
-    +"<div class='sr'><span class='sl'>Баталсан:</span> "+(bt||"_________________________")+" &nbsp;&nbsp;&nbsp; Гарын үсэг _____________ &nbsp;&nbsp;&nbsp; "+(bn||"________________")+"</div>"
-    +"<div class='sr'><span class='sl'>Хянасан:</span> "+(ht||"_________________________")+" &nbsp;&nbsp;&nbsp; Гарын үсэг _____________ &nbsp;&nbsp;&nbsp; "+(hn||"________________")+"</div>"
-    +"<div class='sr'><span class='sl'>Боловсруулсан:</span> "+(bt2||"_________________________")+" &nbsp;&nbsp;&nbsp; Гарын үсэг _____________ &nbsp;&nbsp;&nbsp; "+(bn2||"________________")+"</div>"
+    +"<div class='sr'><span class='sl'>ТАНИЛЦСАН:</span> "+(bt||"")+" _____________ "+(bn||"")+"</div>"
+    +"<div class='sr'><span class='sl'>ХЯНАСАН:</span> "+(ht||"")+" _____________ "+(hn||"")+"</div>"
+    +"<div class='sr'><span class='sl'>БОЛОВСРУУЛСАН:</span> "+(bt2||"")+" _____________ "+(bn2||"")+"</div>"
     +"</div></body></html>");
   w.document.close();w.print();
 }
