@@ -569,7 +569,7 @@ async function gAI(){
   const ri=S.inds.filter(i=>i.plans&&i.plans.includes(plan));const agg={};
   S.units.filter(u=>!u.isAdmin).forEach(u=>{const e=S.data.find(d=>d.unit===u.code&&d.period===per);if(e)ri.forEach(i=>{if(e.values[i.id]){if(!agg[i.id])agg[i.id]={name:i.name,type:i.type,vals:[]};agg[i.id].vals.push(e.values[i.id]);}});});
   const lines=Object.values(agg).map(g=>{const nums=g.vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));if(g.type==="text")return g.name+": "+g.vals.join("; ");if(nums.length)return g.name+": нийт "+nums.reduce((a,b)=>a+b,0).toLocaleString("en-US");return g.name+": "+g.vals.join(", ");}).join("\n");
-  const prompt="Шүүхийн шийдвэр гүйцэтгэх байгууллагын \""+plan+"\" биелэлтийг монгол хэлээр бичнэ үү.\n\nТайлант хугацаа: "+per+"\n\nЦугласан мэдээ:\n"+(lines||"(мэдээ байхгүй)")+"\n\n"+(extra?"Загвар:\n"+extra+"\n\n":"")+"Биелэлтийг албан ёсны хэлбэрт бичнэ үү.";
+  const prompt="Шүүхийн шийдвэр гүйцэтгэх байгууллагын \""+plan+"\" биелэлтийг монгол хэлээр бичнэ үү.\n\nТайлант хугацаа: "+per+"\n\nЦугласан тоон мэдээ:\n"+(lines||"(мэдээ байхгүй)")+"\n\n"+(extra?"Өмнөх биелэлтийн загвар:\n"+extra+"\n\n":"")+"ЧУХАЛ ШААРДЛАГА: Markdown (#, ##, **, __, ---, |) тэмдэгт огт ашиглахгүй. Зөвхөн цэвэр монгол текстээр, Монгол улсын албан хэрэг хөтлөлтийн стандарт MNS 5140:2021-ийн дагуу, дугаарласан хэсгүүдтэй, товч тодорхой, албан ёсны хэлбэрт бичнэ үү.";
   try{
     const apiKey=localStorage.getItem("sga_ai_key")||"";
     if(!apiKey){aiTxt="⚠️ API түлхүүр үг тохируулаагүй байна. Тохиргоо → AI тохиргоо хэсэгт оруулна уу.";out.innerHTML="<div class='aio'>"+aiTxt+"</div>";return;}
@@ -577,7 +577,16 @@ async function gAI(){
     const d=await r.json();
     if(d.error){aiTxt="⚠️ Алдаа: "+JSON.stringify(d.error);out.innerHTML="<div class='aio'>"+aiTxt+"</div>";return;}
     aiTxt=d.content?.[0]?.text||"Хариу алдаа";
-    out.innerHTML="<div class='aio'>"+aiTxt+"</div><div class='brow'></div>";
+    const cleanTxt=aiTxt
+  .replace(/#{1,3}\s*/g,"")
+  .replace(/\*\*([^*]+)\*\*/g,"$1")
+  .replace(/\*([^*]+)\*/g,"$1")
+  .replace(/^---+$/gm,"")
+  .replace(/^\|.*\|$/gm,"")
+  .replace(/^[-•]\s*/gm,"  ")
+  .trim();
+aiTxt=cleanTxt;
+out.innerHTML="<div class='aio'>"+aiTxt+"</div><div class='brow'></div>";
     const br=out.lastChild;
     const b1=mk("button","btn bs");b1.textContent="✅ Архивлах";b1.onclick=archAI;br.appendChild(b1);
     const b2=mk("button","btn bi");b2.textContent="🖨️ Хэвлэх";b2.onclick=()=>{
