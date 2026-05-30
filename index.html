@@ -120,7 +120,18 @@ function fmtInput(el){const r=(el.value+"").replace(/[^0-9]/g,"");el.value=r?par
 function parseVal(v){return(v+"").replace(/,/g,"");}
 function mk(t,c){const e=document.createElement(t);if(c)e.className=c;return e;}
 function toast(m,c){const t=document.getElementById("tst");t.textContent=m;t.className="toast show "+(c||"");clearTimeout(t._t);t._t=setTimeout(()=>{t.className="toast";},3000);}
-async function api(a,p){const u=new URL(SU);u.searchParams.set("action",a);if(p)for(const[k,v]of Object.entries(p))u.searchParams.set(k,typeof v==="object"?JSON.stringify(v):v);try{const r=await fetch(u);const t=await r.text();try{return JSON.parse(t);}catch{return{ok:true};}}catch{return{ok:false};}}
+async function api(a,p){
+  const u=new URL(SU);u.searchParams.set("action",a);
+  if(p)for(const[k,v]of Object.entries(p))u.searchParams.set(k,typeof v==="object"?JSON.stringify(v):v);
+  try{
+    const r=await fetch(u,{redirect:"follow"});
+    const t=await r.text();
+    try{return JSON.parse(t);}catch{return{ok:true};}
+  }catch{
+    // CORS fallback - use no-cors for write operations
+    try{await fetch(u,{mode:"no-cors",redirect:"follow"});return{ok:true};}catch{return{ok:false};}
+  }
+}
 
 const UNITS=[
   {code:"ШГА00",name:"АДМИН (Удирдлага)",pwd:"admin2026",isAdmin:true},
@@ -255,7 +266,19 @@ function getPer(){
   return{w,mn,q};
 }
 async function loadAllData(){
-  try{const r=await api("getAllData");if(r&&r.data&&r.data.length){r.data.forEach(e=>{const i=S.data.findIndex(d=>d.unit===e.unit&&d.period===e.period);if(i>=0)S.data[i]=e;else S.data.push(e);});toast("☁️ "+r.data.length+" мэдээ ачаалагдлаа","ts");}}catch{}
+  try{
+    const u=new URL(SU);u.searchParams.set("action","getAllData");
+    const r=await fetch(u,{redirect:"follow"});
+    const d=await r.json();
+    if(d&&d.data&&d.data.length){
+      d.data.forEach(e=>{
+        const i=S.data.findIndex(x=>x.unit===e.unit&&x.period===e.period);
+        if(i>=0)S.data[i]=e;else S.data.push(e);
+      });
+      try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
+      toast("☁️ "+d.data.length+" мэдээ ачаалагдлаа","ts");
+    }
+  }catch(e){console.log("loadAllData:",e);}
 }
 async function initLogin(){
   const sel=document.getElementById("lC");
