@@ -449,34 +449,66 @@ function prtCur(){
 }
 
 function prtDoc(unit,period,rows){
-  const w=window.open("","_blank");
-  const rh=rows.filter(r=>r[1]).map(r=>"<tr><td>"+r[0]+"</td><td style='text-align:right'>"+r[1]+"</td></tr>").join("");
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Тоон мэдээ</title>
-<style>
-body{font-family:'Times New Roman',serif;font-size:13px;padding:40px;color:#000}
-h1{text-align:center;font-size:16px;font-weight:bold;margin-bottom:4px;text-transform:uppercase}
-h2{text-align:center;font-size:14px;font-weight:bold;margin-bottom:16px;text-transform:uppercase}
-.meta{text-align:center;margin-bottom:16px;font-size:13px}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border:1px solid #000;padding:6px 10px}
-th{background:#f0f0f0;text-align:left;font-weight:bold}
-td:last-child{text-align:right}
-.sig-table{margin-top:50px;width:100%;border-collapse:collapse;border:none}
-.sig-table td{border:none;padding:4px 8px;font-size:13px}
-.sig-label{font-weight:bold;white-space:nowrap;width:120px}
-.sig-cell{border-bottom:1px solid #000;min-width:120px}
-</style></head><body>
-<h1>ШИЙДВЭР ГҮЙЦЭТГЭХ АЛБА</h1>
-<h2>ТООН МЭДЭЭ</h2>
-<div class="meta">
-  <b>Нэгж:</b> `+unit+` &nbsp;&nbsp; <b>Хугацаа:</b> `+period+` &nbsp;&nbsp; <b>Огноо:</b> `+new Date().toLocaleDateString("mn-MN")+`
-</div>
-<table>
-  <tr><th>Үзүүлэлт</th><th style="text-align:right">Утга</th></tr>
-  `+rh+`
-</table>
-<br><br><br>
-<p style="margin-bottom:28px"><b>Баталсан:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>_________________________ &nbsp;&nbsp;&nbsp; Гарын үсэг _________________ &nbsp;&nbsp;&nbsp; Нэр _________________________</p>
-<p style="margin-bottom:28px"><b>Хянасан:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>_________________________ &nbsp;&nbsp;&nbsp; Гарын үсэг _________________ &nbsp;&nbsp;&nbsp; Нэр _________________________</p>
-<p><b>Боловсруулсан:</b> _________________________ &nbsp;&nbsp;&nbsp; Гарын үсэг _________________ &nbsp;&nbsp;&nbsp; Нэр _________________________</p>
-</body></html>`
+  // Хэвлэхийн өмнө гарын үсгийн мэдээлэл бөглөх modal
+  const overlay=mk("div");
+  overlay.style.cssText="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center";
+  const box=mk("div");
+  box.style.cssText="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:28px;width:520px;max-width:95vw";
+  box.innerHTML="<h2 style='font-size:15px;font-weight:700;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--bd)'>🖨️ Хэвлэхийн өмнө бөглөнө үү</h2>"
+    +"<div style='margin-bottom:14px'><label style='font-size:11px;color:var(--tx2);font-weight:600;display:block;margin-bottom:5px'>БАТАЛСАН — Албан тушаал, цол</label>"
+    +"<input id='sig_bt' style='width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px' placeholder='Жишээ: Байгууллагын дарга, хурандаа'></div>"
+    +"<div style='margin-bottom:14px'><label style='font-size:11px;color:var(--tx2);font-weight:600;display:block;margin-bottom:5px'>БАТАЛСАН — Нэр</label>"
+    +"<input id='sig_bn' style='width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px' placeholder='Овог нэр'></div>"
+    +"<div style='margin-bottom:14px'><label style='font-size:11px;color:var(--tx2);font-weight:600;display:block;margin-bottom:5px'>ХЯНАСАН — Албан тушаал, цол</label>"
+    +"<input id='sig_ht' style='width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px' placeholder='Жишээ: Дэд дарга, дэд хурандаа'></div>"
+    +"<div style='margin-bottom:14px'><label style='font-size:11px;color:var(--tx2);font-weight:600;display:block;margin-bottom:5px'>ХЯНАСАН — Нэр</label>"
+    +"<input id='sig_hn' style='width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px' placeholder='Овог нэр'></div>"
+    +"<div style='margin-bottom:14px'><label style='font-size:11px;color:var(--tx2);font-weight:600;display:block;margin-bottom:5px'>БОЛОВСРУУЛСАН — Албан тушаал, цол</label>"
+    +"<input id='sig_bt2' style='width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px' placeholder='Жишээ: Ахлах мэргэжилтэн, дэслэгч'></div>"
+    +"<div style='margin-bottom:20px'><label style='font-size:11px;color:var(--tx2);font-weight:600;display:block;margin-bottom:5px'>БОЛОВСРУУЛСАН — Нэр</label>"
+    +"<input id='sig_btn' style='width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px' placeholder='Овог нэр'></div>"
+    +"<div style='display:flex;gap:10px'>"
+    +"<button id='sig_print_btn' style='flex:1;padding:10px;background:var(--bl);color:#fff;border:none;border-radius:5px;font-size:14px;font-weight:700;cursor:pointer'>🖨️ Хэвлэх</button>"
+    +"<button id='sig_cancel_btn' style='padding:10px 20px;background:var(--bg3);color:var(--tx);border:1px solid var(--bd);border-radius:5px;font-size:14px;cursor:pointer'>Болих</button>"
+    +"</div>";
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  document.getElementById("sig_cancel_btn").onclick=()=>document.body.removeChild(overlay);
+
+  document.getElementById("sig_print_btn").onclick=()=>{
+    const bt=document.getElementById("sig_bt").value||"________________________";
+    const bn=document.getElementById("sig_bn").value||"________________";
+    const ht=document.getElementById("sig_ht").value||"________________________";
+    const hn=document.getElementById("sig_hn").value||"________________";
+    const bt2=document.getElementById("sig_bt2").value||"________________________";
+    const btn=document.getElementById("sig_btn").value||"________________";
+    document.body.removeChild(overlay);
+
+    const w=window.open("","_blank");
+    const rh=rows.filter(r=>r[1]).map(r=>"<tr><td>"+r[0]+"</td><td style='text-align:right'>"+r[1]+"</td></tr>").join("");
+    const html="<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Тоон мэдээ</title>"
+      +"<style>body{font-family:Times New Roman,serif;font-size:13px;padding:40px;color:#000}"
+      +"h1{text-align:center;font-size:16px;font-weight:bold;margin-bottom:4px;text-transform:uppercase}"
+      +"h2{text-align:center;font-size:14px;font-weight:bold;margin-bottom:16px;text-transform:uppercase}"
+      +".meta{text-align:center;margin-bottom:16px}"
+      +"table{width:100%;border-collapse:collapse;margin-top:10px}"
+      +"th,td{border:1px solid #000;padding:6px 10px}"
+      +"th{background:#f0f0f0;text-align:left;font-weight:bold}"
+      +"td:last-child{text-align:right}"
+      +".sig{margin-top:50px}"
+      +".sr{margin-bottom:30px;font-size:13px}"
+      +".sl{font-weight:bold;display:inline-block;min-width:130px}"
+      +"</style></head><body>"
+      +"<h1>ШИЙДВЭР ГҮЙЦЭТГЭХ АЛБА</h1>"
+      +"<h2>ТООН МЭДЭЭ</h2>"
+      +"<div class='meta'><b>Нэгж:</b> "+unit+" &nbsp;&nbsp; <b>Хугацаа:</b> "+period+" &nbsp;&nbsp; <b>Огноо:</b> "+new Date().toLocaleDateString("mn-MN")+"</div>"
+      +"<table><tr><th>Үзүүлэлт</th><th style='text-align:right'>Утга</th></tr>"+rh+"</table>"
+      +"<div class='sig'>"
+      +"<div class='sr'><span class='sl'>Баталсан:</span> "+bt+" &nbsp;&nbsp;&nbsp; Гарын үсэг _____________ &nbsp;&nbsp;&nbsp; "+bn+"</div>"
+      +"<div class='sr'><span class='sl'>Хянасан:</span> "+ht+" &nbsp;&nbsp;&nbsp; Гарын үсэг _____________ &nbsp;&nbsp;&nbsp; "+hn+"</div>"
+      +"<div class='sr'><span class='sl'>Боловсруулсан:</span> "+bt2+" &nbsp;&nbsp;&nbsp; Гарын үсэг _____________ &nbsp;&nbsp;&nbsp; "+btn+"</div>"
+      +"</div></body></html>";
+    w.document.open();w.document.write(html);w.document.close();w.print();
+  };
+}`
