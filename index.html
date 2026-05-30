@@ -262,6 +262,7 @@ async function initLogin(){
   S.units.filter(u=>!u.disabled).forEach(u=>{const o=document.createElement("option");o.value=u.code;o.textContent=u.code+" — "+u.name;sel.appendChild(o);});
   const pf=document.getElementById("lP");pf.value="";setTimeout(()=>{pf.value="";},200);
   pf.onkeydown=e=>{if(e.key==="Enter")doLogin();};
+  try{const ld=localStorage.getItem("sga_data");if(ld)S.data=JSON.parse(ld);}catch{}
   try{const lp=localStorage.getItem("sga_p");if(lp)Object.assign(S.pwds,JSON.parse(lp));}catch{}
   try{const r=await api("getPasswords");if(r&&r.passwords){Object.entries(r.passwords).forEach(([k,v])=>{if(k!=="__ALL__")S.pwds[k]=v;});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
   document.getElementById("lB").textContent="Нэвтрэх →";pf.value="";
@@ -337,7 +338,9 @@ async function subData(){
   const entry={unit:S.user.code,unitName:S.user.name,period:dPer,freq:dFreq,values:vals,date:new Date().toLocaleString("mn-MN")};
   const idx=S.data.findIndex(d=>d.unit===entry.unit&&d.period===entry.period);
   if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
-  toast("✅ Мэдээ хадгалагдлаа!","ts");api("saveData",{data:JSON.stringify(entry)});
+  toast("✅ Мэдээ хадгалагдлаа!","ts");
+  try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
+  api("saveData",{data:JSON.stringify(entry)});
 }
 function prtCur(){
   const inds=S.inds.filter(i=>i.freq===dFreq);
@@ -545,8 +548,12 @@ async function gAI(){
   const lines=Object.values(agg).map(g=>{const nums=g.vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));if(g.type==="text")return g.name+": "+g.vals.join("; ");if(nums.length)return g.name+": нийт "+nums.reduce((a,b)=>a+b,0).toLocaleString("en-US");return g.name+": "+g.vals.join(", ");}).join("\n");
   const prompt="Шүүхийн шийдвэр гүйцэтгэх байгууллагын \""+plan+"\" биелэлтийг монгол хэлээр бичнэ үү.\n\nТайлант хугацаа: "+per+"\n\nЦугласан мэдээ:\n"+(lines||"(мэдээ байхгүй)")+"\n\n"+(extra?"Загвар:\n"+extra+"\n\n":"")+"Биелэлтийг албан ёсны хэлбэрт бичнэ үү.";
   try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
-    const d=await r.json();aiTxt=d.content?.[0]?.text||"Алдаа";
+    const apiKey=localStorage.getItem("sga_ai_key")||"";
+    if(!apiKey){aiTxt="⚠️ API түлхүүр үг тохируулаагүй байна. Тохиргоо → AI тохиргоо хэсэгт оруулна уу.";out.innerHTML="<div class='aio'>"+aiTxt+"</div>";return;}
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
+    const d=await r.json();
+    if(d.error){aiTxt="⚠️ Алдаа: "+d.error.message;out.innerHTML="<div class='aio'>"+aiTxt+"</div>";return;}
+    aiTxt=d.content?.[0]?.text||"Хариу алдаа";
     out.innerHTML="<div class='aio'>"+aiTxt+"</div><div class='brow'></div>";
     const br=out.lastChild;
     const b1=mk("button","btn bs");b1.textContent="✅ Архивлах";b1.onclick=archAI;br.appendChild(b1);
@@ -634,7 +641,31 @@ function buildCfg(c){
   });c4.appendChild(ul);
   const sub4=mk("div","sub");sub4.style.marginTop="10px";sub4.innerHTML="<h3>➕ Шинэ нэгж</h3><div class='fr'><div class='fi'><label>Нэр</label><input id='nuN' placeholder='Нэр'></div><div class='fi'><label>Нууц үг</label><input id='nuPW' value='sga2026'></div></div><div class='fr one'><div class='fi'><label>Код (автомат бол хоосон)</label><input id='nuC' placeholder='ШГА51...'></div></div>";
   const b4=mk("button","btn bs");b4.textContent="➕ Нэмэх";b4.onclick=()=>{const n=document.getElementById("nuN").value.trim();if(!n)return toast("Нэр оруулна уу","te");const pw=document.getElementById("nuPW").value.trim()||"sga2026";let code=document.getElementById("nuC").value.trim();if(!code){const nums=S.units.map(u=>parseInt(u.code.replace("ШГА",""))||0);code="ШГА"+(Math.max(...nums)+1);}if(S.units.find(u=>u.code===code)){if(!confirm(code+" байна. Орлуулах уу?"))return;S.units=S.units.filter(u=>u.code!==code);}S.units.push({code,name:n,pwd:pw});S.pwds[code]=pw;try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}buildCfg(c);toast("✅ "+code,"ts");};sub4.appendChild(b4);c4.appendChild(sub4);c.appendChild(c4);
+  // API тохиргоо + мэдээ цэвэрлэх
+  const c5=mk("div","card");c5.innerHTML="<h2>🤖 AI тохиргоо</h2>";
+  const fi5=mk("div","fi");fi5.innerHTML="<label>Anthropic API түлхүүр үг</label>";
+  const inp5=mk("input");inp5.type="password";inp5.placeholder="sk-ant-...";inp5.style.cssText="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px";
+  inp5.value=localStorage.getItem("sga_ai_key")||"";fi5.appendChild(inp5);c5.appendChild(fi5);
+  const bSaveKey=mk("button","btn bs");bSaveKey.style.marginTop="10px";bSaveKey.textContent="💾 Хадгалах";
+  bSaveKey.onclick=()=>{const k=inp5.value.trim();if(!k)return toast("API түлхүүр үг оруулна уу","te");localStorage.setItem("sga_ai_key",k);toast("✅ API түлхүүр үг хадгалагдлаа","ts");};
+  c5.appendChild(bSaveKey);
+  const note=mk("p");note.style.cssText="font-size:11px;color:var(--tx2);margin-top:10px";note.textContent="API түлхүүр үгийг зөвхөн таны браузерт хадгална. platform.openai.com/anthropic.com дээрээс авна уу.";c5.appendChild(note);
+  c.appendChild(c5);
+  // Мэдээ цэвэрлэх
+  const c6=mk("div","card");c6.innerHTML="<h2>🗑️ Тест мэдээ цэвэрлэх</h2>";
+  const info=mk("p");info.style.cssText="font-size:13px;color:var(--tx2);margin-bottom:12px";info.textContent="Туршилтаар оруулсан бүх мэдээг устгана. Жинхэнэ ажиллагааны өмнө хийх хэрэгтэй.";c6.appendChild(info);
+  const stats=mk("div");stats.style.cssText="background:var(--bg3);border-radius:6px;padding:12px;margin-bottom:14px;font-size:13px";
+  stats.innerHTML="Нийт мэдээ: <b style='color:var(--bl2)'>"+S.data.length+"</b> &nbsp;|&nbsp; Нэгж: <b style='color:var(--gr)'>"+new Set(S.data.map(d=>d.unit)).size+"</b>";c6.appendChild(stats);
+  const bClear=mk("button","btn bd_");bClear.textContent="🗑️ Бүх мэдээг цэвэрлэх";
+  bClear.onclick=()=>{
+    if(!confirm("Бүх "+S.data.length+" мэдээг устгах уу? Энэ үйлдлийг буцааж болохгүй!"))return;
+    S.data=[];
+    try{localStorage.removeItem("sga_data");}catch{}
+    buildCfg(c);toast("✅ Бүх мэдээ цэвэрлэгдлаа","ts");
+  };
+  c6.appendChild(bClear);c.appendChild(c6);
 }
+
 async function sAllPW(){
   const pwd=document.getElementById("allPW").value.trim();if(!pwd)return toast("Оруулна уу","te");
   S.units.filter(u=>!u.isAdmin).forEach(u=>{S.pwds[u.code]=pwd;});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
