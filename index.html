@@ -284,8 +284,8 @@ async function initLogin(){
       try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
     }
   }catch{}
-  // Config background-д татна
-  loadConfig();
+  // Config татна — нэвтрэхийн өмнө хүлээнэ
+  await loadConfig();
   document.getElementById("lB").textContent="Нэвтрэх →";
   document.getElementById("lB").disabled=false;
   pf.value="";
@@ -295,9 +295,11 @@ async function loadConfig(){
   try{
     const r=await api("getConfig");
     if(r&&r.config){
-      if(r.config.indicators&&r.config.indicators.length){S.inds=r.config.indicators;try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}}
-      if(r.config.plans&&r.config.plans.length){S.plans=r.config.plans;try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}}
-      if(S.tab)renderTab(S.tab);
+      let changed=false;
+      if(r.config.indicators&&r.config.indicators.length){S.inds=r.config.indicators;try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}changed=true;}
+      if(r.config.plans&&r.config.plans.length){S.plans=r.config.plans;try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}changed=true;}
+      // Үзүүлэлт өөрчлөгдсөн бол идэвхтэй tab-г refresh хийнэ
+      if(changed&&S.tab)renderTab(S.tab);
     }
   }catch{}
 }
@@ -1001,11 +1003,21 @@ function buildCfg(c){
 
 async function saveInds(){
   try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
-  try{await api("saveConfig",{config:JSON.stringify({indicators:S.inds})});toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");}catch{}
+  try{
+    const u=SU+"?action=saveConfig&key=indicators&value="+encodeURIComponent(JSON.stringify(S.inds));
+    const r=await fetch(u,{redirect:"follow"});
+    const t=await r.text();
+    const d=JSON.parse(t);
+    if(d&&d.ok)toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");
+    else toast("⚠️ Хадгалахад алдаа","te");
+  }catch(e){toast("⚠️ "+e.message,"te");}
 }
 async function savePlans(){
   try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
-  try{await api("saveConfig",{config:JSON.stringify({plans:S.plans})});}catch{}
+  try{
+    const u=SU+"?action=saveConfig&key=plans&value="+encodeURIComponent(JSON.stringify(S.plans));
+    await fetch(u,{redirect:"follow"});
+  }catch{}
 }
 async function sAllPW(){
   const pwd=document.getElementById("allPW").value.trim();if(!pwd)return toast("Оруулна уу","te");
