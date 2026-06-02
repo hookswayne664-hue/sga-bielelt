@@ -310,7 +310,7 @@ async function loadAllData(){
     const d=await r.json();
     if(d&&d.data&&d.data.length){
       d.data.forEach(e=>{
-        const i=S.data.findIndex(x=>x.unit===e.unit&&x.period===e.period);
+        const i=S.data.findIndex(x=>x.unit===e.unit&&x.period===e.period&&x.freq===e.freq);
         if(i>=0)S.data[i]=e;else S.data.push(e);
       });
       try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
