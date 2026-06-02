@@ -105,7 +105,7 @@ tr:hover td{background:var(--bg3)}
 <div class="app" id="AP">
   <div class="nav">
     <div class="navbrand">⚖ ШГА · БИЕЛЭЛТ</div>
-    <div class="navr"><span id="nU"></span><button class="obtn" onclick="logout()">Гарах</button></div>
+    <div class="navr"><span id="nU"></span><button class="obtn" id="btnRefresh" style="display:none" onclick="manualRefresh()">🔄 Шинэчлэх</button><button class="obtn" onclick="logout()">Гарах</button></div>
   </div>
   <div class="tabs" id="TB"></div>
   <div class="con" id="MC"></div>
@@ -369,18 +369,33 @@ function doLogin(){
   document.getElementById("AP").style.display="block";
   document.getElementById("nU").textContent=u.code+" · "+u.name;
   renderTabs();
-  if(u.isAdmin)setTimeout(loadAllData,1500);
+  if(u.isAdmin){
+    setTimeout(loadAllData,1500);
+    // 30 секунд тутамд автоматаар шинэчилнэ
+    window._autoRefresh=setInterval(()=>{
+      loadAllData();
+    },30000);
+  }
   renderTab(u.isAdmin?"monitor":"data");
 }
 
-function logout(){S.user=null;document.getElementById("LP").style.display="flex";document.getElementById("AP").style.display="none";document.getElementById("lP").value="";}
+function logout(){S.user=null;if(window._autoRefresh)clearInterval(window._autoRefresh);document.getElementById("LP").style.display="flex";document.getElementById("AP").style.display="none";document.getElementById("lP").value="";}
 
+function manualRefresh(){
+  const btn=document.getElementById("btnRefresh");
+  if(btn){btn.textContent="⏳ Ачаалж байна...";btn.disabled=true;}
+  loadAllData().then(()=>{
+    if(btn){btn.textContent="🔄 Шинэчлэх";btn.disabled=false;}
+  });
+}
 function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];
   if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
   tabs.push({id:"chat",l:"💬 Чат"});
   if(isA){tabs.push({id:"monitor",l:"🔍 Хяналт"});tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
   const tb=document.getElementById("TB");tb.innerHTML="";
+  const rbtn=document.getElementById("btnRefresh");
+  if(rbtn)rbtn.style.display=(S.user&&S.user.isAdmin)?"inline-block":"none";
   tabs.forEach(t=>{const d=mk("div","tab"+(S.tab===t.id?" on":""));d.textContent=t.l;if(t.id==="chat"){const b=mk("span","tbadge");b.id="tbadge";b.style.display="none";b.textContent="0";d.appendChild(b);}d.onclick=()=>renderTab(t.id);tb.appendChild(d);});
 }
 function renderTab(id){S.tab=id;renderTabs();const c=document.getElementById("MC");
@@ -578,6 +593,46 @@ function tMonitor(c){
   c2.appendChild(fr2);const pRes=mk("div");pRes.id="pRes";c2.appendChild(pRes);c.appendChild(c2);
   setTimeout(()=>{lMon();updPlanPer();},50);
 }
+function showUnitDetail(ucode,uname){
+  // Тухайн нэгжийн бүх мэдээг харах modal
+  const allEntries=S.data.filter(d=>d.unit===ucode).sort((a,b)=>a.period>b.period?-1:1);
+  const overlay=mk("div","modal-overlay");
+  const box=mk("div","modal-box");
+  box.style.width="700px";
+  box.innerHTML="<h3>📋 "+ucode+" — "+uname+"</h3>";
+  if(!allEntries.length){
+    box.innerHTML+="<div class='empty'>Мэдээ байхгүй байна</div>";
+  } else {
+    // Давтамжаар бүлэглэх
+    const freqMap={"week":"7 Хоног","month":"Сар бүр","quarter":"Улирал бүр"};
+    allEntries.forEach(entry=>{
+      const sub=mk("div","sub");sub.style.marginBottom="12px";
+      sub.innerHTML="<h3>"+freqMap[entry.freq]+" — "+entry.period+"</h3>";
+      const inds=S.inds.filter(i=>i.freq===entry.freq);
+      const tbl=mk("table");tbl.style.width="100%";
+      tbl.innerHTML="<tr><th style='text-align:left;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Үзүүлэлт</th><th style='text-align:right;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Утга</th></tr>";
+      let hasVal=false;
+      inds.forEach(ind=>{
+        const val=entry.values[ind.id];
+        if(val===undefined||val===null||val==="")return;
+        hasVal=true;
+        const tr=mk("tr");
+        tr.innerHTML="<td style='padding:5px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+ind.name+"</td><td style='padding:5px 8px;font-size:13px;text-align:right;border-bottom:1px solid var(--bd);color:var(--gr)'>"+fV(val,ind.type)+"</td>";
+        tbl.appendChild(tr);
+      });
+      if(!hasVal){sub.innerHTML+="<div style='font-size:12px;color:var(--tx3);padding:8px'>Утга байхгүй</div>";}
+      else sub.appendChild(tbl);
+      box.appendChild(sub);
+    });
+  }
+  const bClose=mk("button","btn bx");bClose.style.marginTop="12px";bClose.textContent="✕ Хаах";
+  bClose.onclick=()=>document.body.removeChild(overlay);
+  box.appendChild(bClose);
+  overlay.appendChild(box);
+  // Click outside to close
+  overlay.onclick=e=>{if(e.target===overlay)document.body.removeChild(overlay);};
+  document.body.appendChild(overlay);
+}
 function lMon(){
   const per=document.getElementById("mP")?.value,grp=document.getElementById("mG")?.value||"all";if(!per)return;
   const NIIS=["ШГА01","ШГА02","ШГА03","ШГА04","ШГА05","ШГА06","ШГА07","ШГА08","ШГА09","ШГА10","ШГА11","ШГА12","ШГА13","ШГА14"];
@@ -591,7 +646,7 @@ function lMon(){
   const el=document.getElementById("mRes");if(!el)return;
   let h="<div class='stats'><div class='sc'><div class='n'>"+active.length+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+done.length+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+miss.length+"</div><div class='l'>❌ Илгээгээгүй</div></div><div class='sc o'><div class='n'>"+pct+"%</div><div class='l'>Хамрагдалт</div></div></div>";
   h+="<div class='tw'><table><tr><th>Код</th><th>Нэгж</th><th>Статус</th><th>Огноо</th></tr>";
-  active.forEach(u=>{const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td><td>"+(e?"<span class='badge bok'>✅ Илгээсэн</span>":"<span class='badge bfail'>❌ Илгээгээгүй</span>")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e?e.date:"")+"</td></tr>";});
+  active.forEach(u=>{const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);h+="<tr><td><b>"+u.code+"</b></td><td><span style='cursor:pointer;color:var(--bl2)' onclick='showUnitDetail(\""+u.code+"\",\""+u.name.replace(/\"/g,"")+"\")'>"+ u.name+"</span></td><td>"+(e?"<span class='badge bok'>✅ Илгээсэн</span>":"<span class='badge bfail'>❌ Илгээгээгүй</span>")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e?e.date:"")+"</td></tr>";});
   h+="</table></div>";
   if(miss.length)h+="<div style='margin-top:8px;font-size:12px;color:var(--rd)'>❌ "+miss.map(u=>u.code).join(", ")+"</div>";
   el.innerHTML=h;
@@ -642,7 +697,13 @@ function lSum(){
     const vals=entries.map(e=>e.values[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
     const nums=vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));
     let total="—";
-    if(ind.type==="text")total=vals.length?vals.length+" хариу":"—";
+    if(ind.type==="text"){
+      if(vals.length){
+        // Текст утгуудыг товч харуулна
+        const preview=vals.map((v,i)=>"<span style='font-size:11px;color:var(--tx2)'><b>"+entries[i]?.unit+":</b> "+(v.length>40?v.substring(0,40)+"...":v)+"</span>").join("<br>");
+        total="<details><summary style='cursor:pointer;color:var(--bl2)'>"+vals.length+" хариу харах</summary><div style='margin-top:6px;line-height:1.8'>"+preview+"</div></details>";
+      }else{total="—";}
+    }
     else if(ind.type==="pct"&&nums.length)total=(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1)+"%";
     else if(nums.length)total="<b>"+fN(nums.reduce((a,b)=>a+b,0))+"</b>";
     const fc=vals.length,pct=sub?Math.round(fc/sub*100):0;
