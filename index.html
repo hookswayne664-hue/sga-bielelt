@@ -244,6 +244,14 @@ let fbPwdsReady=false;
 
 async function loadSheetJS(){if(window.XLSX)return;await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 
+function getPer(){
+  const n=new Date(),y=n.getFullYear(),m=n.getMonth()+1;
+  const w=[],mn=[],q=[];
+  for(let i=0;i<8;i++){const d=new Date(n);d.setDate(d.getDate()-i*7);w.push(d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0")+" 7 хоног");}
+  for(let i=0;i<6;i++){let mm=m-i,yy=y;if(mm<=0){mm+=12;yy--;}mn.push(yy+" оны "+mm+"-р сар");}
+  for(let i=0;i<4;i++){let qq=Math.ceil(m/3)-i,yy=y;if(qq<=0){qq+=4;yy--;}q.push(yy+" оны "+qq+"-р улирал");}
+  return{w,mn,q};
+}
 async function initFB(){
   try{
     const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),5000));
