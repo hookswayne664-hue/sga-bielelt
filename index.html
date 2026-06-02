@@ -344,7 +344,26 @@ function doLogin(){
   document.getElementById("nU").textContent=u.code+" · "+u.name;
   const rb=document.getElementById("btnRefresh");if(rb)rb.style.display=u.isAdmin?"inline-block":"none";
   renderTabs();
-  if(u.isAdmin){setTimeout(loadAllData,1500);setInterval(loadAllData,30000);}
+  if(u.isAdmin){
+    setTimeout(loadAllData,1500);
+    setInterval(loadAllData,30000);
+    // Firebase-аас шинэ үзүүлэлт ирсэн бол tab refresh
+    setTimeout(async()=>{
+      if(fbDB&&window._get){
+        try{
+          const si=await window._get(window._r(fbDB,"config/indicators"));
+          if(si&&si.exists&&si.exists()){
+            const v=si.val();
+            if(v&&v.length&&v.length!==S.inds.length){
+              S.inds=v;
+              try{localStorage.setItem("sga_inds",JSON.stringify(v));}catch{}
+              if(S.tab)renderTab(S.tab);
+            }
+          }
+        }catch{}
+      }
+    },1000);
+  }
   startChat();
   renderTab(u.isAdmin?"monitor":"data");
 }
