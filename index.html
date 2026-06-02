@@ -281,6 +281,18 @@ async function loadAllData(){
       toast("☁️ "+d.data.length+" мэдээ ачаалагдлаа","ts");
     }
   }catch(e){console.log("loadAllData:",e);}
+  // Load indicators and plans from Sheets
+  try{
+    const r2=await api("getConfig");
+    if(r2&&r2.indicators&&r2.indicators.length){
+      S.inds=r2.indicators;
+      try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
+    }
+    if(r2&&r2.plans&&r2.plans.length){
+      S.plans=r2.plans;
+      try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
+    }
+  }catch(e){console.log("loadConfig:",e);}
 }
 async function initLogin(){
   const sel=document.getElementById("lC");
@@ -736,8 +748,8 @@ function buildCfg(c){
     const uc=mk("span","uc");uc.textContent=ind.id;row.appendChild(uc);
     const un=mk("span","un");un.textContent=ind.name;row.appendChild(un);
     const badge=mk("span","badge "+(ind.freq==="week"?"bok":ind.freq==="month"?"bwarn":"bfail"));badge.textContent=ind.freq==="week"?"7 хоног":ind.freq==="month"?"Сар":"Улирал";row.appendChild(badge);
-    const be=mk("button","btn bi");be.textContent="✏️";be.onclick=(()=>{const idx=i;return()=>{const n=prompt("Нэр:",S.inds[idx].name);if(n){S.inds[idx].name=n;buildCfg(c);toast("✅","ts");}};})();row.appendChild(be);
-    const bd=mk("button","btn bd_");bd.textContent="🗑️";bd.onclick=(()=>{const idx=i;return()=>{if(confirm("Устгах уу?")){S.inds.splice(idx,1);buildCfg(c);}};})();row.appendChild(bd);
+    const be=mk("button","btn bi");be.textContent="✏️";be.onclick=(()=>{const idx=i;return()=>{const n=prompt("Нэр:",S.inds[idx].name);if(n){S.inds[idx].name=n;buildCfg(c);saveInds();}};})();row.appendChild(be);
+    const bd=mk("button","btn bd_");bd.textContent="🗑️";bd.onclick=(()=>{const idx=i;return()=>{if(confirm("Устгах уу?")){S.inds.splice(idx,1);buildCfg(c);saveInds();}};})();row.appendChild(bd);
     il.appendChild(row);
   });
   c1.appendChild(il);
@@ -753,9 +765,9 @@ function buildCfg(c){
   const b1=mk("button","btn bs");b1.textContent="➕ Нэмэх";b1.onclick=()=>{const n=document.getElementById("niN").value.trim();if(!n)return toast("Нэр оруулна уу","te");const f=document.getElementById("niF").value,t=document.getElementById("niT").value,p=document.getElementById("niP").value.split(",").map(x=>x.trim()).filter(Boolean);S.inds.push({id:"i"+Date.now(),name:n,type:t,freq:f,plans:p});buildCfg(c);toast("✅","ts");};sub1.appendChild(b1);c1.appendChild(sub1);c.appendChild(c1);
   // Plans
   const c2=mk("div","card");c2.innerHTML="<h2>📋 Төлөвлөгөөнүүд</h2>";
-  S.plans.forEach((p,i)=>{const row=mk("div","urow");const un=mk("span","un");un.textContent=p;row.appendChild(un);const bd=mk("button","btn bd_");bd.textContent="🗑️";bd.onclick=(()=>{const idx=i;return()=>{if(confirm("Устгах уу?")){S.plans.splice(idx,1);buildCfg(c);}};})();row.appendChild(bd);c2.appendChild(row);});
+  S.plans.forEach((p,i)=>{const row=mk("div","urow");const un=mk("span","un");un.textContent=p;row.appendChild(un);const bd=mk("button","btn bd_");bd.textContent="🗑️";bd.onclick=(()=>{const idx=i;return()=>{if(confirm("Устгах уу?")){S.plans.splice(idx,1);buildCfg(c);savePlans();}};})();row.appendChild(bd);c2.appendChild(row);});
   const sub2=mk("div","sub");sub2.style.marginTop="10px";sub2.innerHTML="<div class='fr one'><div class='fi'><label>Шинэ төлөвлөгөө</label><input id='nPl' placeholder='Нэр'></div></div>";
-  const b2=mk("button","btn bs");b2.textContent="➕ Нэмэх";b2.onclick=()=>{const p=document.getElementById("nPl").value.trim();if(!p)return;S.plans.push(p);buildCfg(c);};sub2.appendChild(b2);c2.appendChild(sub2);c.appendChild(c2);
+  const b2=mk("button","btn bs");b2.textContent="➕ Нэмэх";b2.onclick=()=>{const p=document.getElementById("nPl").value.trim();if(!p)return;S.plans.push(p);buildCfg(c);savePlans();};sub2.appendChild(b2);c2.appendChild(sub2);c.appendChild(c2);
   // Passwords
   const c3=mk("div","card");c3.innerHTML="<h2>🔐 Нууц үгийн удирдлага</h2>";
   const frp=mk("div","fr");const fip1=mk("div","fi");fip1.innerHTML="<label>Бүгдэд нэг нууц үг</label><input id='allPW' placeholder='sga2026'>";frp.appendChild(fip1);
@@ -800,6 +812,16 @@ function buildCfg(c){
     buildCfg(c);toast("✅ Бүх мэдээ цэвэрлэгдлаа","ts");
   };
   c6.appendChild(bClear);c.appendChild(c6);
+}
+
+async function saveInds(){
+  try{await api("saveData",{data:JSON.stringify({action:"saveIndicators",indicators:S.inds})});}catch{}
+  toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");
+}
+
+async function savePlans(){
+  try{await api("saveData",{data:JSON.stringify({action:"savePlans",plans:S.plans})});}catch{}
+  toast("✅ Төлөвлөгөөнүүд хадгалагдлаа","ts");
 }
 
 async function sAllPW(){
