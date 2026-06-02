@@ -343,12 +343,13 @@ async function initLogin(){
     }
   }catch{}
 
+  // Firebase-аас нууц үг болон config татах — ДУУСАХЫГ ХҮЛЭЭНЭ
+  document.getElementById("lB").textContent="⏳ Firebase ачаалж байна...";
+  document.getElementById("lB").disabled=true;
+  await initFB();  // нууц үг + config Firebase-аас татна
   document.getElementById("lB").textContent="Нэвтрэх →";
+  document.getElementById("lB").disabled=false;
   pf.value="";
-
-  // Firebase-аас нууц үг болон config татах (ДАВАМГАЙЛАХ — background-д)
-  // initFB дотроо loadFBPwds болон loadConfig дуудна
-  initFB();  // await хийхгүй — нэвтрэх товчийг хаахгүй
 }
 
 function doLogin(){
