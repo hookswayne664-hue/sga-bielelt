@@ -293,15 +293,25 @@ async function initLogin(){
 
 async function loadConfig(){
   try{
-    const r=await api("getConfig");
+    const url=SU+"?action=getConfig";
+    const resp=await fetch(url,{redirect:"follow"});
+    const txt=await resp.text();
+    const r=JSON.parse(txt);
     if(r&&r.config){
       let changed=false;
-      if(r.config.indicators&&r.config.indicators.length){S.inds=r.config.indicators;try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}changed=true;}
-      if(r.config.plans&&r.config.plans.length){S.plans=r.config.plans;try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}changed=true;}
-      // Үзүүлэлт өөрчлөгдсөн бол идэвхтэй tab-г refresh хийнэ
+      if(r.config.indicators&&Array.isArray(r.config.indicators)&&r.config.indicators.length){
+        S.inds=r.config.indicators;
+        try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
+        changed=true;
+      }
+      if(r.config.plans&&Array.isArray(r.config.plans)&&r.config.plans.length){
+        S.plans=r.config.plans;
+        try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
+        changed=true;
+      }
       if(changed&&S.tab)renderTab(S.tab);
     }
-  }catch{}
+  }catch(e){console.log("loadConfig error:",e);}
 }
 
 async function loadAllData(){
