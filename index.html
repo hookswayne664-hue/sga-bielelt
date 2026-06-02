@@ -107,6 +107,8 @@ tr:hover td{background:var(--bg3)}
 <div class="toast" id="tst"></div>
 <script>
 const SU="https://script.google.com/macros/s/AKfycbyQiqM_tR91U163Xwn1NCCYTxq5zJrVNaydfDdVk-TpZFMCltHoKjXss_WApp9Bt_0/exec";
+const FC={apiKey:"AIzaSyDkxCrZG8aQ96mA02s72M3Pb7i23Nt2MW8",authDomain:"shga-bilelt.firebaseapp.com",databaseURL:"https://shga-bilelt-default-rtdb.firebaseio.com",projectId:"shga-bilelt"};
+let fbDB=null;
 // ===== НЭГЖҮҮД =====
 const UNITS=[
   {code:"ШГА00",name:"АДМИН",pwd:"admin2026",isAdmin:true},
@@ -261,21 +263,25 @@ async function api(action,params){
     try{await fetch(u.toString(),{mode:"no-cors"});return{ok:true};}catch{return{ok:false};}
   }
 }
+async function initFB(){
+  try{
+    const t=new Promise((_,r)=>setTimeout(()=>r("timeout"),5000));
+    const l=async()=>{
+      const{initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+      const{getDatabase,ref,get,set}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+      const app=initializeApp(FC);fbDB=getDatabase(app);
+      window._r=ref;window._get=get;window._set=set;
+    };
+    await Promise.race([l(),t]);
+  }catch{fbDB=null;}
+}
 async function loadSheetJS(){if(window.XLSX)return;await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 
 // ===== INIT =====
 async function initLogin(){
   try{const ld=localStorage.getItem("sga_data");if(ld)S.data=JSON.parse(ld);}catch{}
   try{const lp=localStorage.getItem("sga_p");if(lp)Object.assign(S.pwds,JSON.parse(lp));}catch{}
-  try{
-    const li=localStorage.getItem("sga_inds");
-    if(li){
-      const p=JSON.parse(li);
-      // 11-ээс дээш үзүүлэлт байвал л ашиглана — хуучин анхдагч 11-г хаяна
-      if(p&&p.length>11)S.inds=p;
-      else localStorage.removeItem("sga_inds"); // Хуучин localStorage цэвэрлэнэ
-    }
-  }catch{}
+  try{const li=localStorage.getItem("sga_inds");if(li){const p=JSON.parse(li);if(p&&p.length)S.inds=p;}}catch{}
   try{const lpl=localStorage.getItem("sga_plans");if(lpl){const p=JSON.parse(lpl);if(p&&p.length)S.plans=p;}}catch{}
   const sel=document.getElementById("lC");
   S.units.filter(u=>!u.disabled).forEach(u=>{const o=document.createElement("option");o.value=u.code;o.textContent=u.code+" — "+u.name;sel.appendChild(o);});
@@ -283,52 +289,30 @@ async function initLogin(){
   pf.onkeydown=e=>{if(e.key==="Enter")doLogin();};
   document.getElementById("lB").textContent="⏳ Ачаалж байна...";
   document.getElementById("lB").disabled=true;
-  // Нууц үг Apps Script-аас татна
-  try{
-    const r=await api("getPasswords");
-    if(r&&r.passwords){
-      // 0 утгуудыг хасна — Sheets-д буруу хадгалагдсан
-      Object.entries(r.passwords).forEach(([k,v])=>{if(v!==0&&v!==null&&v!=="")S.pwds[k]=String(v);});
-      try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
-    }
-  }catch{}
-  // Config background-д татна
-  loadConfig();
+  // Firebase-аар нэвтрэх
+  await initFB();
+  if(fbDB&&window._get){
+    try{
+      const si=await window._get(window._r(fbDB,"config/indicators"));
+      if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){S.inds=v;try{localStorage.setItem("sga_inds",JSON.stringify(v));}catch{}}}
+    }catch{}
+    try{
+      const sp=await window._get(window._r(fbDB,"config/plans"));
+      if(sp&&sp.exists&&sp.exists()){const v=sp.val();if(v&&v.length){S.plans=v;try{localStorage.setItem("sga_plans",JSON.stringify(v));}catch{}}}
+    }catch{}
+    try{
+      const sw=await window._get(window._r(fbDB,"passwords"));
+      if(sw&&sw.exists&&sw.exists()){Object.assign(S.pwds,sw.val());try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}
+    }catch{}
+  } else {
+    try{const r=await api("getPasswords");if(r&&r.passwords){Object.entries(r.passwords).forEach(([k,v])=>{if(v!==0&&v!==null&&v!=="")S.pwds[k]=String(v);});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
+  }
   document.getElementById("lB").textContent="Нэвтрэх →";
   document.getElementById("lB").disabled=false;
   pf.value="";
 }
 
-function loadConfig(){
-  return new Promise((resolve)=>{
-    // script tag-аар CORS-г тойрч татна
-    const cbName="__sgaCfg"+Date.now();
-    window[cbName]=function(r){
-      try{
-        if(r&&r.config){
-          if(r.config.indicators&&Array.isArray(r.config.indicators)&&r.config.indicators.length>10){
-            S.inds=r.config.indicators;
-            try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
-          }
-          if(r.config.plans&&Array.isArray(r.config.plans)&&r.config.plans.length){
-            S.plans=r.config.plans;
-            try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
-          }
-          if(S.tab)renderTab(S.tab);
-        }
-      }catch(e){}
-      delete window[cbName];
-      document.getElementById("sgaCfgScript")?.remove();
-      resolve();
-    };
-    const s=document.createElement("script");
-    s.id="sgaCfgScript";
-    s.src=SU+"?action=getConfig&callback="+cbName+"&_="+Date.now();
-    s.onerror=()=>{resolve();};
-    document.head.appendChild(s);
-    setTimeout(resolve,5000); // 5с timeout
-  });
-}
+function loadConfig(){return Promise.resolve();}
 
 async function loadAllData(){
   try{
@@ -1029,14 +1013,10 @@ function buildCfg(c){
 
 async function saveInds(){
   try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
-  try{
-    const u=SU+"?action=saveConfig&key=indicators&value="+encodeURIComponent(JSON.stringify(S.inds));
-    const r=await fetch(u,{redirect:"follow"});
-    const t=await r.text();
-    const d=JSON.parse(t);
-    if(d&&d.ok)toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");
-    else toast("⚠️ Хадгалахад алдаа","te");
-  }catch(e){toast("⚠️ "+e.message,"te");}
+  if(fbDB&&window._set){
+    try{await window._set(window._r(fbDB,"config/indicators"),S.inds);}catch{}
+  }
+  toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");
 }
 async function savePlans(){
   try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
