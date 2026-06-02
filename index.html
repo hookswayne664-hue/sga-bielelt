@@ -252,6 +252,8 @@ async function initFB(){
     const app=initializeApp(FC);fbDB=getDatabase(app);
     window._r=ref;window._p=push;window._ov=onValue;window._get=get;window._set=set;
     loadFBPwds();
+    // Firebase бэлэн болсны дараа config татах
+    await loadConfig();
   }catch(e){}
 }
 async function loadFBPwds(){
@@ -341,14 +343,9 @@ function doLogin(){
   document.getElementById("AP").style.display="block";
   document.getElementById("nU").textContent=u.code+" · "+u.name;
   renderTabs();
-  document.getElementById("MC").innerHTML="<div style='text-align:center;padding:40px;color:var(--tx2)'>⏳ Ачаалж байна...</div>";
   initFB();
   if(u.isAdmin)setTimeout(loadAllData,1500);
-  // Load config first, then show tab
-  setTimeout(async()=>{
-    await loadConfig();
-    renderTab(u.isAdmin?"monitor":"data");
-  },1200);
+  renderTab(u.isAdmin?"monitor":"data");
 }
 function logout(){S.user=null;document.getElementById("LP").style.display="flex";document.getElementById("AP").style.display="none";document.getElementById("lP").value="";}
 function renderTabs(){
