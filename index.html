@@ -283,7 +283,7 @@ async function loadAllData(){
   }catch(e){console.log("loadAllData:",e);}
   // Load indicators and plans from Sheets
   try{
-    const r2=await api("getConfig");
+    const r2=await api("getConfigNew");
     if(r2&&r2.indicators&&r2.indicators.length){
       S.inds=r2.indicators;
       try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
@@ -815,13 +815,23 @@ function buildCfg(c){
 }
 
 async function saveInds(){
-  try{await api("saveData",{data:JSON.stringify({action:"saveIndicators",indicators:S.inds})});}catch{}
-  toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");
+  try{
+    const u=new URL(SU);
+    u.searchParams.set("action","saveIndicators");
+    u.searchParams.set("indicators",encodeURIComponent(JSON.stringify(S.inds)));
+    await fetch(u,{redirect:"follow"});
+    toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");
+  }catch(e){toast("⚠️ Хадгалахад алдаа: "+e.message,"te");}
 }
 
 async function savePlans(){
-  try{await api("saveData",{data:JSON.stringify({action:"savePlans",plans:S.plans})});}catch{}
-  toast("✅ Төлөвлөгөөнүүд хадгалагдлаа","ts");
+  try{
+    const u=new URL(SU);
+    u.searchParams.set("action","savePlans");
+    u.searchParams.set("plans",encodeURIComponent(JSON.stringify(S.plans)));
+    await fetch(u,{redirect:"follow"});
+    toast("✅ Төлөвлөгөөнүүд хадгалагдлаа","ts");
+  }catch(e){toast("⚠️ Хадгалахад алдаа: "+e.message,"te");}
 }
 
 async function sAllPW(){
