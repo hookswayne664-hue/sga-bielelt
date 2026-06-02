@@ -982,7 +982,8 @@ function buildCfg(c){
       const el=document.getElementById("pw_"+code);if(!el)return;
       const pwd=el.value.trim();if(!pwd)return toast("Хоосон","te");
       S.pwds[code]=pwd;try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
-      await api("savePassword",{code,pwd:String(pwd)});toast("✅ "+code+" нууц үг хадгалагдлаа","ts");
+      if(fbDB&&window._set){await window._set(window._r(fbDB,"passwords/"+code),pwd);}
+    toast("✅ "+code+" нууц үг хадгалагдлаа","ts");
     };})(u.code);row.appendChild(bs);pwList.appendChild(row);
   });c3.appendChild(pwList);c.appendChild(c3);
 
@@ -1048,8 +1049,16 @@ async function sAllPW(){
   const pwd=document.getElementById("allPW").value.trim();if(!pwd)return toast("Оруулна уу","te");
   S.units.filter(u=>!u.isAdmin).forEach(u=>{S.pwds[u.code]=pwd;});
   try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
-  const all={};S.units.filter(u=>!u.isAdmin).forEach(u=>{all[u.code]=pwd;});
-  try{await api("saveAllPasswords",{pwds:JSON.stringify(all)});toast("✅ Бүгдийн нууц үг солигдлоо: "+pwd,"ts");}catch{toast("✅ Солигдлоо: "+pwd,"ts");}
+  // Firebase-д шууд хадгална
+  if(fbDB&&window._set){
+    try{
+      const all={};S.units.filter(u=>!u.isAdmin).forEach(u=>{all[u.code]=pwd;});
+      await window._set(window._r(fbDB,"passwords"),all);
+      toast("✅ Бүгдийн нууц үг Firebase-д хадгалагдлаа: "+pwd,"ts");
+    }catch{toast("✅ Солигдлоо (локал): "+pwd,"ts");}
+  } else {
+    toast("✅ Солигдлоо (локал): "+pwd,"ts");
+  }
   buildCfg(document.getElementById("MC"));
 }
 
