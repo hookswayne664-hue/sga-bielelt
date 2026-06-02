@@ -561,10 +561,19 @@ function tMonitor(c){
   c1.appendChild(fr1);const mRes=mk("div");mRes.id="mRes";c1.appendChild(mRes);c.appendChild(c1);
   const c2=mk("div","card");c2.innerHTML="<h2>📋 Төлөвлөгөө / АД-ын хамрагдалт</h2>";
   const fr2=mk("div","fr");
-  const fi3=mk("div","fi");fi3.innerHTML="<label>Төлөвлөгөө / АД</label>";const s3=mk("select");s3.id="mPl";S.plans.forEach(p=>{const o=mk("option");o.textContent=p;s3.appendChild(o);});s3.onchange=lPlanCov;fi3.appendChild(s3);fr2.appendChild(fi3);
-  const fi4=mk("div","fi");fi4.innerHTML="<label>Хугацаа</label>";const s4=mk("select");s4.id="mPP";allP.forEach(p=>{const o=mk("option");o.textContent=p;s4.appendChild(o);});s4.onchange=lPlanCov;fi4.appendChild(s4);fr2.appendChild(fi4);
+  const fi3=mk("div","fi");fi3.innerHTML="<label>Төлөвлөгөө / АД</label>";const s3=mk("select");s3.id="mPl";S.plans.forEach(p=>{const o=mk("option");o.textContent=p;s3.appendChild(o);});fi3.appendChild(s3);fr2.appendChild(fi3);
+  const fi4=mk("div","fi");fi4.innerHTML="<label>Хугацаа</label>";const s4=mk("select");s4.id="mPP";s4.onchange=lPlanCov;fi4.appendChild(s4);fr2.appendChild(fi4);
+  function updPlanPer(){
+    const pv=s3.value;
+    const pi=S.inds.filter(i=>i.plans&&i.plans.includes(pv));
+    const pf=pi.length?pi[0].freq:"week";
+    const pp=pf==="week"?P.w:pf==="month"?P.mn:P.q;
+    s4.innerHTML="";pp.forEach(p=>{const o=mk("option");o.textContent=p;s4.appendChild(o);});
+    lPlanCov();
+  }
+  s3.onchange=updPlanPer;
   c2.appendChild(fr2);const pRes=mk("div");pRes.id="pRes";c2.appendChild(pRes);c.appendChild(c2);
-  setTimeout(()=>{lMon();lPlanCov();},50);
+  setTimeout(()=>{lMon();updPlanPer();},50);
 }
 function lMon(){
   const per=document.getElementById("mP")?.value,grp=document.getElementById("mG")?.value||"all";if(!per)return;
