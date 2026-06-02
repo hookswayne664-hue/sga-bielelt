@@ -262,7 +262,11 @@ async function initLogin(){
   // Нууц үг Apps Script-аас татна
   try{
     const r=await api("getPasswords");
-    if(r&&r.passwords){Object.assign(S.pwds,r.passwords);try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}
+    if(r&&r.passwords){
+      // 0 утгуудыг хасна — Sheets-д буруу хадгалагдсан
+      Object.entries(r.passwords).forEach(([k,v])=>{if(v!==0&&v!==null&&v!=="")S.pwds[k]=String(v);});
+      try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
+    }
   }catch{}
   // Config background-д татна
   loadConfig();
@@ -304,7 +308,8 @@ function doLogin(){
   if(!pwd){err.textContent="Нууц үг оруулна уу!";return;}
   const u=S.units.find(x=>x.code===code);
   if(!u||u.disabled){err.textContent="Нэгж олдсонгүй!";return;}
-  if(pwd!==(S.pwds[code]||u.pwd)){err.textContent="Нууц үг буруу!";return;}
+  const correctPwd=S.pwds.hasOwnProperty(code)&&S.pwds[code]!==0&&S.pwds[code]!==""?S.pwds[code]:u.pwd;
+  if(pwd!==String(correctPwd)){err.textContent="Нууц үг буруу!";return;}
   S.user=u;
   document.getElementById("LP").style.display="none";
   document.getElementById("AP").style.display="block";
@@ -930,7 +935,7 @@ function buildCfg(c){
       const el=document.getElementById("pw_"+code);if(!el)return;
       const pwd=el.value.trim();if(!pwd)return toast("Хоосон","te");
       S.pwds[code]=pwd;try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
-      await api("savePassword",{code,pwd});toast("✅ "+code+" нууц үг хадгалагдлаа","ts");
+      await api("savePassword",{code,pwd:String(pwd)});toast("✅ "+code+" нууц үг хадгалагдлаа","ts");
     };})(u.code);row.appendChild(bs);pwList.appendChild(row);
   });c3.appendChild(pwList);c.appendChild(c3);
 
