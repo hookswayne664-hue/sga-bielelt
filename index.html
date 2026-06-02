@@ -237,6 +237,9 @@ const DINDS=[
   {id:"qn",name:"Улирлын ажлын талаар",type:"text",freq:"quarter",plans:["АД №01","АД №02"]}
 ];
 const DPLANS=["АД №01","АД №02","ХЗДХС АД №01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030"];
+// Load saved inds/plans from localStorage
+(function(){try{const li=localStorage.getItem("sga_inds");if(li){const p=JSON.parse(li);if(p&&p.length)DINDS.splice(0,DINDS.length,...p);}}catch{}try{const lp=localStorage.getItem("sga_plans");if(lp){const p=JSON.parse(lp);if(p&&p.length)DPLANS.splice(0,DPLANS.length,...p);}}catch{}})();
+
 let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0};
 let fbDB=null,aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";
 
@@ -267,6 +270,24 @@ function getPer(){
   for(let i=0;i<4;i++){let qq=Math.ceil(m/3)-i,yy=y;if(qq<=0){qq+=4;yy--;}q.push(yy+" оны "+qq+"-р улирал");}
   return{w,mn,q};
 }
+async function loadConfig(){
+  try{
+    const u=new URL(SU);u.searchParams.set("action","getConfigNew");
+    const r=await fetch(u,{redirect:"follow"});
+    const d=await r.json();
+    if(d&&d.indicators&&d.indicators.length){
+      S.inds=d.indicators;
+      try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
+    }
+    if(d&&d.plans&&d.plans.length){
+      S.plans=d.plans;
+      try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
+    }
+    // Refresh current tab to show new indicators
+    if(S.tab==="data")renderTab("data");
+  }catch(e){console.log("loadConfig:",e);}
+}
+
 async function loadAllData(){
   try{
     const u=new URL(SU);u.searchParams.set("action","getAllData");
@@ -318,6 +339,7 @@ function doLogin(){
   document.getElementById("nU").textContent=u.code+" · "+u.name;
   renderTabs();renderTab(u.isAdmin?"monitor":"data");initFB();
   if(u.isAdmin)setTimeout(loadAllData,1500);
+  setTimeout(loadConfig,1000);
 }
 function logout(){S.user=null;document.getElementById("LP").style.display="flex";document.getElementById("AP").style.display="none";document.getElementById("lP").value="";}
 function renderTabs(){
