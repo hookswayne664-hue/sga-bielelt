@@ -271,20 +271,21 @@ function getPer(){
   return{w,mn,q};
 }
 async function loadConfig(){
+  if(!fbDB||!window._get)return;
   try{
-    const u=new URL(SU);u.searchParams.set("action","getConfigNew");
-    const r=await fetch(u,{redirect:"follow"});
-    const d=await r.json();
-    if(d&&d.indicators&&d.indicators.length){
-      S.inds=d.indicators;
-      try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
+    const snap=await window._get(window._r(fbDB,"config"));
+    if(snap.exists()){
+      const cfg=snap.val();
+      if(cfg.indicators&&cfg.indicators.length){
+        S.inds=cfg.indicators;
+        try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
+      }
+      if(cfg.plans&&cfg.plans.length){
+        S.plans=cfg.plans;
+        try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
+      }
+      if(S.tab==="data")renderTab("data");
     }
-    if(d&&d.plans&&d.plans.length){
-      S.plans=d.plans;
-      try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
-    }
-    // Refresh current tab to show new indicators
-    if(S.tab==="data")renderTab("data");
   }catch(e){console.log("loadConfig:",e);}
 }
 
@@ -302,18 +303,7 @@ async function loadAllData(){
       toast("☁️ "+d.data.length+" мэдээ ачаалагдлаа","ts");
     }
   }catch(e){console.log("loadAllData:",e);}
-  // Load indicators and plans from Sheets
-  try{
-    const r2=await api("getConfigNew");
-    if(r2&&r2.indicators&&r2.indicators.length){
-      S.inds=r2.indicators;
-      try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
-    }
-    if(r2&&r2.plans&&r2.plans.length){
-      S.plans=r2.plans;
-      try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
-    }
-  }catch(e){console.log("loadConfig:",e);}
+
 }
 async function initLogin(){
   const sel=document.getElementById("lC");
@@ -837,23 +827,21 @@ function buildCfg(c){
 }
 
 async function saveInds(){
+  if(!fbDB||!window._set){toast("Firebase холбогдоогүй","te");return;}
   try{
-    const u=new URL(SU);
-    u.searchParams.set("action","saveIndicators");
-    u.searchParams.set("indicators",encodeURIComponent(JSON.stringify(S.inds)));
-    await fetch(u,{redirect:"follow"});
+    await window._set(window._r(fbDB,"config/indicators"),S.inds);
+    try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
     toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");
-  }catch(e){toast("⚠️ Хадгалахад алдаа: "+e.message,"te");}
+  }catch(e){toast("⚠️ Алдаа: "+e.message,"te");}
 }
 
 async function savePlans(){
+  if(!fbDB||!window._set){toast("Firebase холбогдоогүй","te");return;}
   try{
-    const u=new URL(SU);
-    u.searchParams.set("action","savePlans");
-    u.searchParams.set("plans",encodeURIComponent(JSON.stringify(S.plans)));
-    await fetch(u,{redirect:"follow"});
+    await window._set(window._r(fbDB,"config/plans"),S.plans);
+    try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
     toast("✅ Төлөвлөгөөнүүд хадгалагдлаа","ts");
-  }catch(e){toast("⚠️ Хадгалахад алдаа: "+e.message,"te");}
+  }catch(e){toast("⚠️ Алдаа: "+e.message,"te");}
 }
 
 async function sAllPW(){
