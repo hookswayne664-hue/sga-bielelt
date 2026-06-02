@@ -428,7 +428,7 @@ async function subData(){
   const inds=S.inds.filter(i=>i.freq===dFreq),vals={};
   inds.forEach(i=>{const el=document.getElementById("v_"+i.id);if(el)vals[i.id]=parseVal(el.value);});
   const entry={unit:S.user.code,unitName:S.user.name,period:dPer,freq:dFreq,values:vals,date:new Date().toLocaleString("mn-MN")};
-  const idx=S.data.findIndex(d=>d.unit===entry.unit&&d.period===entry.period);
+  const idx=S.data.findIndex(d=>d.unit===entry.unit&&d.period===entry.period&&d.freq===entry.freq);
   if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
   toast("✅ Мэдээ хадгалагдлаа!","ts");
   try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
@@ -573,13 +573,13 @@ function lMon(){
   if(grp==="niislel")active=active.filter(u=>NIIS.includes(u.code));
   else if(grp==="bank")active=active.filter(u=>u.name.includes("Банк"));
   else if(grp==="aimag")active=active.filter(u=>u.name.includes("аймаг"));
-  const sub=new Set(S.data.filter(d=>d.period===per).map(d=>d.unit));
+  const sub=new Set(S.data.filter(d=>d.period===per&&d.freq===mFreq).map(d=>d.unit));
   const done=active.filter(u=>sub.has(u.code)),miss=active.filter(u=>!sub.has(u.code));
   const pct=active.length?Math.round(done.length/active.length*100):0;
   const el=document.getElementById("mRes");if(!el)return;
   let h="<div class='stats'><div class='sc'><div class='n'>"+active.length+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+done.length+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+miss.length+"</div><div class='l'>❌ Илгээгээгүй</div></div><div class='sc o'><div class='n'>"+pct+"%</div><div class='l'>Хамрагдалт</div></div></div>";
   h+="<div class='tw'><table><tr><th>Код</th><th>Нэгж</th><th>Статус</th><th>Огноо</th></tr>";
-  active.forEach(u=>{const e=S.data.find(d=>d.unit===u.code&&d.period===per);h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td><td>"+(e?"<span class='badge bok'>✅ Илгээсэн</span>":"<span class='badge bfail'>❌ Илгээгээгүй</span>")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e?e.date:"")+"</td></tr>";});
+  active.forEach(u=>{const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td><td>"+(e?"<span class='badge bok'>✅ Илгээсэн</span>":"<span class='badge bfail'>❌ Илгээгээгүй</span>")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e?e.date:"")+"</td></tr>";});
   h+="</table></div>";
   if(miss.length)h+="<div style='margin-top:8px;font-size:12px;color:var(--rd)'>❌ "+miss.map(u=>u.code).join(", ")+"</div>";
   el.innerHTML=h;
@@ -589,9 +589,18 @@ function lPlanCov(){
   const inds=S.inds.filter(i=>i.plans&&i.plans.includes(plan));
   const el=document.getElementById("pRes");if(!el)return;
   if(!inds.length){el.innerHTML="<div class='empty'>Энэ төлөвлөгөөнд үзүүлэлт байхгүй байна</div>";return;}
+  // Тухайн төлөвлөгөөний үзүүлэлтүүдийн freq-г тодорхойлно
+  const freqs=new Set(inds.map(i=>i.freq));
   const active=S.units.filter(u=>!u.isAdmin&&!u.disabled);
   let tot=0,filled=0,h="<div class='tw'><table><tr><th>Код</th><th>Нэгж</th><th>Дүүрсэн</th><th>Явц</th><th></th></tr>";
-  active.forEach(u=>{const e=S.data.find(d=>d.unit===u.code&&d.period===per);const f=inds.filter(i=>e&&e.values&&e.values[i.id]).length;tot+=inds.length;filled+=f;const pct=Math.round(f/inds.length*100);h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td><td>"+f+"/"+inds.length+"</td><td><div class='pb'><div class='pf' style='width:"+pct+"%'></div></div> <span style='font-size:11px'>"+pct+"%</span></td><td>"+(e?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>❌</span>")+"</td></tr>";});
+  active.forEach(u=>{
+    // Тэр нэгжийн period-тай тохирох freq-тэй мэдээг хайна
+    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&freqs.has(d.freq));
+    const f=inds.filter(i=>e&&e.values&&e.values[i.id]).length;
+    tot+=inds.length;filled+=f;
+    const pct=Math.round(f/inds.length*100);
+    h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td><td>"+f+"/"+inds.length+"</td><td><div class='pb'><div class='pf' style='width:"+pct+"%'></div></div> <span style='font-size:11px'>"+pct+"%</span></td><td>"+(e?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>❌</span>")+"</td></tr>";
+  });
   h+="</table></div>";
   const oPct=tot?Math.round(filled/tot*100):0;
   el.innerHTML="<div style='margin-bottom:10px;font-size:13px'><b style='color:var(--bl2)'>"+plan+"</b> — Нийт хамрагдалт: <b style='color:"+(oPct>=80?"var(--gr)":"var(--or)")+"'>"+oPct+"%</b></div>"+h;
