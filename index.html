@@ -284,7 +284,7 @@ async function loadConfig(){
         S.plans=cfg.plans;
         try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
       }
-      if(S.tab==="data")renderTab("data");
+      if(S.tab)renderTab(S.tab);
     }
   }catch(e){console.log("loadConfig:",e);}
 }
