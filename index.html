@@ -565,10 +565,13 @@ function tMonitor(c){
   const fi4=mk("div","fi");fi4.innerHTML="<label>Хугацаа</label>";const s4=mk("select");s4.id="mPP";s4.onchange=lPlanCov;fi4.appendChild(s4);fr2.appendChild(fi4);
   function updPlanPer(){
     const pv=s3.value;
-    const pi=S.inds.filter(i=>i.plans&&i.plans.includes(pv));
+    // S.inds-д тухайн планд тохирох үзүүлэлт хайна
+    const pi=S.inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===pv.trim()));
+    // freq тодорхойлно — байхгүй бол "week" 
     const pf=pi.length?pi[0].freq:"week";
     const pp=pf==="week"?P.w:pf==="month"?P.mn:P.q;
-    s4.innerHTML="";pp.forEach(p=>{const o=mk("option");o.textContent=p;s4.appendChild(o);});
+    s4.innerHTML="";
+    pp.forEach(p=>{const o=mk("option");o.textContent=p;s4.appendChild(o);});
     lPlanCov();
   }
   s3.onchange=updPlanPer;
@@ -595,16 +598,16 @@ function lMon(){
 }
 function lPlanCov(){
   const plan=document.getElementById("mPl")?.value,per=document.getElementById("mPP")?.value;if(!plan||!per)return;
-  const inds=S.inds.filter(i=>i.plans&&i.plans.includes(plan));
+  const inds=S.inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===plan.trim()));
   const el=document.getElementById("pRes");if(!el)return;
   if(!inds.length){el.innerHTML="<div class='empty'>Энэ төлөвлөгөөнд үзүүлэлт байхгүй байна</div>";return;}
   // Тухайн төлөвлөгөөний үзүүлэлтүүдийн freq-г тодорхойлно
-  const freqs=new Set(inds.map(i=>i.freq));
+  const planFreq=inds.length?inds[0].freq:"week";
   const active=S.units.filter(u=>!u.isAdmin&&!u.disabled);
   let tot=0,filled=0,h="<div class='tw'><table><tr><th>Код</th><th>Нэгж</th><th>Дүүрсэн</th><th>Явц</th><th></th></tr>";
   active.forEach(u=>{
-    // Тэр нэгжийн period-тай тохирох freq-тэй мэдээг хайна
-    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&freqs.has(d.freq));
+    // Тэр нэгжийн period болон planFreq-тэй тохирох мэдээг хайна
+    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===planFreq);
     const f=inds.filter(i=>e&&e.values&&e.values[i.id]).length;
     tot+=inds.length;filled+=f;
     const pct=Math.round(f/inds.length*100);
