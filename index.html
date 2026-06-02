@@ -128,7 +128,6 @@ async function api(a,p){
     const t=await r.text();
     try{return JSON.parse(t);}catch{return{ok:true};}
   }catch{
-    // CORS fallback - use no-cors for write operations
     try{await fetch(u,{mode:"no-cors",redirect:"follow"});return{ok:true};}catch{return{ok:false};}
   }
 }
@@ -142,7 +141,7 @@ const UNITS=[
   {code:"ШГА05",name:"Нийслэлийн ШШГГ — СБД-1",pwd:"sga2026"},
   {code:"ШГА06",name:"Нийслэлийн ШШГГ — СБД-2",pwd:"sga2026"},
   {code:"ШГА07",name:"Нийслэлийн ШШГГ — БГД-1",pwd:"sga2026"},
-  {code:"ШГА08",name:"Нийслэлийн ШШГГ — БГД-2",pwd:"0000"},
+  {code:"ШГА08",name:"Нийслэлийн ШШГГ — БГД-2",pwd:"sga2026"},
   {code:"ШГА09",name:"Нийслэлийн ШШГГ — ЧД",pwd:"sga2026"},
   {code:"ШГА10",name:"Нийслэлийн ШШГГ — СХД-1",pwd:"sga2026"},
   {code:"ШГА11",name:"Нийслэлийн ШШГГ — СХД-2",pwd:"sga2026"},
@@ -184,7 +183,7 @@ const UNITS=[
   {code:"ШГА47",name:"Банкны төлбөр барагдуулах газар — ХУД",pwd:"sga2026"},
   {code:"ШГА48",name:"Банкны төлбөр барагдуулах газар — СХД",pwd:"sga2026"},
   {code:"ШГА49",name:"Банкны төлбөр барагдуулах газар — БГД",pwd:"sga2026"},
-  {code:"ШГА50",name:"Банкны төлбөр барагдуулах газар — БЗД",pwd:"sga2026"}
+  {code:"ШГА50",name:"Банкны төлбөр барагдуулах газar — БЗД",pwd:"sga2026"}
 ];
 const DINDS=[
   {id:"w1",name:"Барьцаа хөрөнгөөр дууссан ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС АД №01"]},
@@ -237,11 +236,11 @@ const DINDS=[
   {id:"qn",name:"Улирлын ажлын талаар",type:"text",freq:"quarter",plans:["АД №01","АД №02"]}
 ];
 const DPLANS=["АД №01","АД №02","ХЗДХС АД №01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030"];
-// Load saved inds/plans from localStorage
-(function(){try{const li=localStorage.getItem("sga_inds");if(li){const p=JSON.parse(li);if(p&&p.length)DINDS.splice(0,DINDS.length,...p);}}catch{}try{const lp=localStorage.getItem("sga_plans");if(lp){const p=JSON.parse(lp);if(p&&p.length)DPLANS.splice(0,DPLANS.length,...p);}}catch{}})();
 
 let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0};
 let fbDB=null,aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";
+// Firebase-аас ирсэн нууц үгийг хадгалах — нэвтрэх үед ашиглана
+let fbPwdsReady=false;
 
 async function loadSheetJS(){if(window.XLSX)return;await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 
@@ -251,19 +250,30 @@ async function initFB(){
     const{getDatabase,ref,push,onValue,get,set}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
     const app=initializeApp(FC);fbDB=getDatabase(app);
     window._r=ref;window._p=push;window._ov=onValue;window._get=get;window._set=set;
-    loadFBPwds();
-    // Firebase бэлэн болсны дараа config татах
-    await loadConfig();
-  }catch(e){}
+    // Firebase бэлэн болсны дараа нууц үг болон config татах
+    await Promise.all([loadFBPwds(), loadConfig()]);
+  }catch(e){console.log("initFB error:",e);}
 }
+
 async function loadFBPwds(){
   if(!fbDB||!window._get)return;
-  try{const s=await window._get(window._r(fbDB,"passwords"));if(s.exists()){Object.assign(S.pwds,s.val());try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
+  try{
+    const s=await window._get(window._r(fbDB,"passwords"));
+    if(s.exists()){
+      // Firebase-ийн утга ДАВАМГАЙЛНА — localStorage-г дарна
+      const fbPwds=s.val();
+      Object.assign(S.pwds,fbPwds);
+      fbPwdsReady=true;
+      try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
+    }
+  }catch(e){console.log("loadFBPwds:",e);}
 }
+
 async function savePwdFB(code,pwd){
   if(!fbDB||!window._set)return false;
-  try{await window._set(window._r(fbDB,"passwords/"+code),pwd);return true;}catch{return false;}
+  try{await window._set(window._r(fbDB,"passwords/"+code),pwd);S.pwds[code]=pwd;try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}return true;}catch{return false;}
 }
+
 function getPer(){
   const n=new Date(),y=n.getFullYear(),m=n.getMonth()+1;
   const w=[],mn=[],q=[];
@@ -272,6 +282,7 @@ function getPer(){
   for(let i=0;i<4;i++){let qq=Math.ceil(m/3)-i,yy=y;if(qq<=0){qq+=4;yy--;}q.push(yy+" оны "+qq+"-р улирал");}
   return{w,mn,q};
 }
+
 async function loadConfig(){
   if(!fbDB||!window._get)return;
   try{
@@ -286,6 +297,7 @@ async function loadConfig(){
         S.plans=cfg.plans;
         try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
       }
+      // Идэвхтэй tab байвал дахин render хийх
       if(S.tab)renderTab(S.tab);
     }
   }catch(e){console.log("loadConfig:",e);}
@@ -303,33 +315,42 @@ async function loadAllData(){
       });
       try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
       toast("☁️ "+d.data.length+" мэдээ ачаалагдлаа","ts");
+      // Нэгдсэн дүн нээлттэй бол refresh
+      if(S.tab==="summary"||S.tab==="monitor")renderTab(S.tab);
     }
   }catch(e){console.log("loadAllData:",e);}
-
 }
+
 async function initLogin(){
-  const sel=document.getElementById("lC");
-  S.units.filter(u=>!u.disabled).forEach(u=>{const o=document.createElement("option");o.value=u.code;o.textContent=u.code+" — "+u.name;sel.appendChild(o);});
-  const pf=document.getElementById("lP");pf.value="";setTimeout(()=>{pf.value="";},200);
-  pf.onkeydown=e=>{if(e.key==="Enter")doLogin();};
+  // LocalStorage-аас анхны утга татах (offline fallback)
   try{const ld=localStorage.getItem("sga_data");if(ld)S.data=JSON.parse(ld);}catch{}
   try{const lp=localStorage.getItem("sga_p");if(lp)Object.assign(S.pwds,JSON.parse(lp));}catch{}
-  try{const r=await api("getPasswords");if(r&&r.passwords){Object.entries(r.passwords).forEach(([k,v])=>{if(k!=="__ALL__")S.pwds[k]=v;});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
-  document.getElementById("lB").textContent="Нэвтрэх →";pf.value="";
-  // Firebase-аас config татах
+  try{const li=localStorage.getItem("sga_inds");if(li){const p=JSON.parse(li);if(p&&p.length)S.inds=p;}}catch{}
+  try{const lpl=localStorage.getItem("sga_plans");if(lpl){const p=JSON.parse(lpl);if(p&&p.length)S.plans=p;}}catch{}
+
+  // Нэгж dropdown
+  const sel=document.getElementById("lC");
+  S.units.filter(u=>!u.disabled).forEach(u=>{const o=document.createElement("option");o.value=u.code;o.textContent=u.code+" — "+u.name;sel.appendChild(o);});
+  const pf=document.getElementById("lP");pf.value="";
+  pf.onkeydown=e=>{if(e.key==="Enter")doLogin();};
+
+  // Apps Script-аас нууц үг татах (хуучин арга — backup)
   try{
-    const{initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
-    const{getDatabase,ref,get}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
-    const app2=initializeApp(FC,"config_loader");
-    const db2=getDatabase(app2);
-    const snap=await get(ref(db2,"config"));
-    if(snap.exists()){
-      const cfg=snap.val();
-      if(cfg.indicators&&cfg.indicators.length){S.inds=cfg.indicators;try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}}
-      if(cfg.plans&&cfg.plans.length){S.plans=cfg.plans;try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}}
+    const r=await api("getPasswords");
+    if(r&&r.passwords){
+      Object.entries(r.passwords).forEach(([k,v])=>{if(k!=="__ALL__")S.pwds[k]=v;});
+      try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
     }
   }catch{}
+
+  document.getElementById("lB").textContent="Нэвтрэх →";
+  pf.value="";
+
+  // Firebase-аас нууц үг болон config татах (ДАВАМГАЙЛАХ — background-д)
+  // initFB дотроо loadFBPwds болон loadConfig дуудна
+  initFB();  // await хийхгүй — нэвтрэх товчийг хаахгүй
 }
+
 function doLogin(){
   const code=document.getElementById("lC").value,pwd=document.getElementById("lP").value;
   const err=document.getElementById("lE");err.textContent="";
@@ -337,17 +358,22 @@ function doLogin(){
   if(!pwd){err.textContent="Нууц үг оруулна уу!";return;}
   const u=S.units.find(x=>x.code===code);
   if(!u||u.disabled){err.textContent="Нэгж олдсонгүй эсвэл хаалттай!";return;}
-  if(pwd!==(S.pwds[code]||u.pwd)){err.textContent="Нууц үг буруу байна!";return;}
+
+  // Нууц үгийн шалгалт: S.pwds (Firebase+localStorage давамгайтай) → кодонд бичигдсэн
+  const correctPwd=S.pwds[code]||u.pwd;
+  if(pwd!==correctPwd){err.textContent="Нууц үг буруу байна!";return;}
+
   S.user=u;
   document.getElementById("LP").style.display="none";
   document.getElementById("AP").style.display="block";
   document.getElementById("nU").textContent=u.code+" · "+u.name;
   renderTabs();
-  initFB();
   if(u.isAdmin)setTimeout(loadAllData,1500);
   renderTab(u.isAdmin?"monitor":"data");
 }
+
 function logout(){S.user=null;document.getElementById("LP").style.display="flex";document.getElementById("AP").style.display="none";document.getElementById("lP").value="";}
+
 function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];
   if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
@@ -416,11 +442,11 @@ function showPrintModal(unit,period,rows){
   const overlay=mk("div","modal-overlay");
   const box=mk("div","modal-box");
   box.innerHTML="<h3>🖨️ Гарын үсгийн мэдээлэл бөглөнө үү</h3>"
-    +"<div class='mfi'><label>ТАНИЛЦСАН — Албан тушаал, цол, нэр</label><input id='s_bt' placeholder='ДАРГА, ХУРАНДАА'></div>"
+    +"<div class='mfi'><label>ТАНИЛЦСАН — Албан тушаал, цол</label><input id='s_bt' placeholder='ДАРГА, ХУРАНДАА'></div>"
     +"<div class='mfi'><label>ТАНИЛЦСАН — Нэр</label><input id='s_bn' placeholder='Э.БЯМБАЖАВ'></div>"
-    +"<div class='mfi'><label>ХЯНАСАН — Албан тушаал, цол, нэр</label><input id='s_ht' placeholder='ДЭД ДАРГА, ДЭД ХУРАНДАА'></div>"
+    +"<div class='mfi'><label>ХЯНАСАН — Албан тушаал, цол</label><input id='s_ht' placeholder='ДЭД ДАРГА, ДЭД ХУРАНДАА'></div>"
     +"<div class='mfi'><label>ХЯНАСАН — Нэр</label><input id='s_hn' placeholder='Э.БЯМБАЖАВ'></div>"
-    +"<div class='mfi'><label>БОЛОВСРУУЛСАН — Албан тушаал, цол, нэр</label><input id='s_bt2' placeholder='МЭРГЭЖИЛТЭН, ДЭСЛЭГЧ'></div>"
+    +"<div class='mfi'><label>БОЛОВСРУУЛСАН — Албан тушаал, цол</label><input id='s_bt2' placeholder='МЭРГЭЖИЛТЭН, ДЭСЛЭГЧ'></div>"
     +"<div class='mfi' style='margin-bottom:20px'><label>БОЛОВСРУУЛСАН — Нэр</label><input id='s_bn2' placeholder='Э.БЯМБАЖАВ'></div>"
     +"<div style='display:flex;gap:10px'></div>";
   const btnRow=box.lastChild;
@@ -449,15 +475,15 @@ function doPrint(unit,period,rows,bt,bn,ht,hn,bt2,bn2){
     +"td:last-child{text-align:right}"
     +".sig{margin-top:50px;font-size:13px}"
     +".sr{margin-bottom:30px;line-height:2}"
-    +".sl{font-weight:bold;min-width:140px;display:inline-block}"
+    +".sl{font-weight:bold;min-width:160px;display:inline-block}"
     +"</style></head><body>"
     +"<h1>ШИЙДВЭР ГҮЙЦЭТГЭХ АЛБА</h1><h2>ТООН МЭДЭЭ</h2>"
     +"<div class='meta'><b>Нэгж:</b> "+unit+" &nbsp;&nbsp; <b>Хугацаа:</b> "+period+" &nbsp;&nbsp; <b>Огноо:</b> "+new Date().toLocaleDateString("mn-MN")+"</div>"
     +"<table><tr><th>Үзүүлэлт</th><th style='text-align:right'>Утга</th></tr>"+rh+"</table>"
     +"<div class='sig'>"
-    +"<div class='sr'><span class='sl'>ТАНИЛЦСАН:</span> "+(bt||"")+" _____________ "+(bn||"")+"</div>"
-    +"<div class='sr'><span class='sl'>ХЯНАСАН:</span> "+(ht||"")+" _____________ "+(hn||"")+"</div>"
-    +"<div class='sr'><span class='sl'>БОЛОВСРУУЛСАН:</span> "+(bt2||"")+" _____________ "+(bn2||"")+"</div>"
+    +"<div class='sr'><span class='sl'>ТАНИЛЦСАН:</span>"+(bt||"")+" _____________ "+(bn||"")+"</div>"
+    +"<div class='sr'><span class='sl'>ХЯНАСАН:</span>"+(ht||"")+" _____________ "+(hn||"")+"</div>"
+    +"<div class='sr'><span class='sl'>БОЛОВСРУУЛСАН:</span>"+(bt2||"")+" _____________ "+(bn2||"")+"</div>"
     +"</div></body></html>");
   w.document.close();w.print();
 }
@@ -648,22 +674,12 @@ async function gAI(){
     const d=await r.json();
     if(d.error){aiTxt="⚠️ Алдаа: "+JSON.stringify(d.error);out.innerHTML="<div class='aio'>"+aiTxt+"</div>";return;}
     aiTxt=d.content?.[0]?.text||"Хариу алдаа";
-    const cleanTxt=aiTxt
-  .replace(/#{1,3}\s*/g,"")
-  .replace(/\*\*([^*]+)\*\*/g,"$1")
-  .replace(/\*([^*]+)\*/g,"$1")
-  .replace(/^---+$/gm,"")
-  .replace(/^\|.*\|$/gm,"")
-  .replace(/^[-•]\s*/gm,"  ")
-  .trim();
-aiTxt=cleanTxt;
-out.innerHTML="<div class='aio'>"+aiTxt+"</div><div class='brow'></div>";
+    const cleanTxt=aiTxt.replace(/#{1,3}\s*/g,"").replace(/\*\*([^*]+)\*\*/g,"$1").replace(/\*([^*]+)\*/g,"$1").replace(/^---+$/gm,"").replace(/^\|.*\|$/gm,"").replace(/^[-•]\s*/gm,"  ").trim();
+    aiTxt=cleanTxt;
+    out.innerHTML="<div class='aio'>"+aiTxt+"</div><div class='brow'></div>";
     const br=out.lastChild;
     const b1=mk("button","btn bs");b1.textContent="✅ Архивлах";b1.onclick=archAI;br.appendChild(b1);
-    const b2=mk("button","btn bi");b2.textContent="🖨️ Хэвлэх";b2.onclick=()=>{
-      const plan2=document.getElementById("aP")?.value,per2=document.getElementById("aPer")?.value;
-      showPrintModal("",per2||"",[[plan2+" биелэлт",aiTxt]]);
-    };br.appendChild(b2);
+    const b2=mk("button","btn bi");b2.textContent="🖨️ Хэвлэх";b2.onclick=()=>{const plan2=document.getElementById("aP")?.value,per2=document.getElementById("aPer")?.value;showPrintModal("",per2||"",[[plan2+" биелэлт",aiTxt]]);};br.appendChild(b2);
     const b3=mk("button","btn bx");b3.textContent="📋 Хуулах";b3.onclick=()=>navigator.clipboard.writeText(aiTxt).then(()=>toast("Copied","ts"));br.appendChild(b3);
   }catch(e){out.innerHTML="<div class='aio'>Error: "+e.message+"</div>";}
 }
@@ -672,7 +688,6 @@ async function archAI(){
   const entry={plan,period:per,text:aiTxt,date:new Date().toLocaleString("mn-MN"),author:S.user.name};
   S.archives.push(entry);api("saveArchive",{entry:JSON.stringify(entry)});toast("✅ Архивлагдлаа!","ts");
 }
-
 
 function tFiles(c){
   c.innerHTML="";const card=mk("div","card");
@@ -689,7 +704,6 @@ function tFiles(c){
   const listDiv=mk("div");listDiv.id="fileList";card.appendChild(listDiv);
   c.appendChild(card);loadFileList();
 }
-
 async function uploadFile(){
   const name=document.getElementById("fName").value.trim();
   const fileEl=document.getElementById("fFile");
@@ -712,7 +726,6 @@ async function uploadFile(){
     loadFileList();toast("✅ Файл хадгалагдлаа","ts");
   }catch(e){res.innerHTML="<span style='color:var(--rd)'>❌ Алдаа: "+e.message+"</span>";}
 }
-
 async function loadFileList(){
   const el=document.getElementById("fileList");if(!el)return;
   if(!fbDB||!window._get){el.innerHTML="<div class='empty'>Firebase холбогдоогүй</div>";return;}
@@ -736,7 +749,6 @@ async function loadFileList(){
     });
   }catch(e){el.innerHTML="<div class='empty'>Алдаа: "+e.message+"</div>";}
 }
-
 async function loadFileSelect(){
   const sel=document.getElementById("aFile");if(!sel||!fbDB||!window._get)return;
   try{
@@ -768,7 +780,6 @@ function renderArchList(el,items){
 function tConfig(c){c.innerHTML="";buildCfg(c);}
 function buildCfg(c){
   c.innerHTML="";
-  // Indicators
   const c1=mk("div","card");c1.innerHTML="<h2>📊 Шалгуур үзүүлэлтүүд</h2>";
   const il=mk("div");il.style.cssText="max-height:340px;overflow-y:auto";
   S.inds.forEach((ind,i)=>{
@@ -790,13 +801,21 @@ function buildCfg(c){
   const fi1c=mk("div","fi");fi1c.innerHTML="<label>Хэлбэр</label><select id='niT'><option value='num'>Тоо</option><option value='money'>Мөнгөн дүн</option><option value='pct'>Хувь</option><option value='text'>Текст</option></select>";fr1b.appendChild(fi1c);
   const fi1d=mk("div","fi");fi1d.innerHTML="<label>Төлөвлөгөөнүүд</label><input id='niP' placeholder='АД №01, АД №02'>";fr1b.appendChild(fi1d);
   sub1.appendChild(fr1b);
-  const b1=mk("button","btn bs");b1.textContent="➕ Нэмэх";b1.onclick=()=>{const n=document.getElementById("niN").value.trim();if(!n)return toast("Нэр оруулна уу","te");const f=document.getElementById("niF").value,t=document.getElementById("niT").value,p=document.getElementById("niP").value.split(",").map(x=>x.trim()).filter(Boolean);S.inds.push({id:"i"+Date.now(),name:n,type:t,freq:f,plans:p});buildCfg(c);toast("✅","ts");};sub1.appendChild(b1);c1.appendChild(sub1);c.appendChild(c1);
-  // Plans
+  const b1=mk("button","btn bs");b1.textContent="➕ Нэмэх";b1.onclick=()=>{
+    const n=document.getElementById("niN").value.trim();
+    if(!n)return toast("Нэр оруулна уу","te");
+    const f=document.getElementById("niF").value,t=document.getElementById("niT").value,p=document.getElementById("niP").value.split(",").map(x=>x.trim()).filter(Boolean);
+    S.inds.push({id:"i"+Date.now(),name:n,type:t,freq:f,plans:p});
+    saveInds();
+    buildCfg(c);
+    toast("✅ Нэмэгдлээ","ts");
+  };sub1.appendChild(b1);c1.appendChild(sub1);c.appendChild(c1);
+
   const c2=mk("div","card");c2.innerHTML="<h2>📋 Төлөвлөгөөнүүд</h2>";
   S.plans.forEach((p,i)=>{const row=mk("div","urow");const un=mk("span","un");un.textContent=p;row.appendChild(un);const bd=mk("button","btn bd_");bd.textContent="🗑️";bd.onclick=(()=>{const idx=i;return()=>{if(confirm("Устгах уу?")){S.plans.splice(idx,1);buildCfg(c);savePlans();}};})();row.appendChild(bd);c2.appendChild(row);});
   const sub2=mk("div","sub");sub2.style.marginTop="10px";sub2.innerHTML="<div class='fr one'><div class='fi'><label>Шинэ төлөвлөгөө</label><input id='nPl' placeholder='Нэр'></div></div>";
-  const b2=mk("button","btn bs");b2.textContent="➕ Нэмэх";b2.onclick=()=>{const p=document.getElementById("nPl").value.trim();if(!p)return;S.plans.push(p);buildCfg(c);savePlans();};sub2.appendChild(b2);c2.appendChild(sub2);c.appendChild(c2);
-  // Passwords
+  const b2=mk("button","btn bs");b2.textContent="➕ Нэмэх";b2.onclick=()=>{const p=document.getElementById("nPl").value.trim();if(!p)return;S.plans.push(p);savePlans();buildCfg(c);};sub2.appendChild(b2);c2.appendChild(sub2);c.appendChild(c2);
+
   const c3=mk("div","card");c3.innerHTML="<h2>🔐 Нууц үгийн удирдлага</h2>";
   const frp=mk("div","fr");const fip1=mk("div","fi");fip1.innerHTML="<label>Бүгдэд нэг нууц үг</label><input id='allPW' placeholder='sga2026'>";frp.appendChild(fip1);
   const fip2=mk("div","fi");fip2.style.cssText="display:flex;align-items:flex-end";const ball=mk("button","btn bw");ball.textContent="🔄 Бүгдэд солих";ball.onclick=sAllPW;fip2.appendChild(ball);frp.appendChild(fip2);c3.appendChild(frp);
@@ -804,9 +823,9 @@ function buildCfg(c){
   S.units.filter(u=>!u.isAdmin).forEach(u=>{
     const row=mk("div","urow");const uc=mk("span","uc");uc.textContent=u.code;row.appendChild(uc);const un=mk("span","un");un.textContent=u.name;row.appendChild(un);
     const pinp=mk("input","pi");pinp.id="pw_"+u.code;pinp.value=S.pwds[u.code]||u.pwd;row.appendChild(pinp);
-    const bs=mk("button","btn bs");bs.textContent="💾";bs.onclick=(()=>{const code=u.code;return async()=>{const el=document.getElementById("pw_"+code);if(!el)return;const pwd=el.value.trim();if(!pwd)return toast("Хоосон","te");S.pwds[code]=pwd;try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}const ok=await savePwdFB(code,pwd);toast("✅ "+code+(ok?" (Firebase)":""),"ts");};})();row.appendChild(bs);pwList.appendChild(row);
+    const bs=mk("button","btn bs");bs.textContent="💾";bs.onclick=(()=>{const code=u.code;return async()=>{const el=document.getElementById("pw_"+code);if(!el)return;const pwd=el.value.trim();if(!pwd)return toast("Хоосон","te");const ok=await savePwdFB(code,pwd);toast("✅ "+code+(ok?" (Firebase хадгалагдлаа)":""),"ts");};})();row.appendChild(bs);pwList.appendChild(row);
   });c3.appendChild(pwList);c.appendChild(c3);
-  // Units
+
   const c4=mk("div","card");c4.innerHTML="<h2>🏛️ Нэгжийн удирдлага</h2>";
   const ul=mk("div");ul.style.cssText="max-height:360px;overflow-y:auto";
   S.units.filter(u=>!u.isAdmin).forEach((u,i)=>{
@@ -817,17 +836,15 @@ function buildCfg(c){
   });c4.appendChild(ul);
   const sub4=mk("div","sub");sub4.style.marginTop="10px";sub4.innerHTML="<h3>➕ Шинэ нэгж</h3><div class='fr'><div class='fi'><label>Нэр</label><input id='nuN' placeholder='Нэр'></div><div class='fi'><label>Нууц үг</label><input id='nuPW' value='sga2026'></div></div><div class='fr one'><div class='fi'><label>Код (автомат бол хоосон)</label><input id='nuC' placeholder='ШГА51...'></div></div>";
   const b4=mk("button","btn bs");b4.textContent="➕ Нэмэх";b4.onclick=()=>{const n=document.getElementById("nuN").value.trim();if(!n)return toast("Нэр оруулна уу","te");const pw=document.getElementById("nuPW").value.trim()||"sga2026";let code=document.getElementById("nuC").value.trim();if(!code){const nums=S.units.map(u=>parseInt(u.code.replace("ШГА",""))||0);code="ШГА"+(Math.max(...nums)+1);}if(S.units.find(u=>u.code===code)){if(!confirm(code+" байна. Орлуулах уу?"))return;S.units=S.units.filter(u=>u.code!==code);}S.units.push({code,name:n,pwd:pw});S.pwds[code]=pw;try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}buildCfg(c);toast("✅ "+code,"ts");};sub4.appendChild(b4);c4.appendChild(sub4);c.appendChild(c4);
-  // API тохиргоо + мэдээ цэвэрлэх
+
   const c5=mk("div","card");c5.innerHTML="<h2>🤖 AI тохиргоо</h2>";
   const fi5=mk("div","fi");fi5.innerHTML="<label>Anthropic API түлхүүр үг</label>";
   const inp5=mk("input");inp5.type="password";inp5.placeholder="sk-ant-...";inp5.style.cssText="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px";
   inp5.value=localStorage.getItem("sga_ai_key")||"";fi5.appendChild(inp5);c5.appendChild(fi5);
   const bSaveKey=mk("button","btn bs");bSaveKey.style.marginTop="10px";bSaveKey.textContent="💾 Хадгалах";
   bSaveKey.onclick=()=>{const k=inp5.value.trim();if(!k)return toast("API түлхүүр үг оруулна уу","te");localStorage.setItem("sga_ai_key",k);toast("✅ API түлхүүр үг хадгалагдлаа","ts");};
-  c5.appendChild(bSaveKey);
-  const note=mk("p");note.style.cssText="font-size:11px;color:var(--tx2);margin-top:10px";note.textContent="API түлхүүр үгийг зөвхөн таны браузерт хадгална. platform.openai.com/anthropic.com дээрээс авна уу.";c5.appendChild(note);
-  c.appendChild(c5);
-  // Мэдээ цэвэрлэх
+  c5.appendChild(bSaveKey);c.appendChild(c5);
+
   const c6=mk("div","card");c6.innerHTML="<h2>🗑️ Тест мэдээ цэвэрлэх</h2>";
   const info=mk("p");info.style.cssText="font-size:13px;color:var(--tx2);margin-bottom:12px";info.textContent="Туршилтаар оруулсан бүх мэдээг устгана. Жинхэнэ ажиллагааны өмнө хийх хэрэгтэй.";c6.appendChild(info);
   const stats=mk("div");stats.style.cssText="background:var(--bg3);border-radius:6px;padding:12px;margin-bottom:14px;font-size:13px";
@@ -835,24 +852,31 @@ function buildCfg(c){
   const bClear=mk("button","btn bd_");bClear.textContent="🗑️ Бүх мэдээг цэвэрлэх";
   bClear.onclick=()=>{
     if(!confirm("Бүх "+S.data.length+" мэдээг устгах уу? Энэ үйлдлийг буцааж болохгүй!"))return;
-    S.data=[];
-    try{localStorage.removeItem("sga_data");}catch{}
+    S.data=[];try{localStorage.removeItem("sga_data");}catch{}
     buildCfg(c);toast("✅ Бүх мэдээ цэвэрлэгдлаа","ts");
   };
   c6.appendChild(bClear);c.appendChild(c6);
 }
 
 async function saveInds(){
-  if(!fbDB||!window._set){toast("Firebase холбогдоогүй","te");return;}
+  if(!fbDB||!window._set){
+    // Firebase байхгүй бол localStorage-д хадгала
+    try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
+    toast("⚠️ Firebase холбогдоогүй — зөвхөн энэ браузерт хадгалагдлаа","te");
+    return;
+  }
   try{
     await window._set(window._r(fbDB,"config/indicators"),S.inds);
     try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
-    toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");
+    toast("✅ Үзүүлэлтүүд Firebase-д хадгалагдлаа","ts");
   }catch(e){toast("⚠️ Алдаа: "+e.message,"te");}
 }
 
 async function savePlans(){
-  if(!fbDB||!window._set){toast("Firebase холбогдоогүй","te");return;}
+  if(!fbDB||!window._set){
+    try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
+    return;
+  }
   try{
     await window._set(window._r(fbDB,"config/plans"),S.plans);
     try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
@@ -862,10 +886,16 @@ async function savePlans(){
 
 async function sAllPW(){
   const pwd=document.getElementById("allPW").value.trim();if(!pwd)return toast("Оруулна уу","te");
-  S.units.filter(u=>!u.isAdmin).forEach(u=>{S.pwds[u.code]=pwd;});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
-  if(fbDB&&window._set){const all={};S.units.filter(u=>!u.isAdmin).forEach(u=>{all[u.code]=pwd;});try{await window._set(window._r(fbDB,"passwords"),all);}catch{}}
-  toast("✅ Бүгдийн нууц үг: "+pwd,"ts");buildCfg(document.getElementById("MC"));
+  S.units.filter(u=>!u.isAdmin).forEach(u=>{S.pwds[u.code]=pwd;});
+  try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
+  if(fbDB&&window._set){
+    const all={};S.units.filter(u=>!u.isAdmin).forEach(u=>{all[u.code]=pwd;});
+    try{await window._set(window._r(fbDB,"passwords"),all);toast("✅ Бүгдийн нууц үг Firebase-д хадгалагдлаа: "+pwd,"ts");}
+    catch{toast("✅ Бүгдийн нууц үг солигдлоо: "+pwd,"ts");}
+  }else{toast("✅ Бүгдийн нууц үг: "+pwd,"ts");}
+  buildCfg(document.getElementById("MC"));
 }
+
 window.addEventListener("DOMContentLoaded",initLogin);
 </script>
 </body>
