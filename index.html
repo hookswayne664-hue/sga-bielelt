@@ -113,7 +113,7 @@ tr:hover td{background:var(--bg3)}
 <div class="toast" id="tst"></div>
 <script>
 const SU="https://script.google.com/macros/s/AKfycbyQiqM_tR91U163Xwn1NCCYTxq5zJrVNaydfDdVk-TpZFMCltHoKjXss_WApp9Bt_0/exec";
-// Firebase хасагдлаа — Apps Script ашиглана
+const FC={apiKey:"AIzaSyDkxCrZG8aQ96mA02s72M3Pb7i23Nt2MW8",authDomain:"shga-bilelt.firebaseapp.com",databaseURL:"https://shga-bilelt-default-rtdb.firebaseio.com",projectId:"shga-bilelt",storageBucket:"shga-bilelt.firebasestorage.app",messagingSenderId:"44190929136",appId:"1:44190929136:web:ca772578c0b6446805b235"};
 function fN(v){const n=parseInt((v+"").replace(/,/g,""));return isNaN(n)?"":n.toLocaleString("en-US");}
 function fV(v,t){if(v===undefined||v===null||v==="")return"";if(t==="money")return fN(v)+"₮";if(t==="pct")return(parseFloat(v)||0).toFixed(1)+"%";if(t==="text")return v;return fN(v);}
 function fmtInput(el){const r=(el.value+"").replace(/[^0-9]/g,"");el.value=r?parseInt(r).toLocaleString("en-US"):"";}
@@ -238,25 +238,42 @@ const DINDS=[
 const DPLANS=["АД №01","АД №02","ХЗДХС АД №01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030"];
 
 let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0};
-let aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";let chatLastId=0,chatInterval=null;
+let fbDB=null,aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";let chatLastId=0,chatInterval=null;
 // Firebase-аас ирсэн нууц үгийг хадгалах — нэвтрэх үед ашиглана
 let fbPwdsReady=false;
 
 async function loadSheetJS(){if(window.XLSX)return;await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 
+async function initFB(){
+  try{
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),5000));
+    const load=async()=>{
+      const{initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+      const{getDatabase,ref,push,onValue,get,set}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+      const app=initializeApp(FC);fbDB=getDatabase(app);
+      window._r=ref;window._p=push;window._ov=onValue;window._get=get;window._set=set;
+    };
+    await Promise.race([load(),timeout]);
+  }catch(e){fbDB=null;}
+}
 // Apps Script-аас нууц үг татах
 async function loadFBPwds(){
   try{
     const r=await api("getPasswords");
     if(r&&r.passwords){Object.assign(S.pwds,r.passwords);try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}
-  }catch(e){console.log("loadPwds:",e);}
+  }catch(e){}
+  // Firebase байвал тэндээс ч татна
+  if(fbDB&&window._get){
+    try{
+      const s=await window._get(window._r(fbDB,"passwords"));
+      if(s&&s.exists){const v=s.exists()?s.val():{};Object.assign(S.pwds,v);try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}
+    }catch{}
+  }
 }
-// Apps Script-д нууц үг хадгалах
 async function savePwdFB(code,pwd){
   S.pwds[code]=pwd;try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
   try{await api("savePassword",{code,pwd});return true;}catch{return false;}
 }
-// Apps Script-аас config татах
 async function loadConfig(){
   try{
     const r=await api("getConfig");
@@ -265,7 +282,7 @@ async function loadConfig(){
       if(r.config.plans&&r.config.plans.length){S.plans=r.config.plans;try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}}
       if(S.tab)renderTab(S.tab);
     }
-  }catch(e){console.log("loadConfig:",e);}
+  }catch(e){}
 }
 async function loadAllData(){
   try{
@@ -298,19 +315,12 @@ async function initLogin(){
   const pf=document.getElementById("lP");pf.value="";
   pf.onkeydown=e=>{if(e.key==="Enter")doLogin();};
 
-  // Apps Script-аас нууц үг татах (хуучин арга — backup)
-  try{
-    const r=await api("getPasswords");
-    if(r&&r.passwords){
-      Object.entries(r.passwords).forEach(([k,v])=>{if(k!=="__ALL__")S.pwds[k]=v;});
-      try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
-    }
-  }catch{}
-
-  // Apps Script-аас нууц үг болон config татах
   document.getElementById("lB").textContent="⏳ Ачаалж байна...";
   document.getElementById("lB").disabled=true;
-  await Promise.all([loadFBPwds(), loadConfig()]);
+  // Firebase 5с timeout-тай оролдоно, дараа нь Apps Script-аас татна
+  await initFB();
+  await loadFBPwds();
+  loadConfig(); // background
   document.getElementById("lB").textContent="Нэвтрэх →";
   document.getElementById("lB").disabled=false;
   pf.value="";
@@ -383,7 +393,13 @@ function tData(c){
   const sel=mk("select");ps.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;if(p===dPer)o.selected=true;sel.appendChild(o);});
   sel.onchange=()=>{dPer=sel.value;tData(document.getElementById("MC"));};fi1.appendChild(sel);fr.appendChild(fi1);
   const fi2=mk("div","fi");fi2.innerHTML="<label>Нэгж</label><input value='"+S.user.name+"' disabled>";fr.appendChild(fi2);card.appendChild(fr);
-  if(!inds.length){card.innerHTML+="<div class='empty'>Үзүүлэлт байхгүй байна</div>";}
+  if(!inds.length){
+    const loadDiv=mk("div");loadDiv.style.cssText="text-align:center;padding:24px;color:var(--tx2)";
+    loadDiv.innerHTML="⏳ Үзүүлэлт ачаалж байна...<br><small style='font-size:11px;margin-top:8px;display:block'>Apps Script холбогдохыг хүлээж байна</small>";
+    card.appendChild(loadDiv);
+    // 3 секундын дараа дахин оролдоно
+    setTimeout(()=>{if(S.inds.filter(i=>i.freq===dFreq).length)tData(document.getElementById("MC"));},3000);
+  }
   else{
     const groups={};inds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
     Object.entries(groups).forEach(([pl,pInds])=>{
@@ -522,6 +538,22 @@ function renderChatMsgs(){
   });
   el.scrollTop=el.scrollHeight;
 }
+function lChat(){
+  // Firebase байвал realtime, үгүй бол polling
+  if(fbDB&&window._ov){
+    window._ov(window._r(fbDB,"messages"),snap=>{
+      const el=document.getElementById("CB");if(!el)return;
+      const msgs=[];snap.forEach(ch=>msgs.push({...ch.val()}));
+      chatMsgs=msgs;
+      renderChatMsgs();
+      if(S.tab!=="chat"){S.unread++;uBadge(S.unread);}
+    });
+  } else {
+    pollChat();
+    if(chatInterval)clearInterval(chatInterval);
+    chatInterval=setInterval(pollChat,10000);
+  }
+}
 async function pollChat(){
   try{
     const r=await api("getChat",{since:chatLastId});
@@ -532,24 +564,21 @@ async function pollChat(){
     }
   }catch(e){}
 }
-function startChatPolling(){
-  pollChat();
-  if(chatInterval)clearInterval(chatInterval);
-  chatInterval=setInterval(pollChat,10000);
-}
+function startChatPolling(){lChat();}
 function stopChatPolling(){if(chatInterval){clearInterval(chatInterval);chatInterval=null;}}
 async function sMsg(){
   const inp=document.getElementById("CI");if(!inp||!inp.value.trim())return;
   const msg={sender:S.user.code,senderName:S.user.name,text:inp.value.trim(),time:new Date().toLocaleTimeString("mn-MN"),type:"normal"};
-  inp.value="";
-  chatMsgs.push({...msg,id:Date.now()});renderChatMsgs();
-  try{await api("sendChat",{msg:JSON.stringify(msg)});}catch(e){}
+  inp.value="";chatMsgs.push({...msg,id:Date.now()});renderChatMsgs();
+  if(fbDB&&window._p){try{await window._p(window._r(fbDB,"messages"),msg);}catch{}}
+  else{try{await api("sendChat",{msg:JSON.stringify(msg)});}catch{}}
 }
 async function sAnn(){
   const txt=prompt("Зарлал:");if(!txt)return;
   const msg={sender:S.user.code,senderName:S.user.name,text:txt,time:new Date().toLocaleTimeString("mn-MN"),type:"announce"};
   chatMsgs.push({...msg,id:Date.now()});renderChatMsgs();
-  try{await api("sendChat",{msg:JSON.stringify(msg)});}catch(e){}
+  if(fbDB&&window._p){try{await window._p(window._r(fbDB,"messages"),msg);}catch{}}
+  else{try{await api("sendChat",{msg:JSON.stringify(msg)});}catch{}}
 }
 function uBadge(n){const b=document.getElementById("tbadge");if(!b)return;b.textContent=n;b.style.display=n>0?"inline-block":"none";}
 
@@ -958,25 +987,26 @@ function buildCfg(c){
 
 async function saveInds(){
   try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
-  try{await api("saveConfig",{config:JSON.stringify({indicators:S.inds})});toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");}
-  catch(e){toast("⚠️ Алдаа: "+e.message,"te");}
+  let ok=false;
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"config/indicators"),S.inds);ok=true;}catch{}}
+  try{await api("saveConfig",{config:JSON.stringify({indicators:S.inds})});ok=true;}catch{}
+  toast(ok?"✅ Үзүүлэлтүүд хадгалагдлаа":"⚠️ Зөвхөн локал хадгалагдлаа",ok?"ts":"te");
 }
 
 async function savePlans(){
   try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
-  try{await api("saveConfig",{config:JSON.stringify({plans:S.plans})});toast("✅ Төлөвлөгөөнүүд хадгалагдлаа","ts");}
-  catch(e){}
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"config/plans"),S.plans);}catch{}}
+  try{await api("saveConfig",{config:JSON.stringify({plans:S.plans})});}catch{}
 }
 
 async function sAllPW(){
   const pwd=document.getElementById("allPW").value.trim();if(!pwd)return toast("Оруулна уу","te");
   S.units.filter(u=>!u.isAdmin).forEach(u=>{S.pwds[u.code]=pwd;});
   try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
-  try{
-    const all={};S.units.filter(u=>!u.isAdmin).forEach(u=>{all[u.code]=pwd;});
-    await api("saveAllPasswords",{pwds:JSON.stringify(all)});
-    toast("✅ Бүгдийн нууц үг хадгалагдлаа: "+pwd,"ts");
-  }catch{toast("✅ Бүгдийн нууц үг солигдлоо (локал): "+pwd,"ts");}
+  const all={};S.units.filter(u=>!u.isAdmin).forEach(u=>{all[u.code]=pwd;});
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"passwords"),all);}catch{}}
+  try{await api("saveAllPasswords",{pwds:JSON.stringify(all)});}catch{}
+  toast("✅ Бүгдийн нууц үг солигдлоо: "+pwd,"ts");
   buildCfg(document.getElementById("MC"));
 }
 
