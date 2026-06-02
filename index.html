@@ -340,9 +340,15 @@ function doLogin(){
   document.getElementById("LP").style.display="none";
   document.getElementById("AP").style.display="block";
   document.getElementById("nU").textContent=u.code+" · "+u.name;
-  renderTabs();renderTab(u.isAdmin?"monitor":"data");initFB();
+  renderTabs();
+  document.getElementById("MC").innerHTML="<div style='text-align:center;padding:40px;color:var(--tx2)'>⏳ Ачаалж байна...</div>";
+  initFB();
   if(u.isAdmin)setTimeout(loadAllData,1500);
-  setTimeout(loadConfig,1000);
+  // Load config first, then show tab
+  setTimeout(async()=>{
+    await loadConfig();
+    renderTab(u.isAdmin?"monitor":"data");
+  },1200);
 }
 function logout(){S.user=null;document.getElementById("LP").style.display="flex";document.getElementById("AP").style.display="none";document.getElementById("lP").value="";}
 function renderTabs(){
