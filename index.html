@@ -267,7 +267,15 @@ async function loadSheetJS(){if(window.XLSX)return;await new Promise((res,rej)=>
 async function initLogin(){
   try{const ld=localStorage.getItem("sga_data");if(ld)S.data=JSON.parse(ld);}catch{}
   try{const lp=localStorage.getItem("sga_p");if(lp)Object.assign(S.pwds,JSON.parse(lp));}catch{}
-  try{const li=localStorage.getItem("sga_inds");if(li){const p=JSON.parse(li);if(p&&p.length)S.inds=p;}}catch{}
+  try{
+    const li=localStorage.getItem("sga_inds");
+    if(li){
+      const p=JSON.parse(li);
+      // 11-ээс дээш үзүүлэлт байвал л ашиглана — хуучин анхдагч 11-г хаяна
+      if(p&&p.length>11)S.inds=p;
+      else localStorage.removeItem("sga_inds"); // Хуучин localStorage цэвэрлэнэ
+    }
+  }catch{}
   try{const lpl=localStorage.getItem("sga_plans");if(lpl){const p=JSON.parse(lpl);if(p&&p.length)S.plans=p;}}catch{}
   const sel=document.getElementById("lC");
   S.units.filter(u=>!u.disabled).forEach(u=>{const o=document.createElement("option");o.value=u.code;o.textContent=u.code+" — "+u.name;sel.appendChild(o);});
@@ -284,34 +292,42 @@ async function initLogin(){
       try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
     }
   }catch{}
-  // Config татна — нэвтрэхийн өмнө хүлээнэ
-  await loadConfig();
+  // Config background-д татна
+  loadConfig();
   document.getElementById("lB").textContent="Нэвтрэх →";
   document.getElementById("lB").disabled=false;
   pf.value="";
 }
 
-async function loadConfig(){
-  try{
-    const url=SU+"?action=getConfig";
-    const resp=await fetch(url,{redirect:"follow"});
-    const txt=await resp.text();
-    const r=JSON.parse(txt);
-    if(r&&r.config){
-      let changed=false;
-      if(r.config.indicators&&Array.isArray(r.config.indicators)&&r.config.indicators.length){
-        S.inds=r.config.indicators;
-        try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
-        changed=true;
-      }
-      if(r.config.plans&&Array.isArray(r.config.plans)&&r.config.plans.length){
-        S.plans=r.config.plans;
-        try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
-        changed=true;
-      }
-      if(changed&&S.tab)renderTab(S.tab);
-    }
-  }catch(e){console.log("loadConfig error:",e);}
+function loadConfig(){
+  return new Promise((resolve)=>{
+    // script tag-аар CORS-г тойрч татна
+    const cbName="__sgaCfg"+Date.now();
+    window[cbName]=function(r){
+      try{
+        if(r&&r.config){
+          if(r.config.indicators&&Array.isArray(r.config.indicators)&&r.config.indicators.length>10){
+            S.inds=r.config.indicators;
+            try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
+          }
+          if(r.config.plans&&Array.isArray(r.config.plans)&&r.config.plans.length){
+            S.plans=r.config.plans;
+            try{localStorage.setItem("sga_plans",JSON.stringify(S.plans));}catch{}
+          }
+          if(S.tab)renderTab(S.tab);
+        }
+      }catch(e){}
+      delete window[cbName];
+      document.getElementById("sgaCfgScript")?.remove();
+      resolve();
+    };
+    const s=document.createElement("script");
+    s.id="sgaCfgScript";
+    s.src=SU+"?action=getConfig&callback="+cbName+"&_="+Date.now();
+    s.onerror=()=>{resolve();};
+    document.head.appendChild(s);
+    setTimeout(resolve,5000); // 5с timeout
+  });
 }
 
 async function loadAllData(){
