@@ -644,12 +644,38 @@ function lMon(){
   const done=active.filter(u=>sub.has(u.code)),miss=active.filter(u=>!sub.has(u.code));
   const pct=active.length?Math.round(done.length/active.length*100):0;
   const el=document.getElementById("mRes");if(!el)return;
-  let h="<div class='stats'><div class='sc'><div class='n'>"+active.length+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+done.length+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+miss.length+"</div><div class='l'>❌ Илгээгээгүй</div></div><div class='sc o'><div class='n'>"+pct+"%</div><div class='l'>Хамрагдалт</div></div></div>";
-  h+="<div class='tw'><table><tr><th>Код</th><th>Нэгж</th><th>Статус</th><th>Огноо</th></tr>";
-  active.forEach(u=>{const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);h+="<tr><td><b>"+u.code+"</b></td><td><span style='cursor:pointer;color:var(--bl2)' onclick='showUnitDetail(\""+u.code+"\",\""+u.name.replace(/\"/g,"")+"\")'>"+ u.name+"</span></td><td>"+(e?"<span class='badge bok'>✅ Илгээсэн</span>":"<span class='badge bfail'>❌ Илгээгээгүй</span>")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e?e.date:"")+"</td></tr>";});
-  h+="</table></div>";
-  if(miss.length)h+="<div style='margin-top:8px;font-size:12px;color:var(--rd)'>❌ "+miss.map(u=>u.code).join(", ")+"</div>";
-  el.innerHTML=h;
+  // Stats
+  const statsDiv=mk("div","stats");
+  [{n:active.length,l:"Нийт нэгж",c:""},{n:done.length,l:"✅ Илгээсэн",c:"g"},{n:miss.length,l:"❌ Илгээгээгүй",c:"r"},{n:pct+"%",l:"Хамрагдалт",c:"o"}].forEach(s=>{
+    const sc=mk("div","sc "+(s.c||""));sc.innerHTML="<div class='n'>"+s.n+"</div><div class='l'>"+s.l+"</div>";statsDiv.appendChild(sc);
+  });
+  el.innerHTML="";el.appendChild(statsDiv);
+  // Table
+  const tw=mk("div","tw");const tbl=mk("table");
+  const hdr=mk("tr");["Код","Нэгж","Статус","Огноо"].forEach(t=>{const th=mk("th");th.textContent=t;hdr.appendChild(th);});
+  tbl.appendChild(hdr);
+  active.forEach(u=>{
+    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);
+    const tr=mk("tr");
+    // Код
+    const td1=mk("td");td1.innerHTML="<b>"+u.code+"</b>";tr.appendChild(td1);
+    // Нэгжийн нэр — дарахад дэлгэрэнгүй харна
+    const td2=mk("td");
+    const sp=mk("span");sp.textContent=u.name;
+    sp.style.cssText="cursor:pointer;color:var(--bl2)";
+    sp.title="Дэлгэрэнгүй харах";
+    sp.onclick=(function(c,n){return function(){showUnitDetail(c,n);};})(u.code,u.name);
+    td2.appendChild(sp);tr.appendChild(td2);
+    // Статус
+    const td3=mk("td");
+    const badge=mk("span","badge "+(e?"bok":"bfail"));badge.textContent=e?"✅ Илгээсэн":"❌ Илгээгээгүй";
+    td3.appendChild(badge);tr.appendChild(td3);
+    // Огноо
+    const td4=mk("td");td4.style.cssText="font-size:12px;color:var(--tx3)";td4.textContent=e?e.date:"";tr.appendChild(td4);
+    tbl.appendChild(tr);
+  });
+  tw.appendChild(tbl);el.appendChild(tw);
+  if(miss.length){const md=mk("div");md.style.cssText="margin-top:8px;font-size:12px;color:var(--rd)";md.textContent="❌ "+miss.map(u=>u.code).join(", ");el.appendChild(md);}
 }
 function lPlanCov(){
   const plan=document.getElementById("mPl")?.value,per=document.getElementById("mPP")?.value;if(!plan||!per)return;
