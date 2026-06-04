@@ -335,7 +335,9 @@ async function loadAllData(){
       });
       try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
       toast("☁️ "+r.data.length+" мэдээ ачаалагдлаа","ts");
-      if(S.tab==="summary"||S.tab==="monitor")renderTab(S.tab);
+      // Tab дахин render хийхгүй — зөвхөн тоог шинэчилнэ
+      if(S.tab==="summary")lSum();
+      else if(S.tab==="monitor")lMon();
     }
   }catch{}
 }
