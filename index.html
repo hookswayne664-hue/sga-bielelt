@@ -229,7 +229,13 @@ function toast(m,c){const t=document.getElementById("tst");t.textContent=m;t.cla
 function getPer(){
   const n=new Date(),y=n.getFullYear(),m=n.getMonth()+1;
   const w=[],mn=[],q=[];
-  for(let i=0;i<8;i++){const d=new Date(n);d.setDate(d.getDate()-i*7);w.push(d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0")+" 7 хоног");}
+  // 7 хоног тутам биш өдөр тутам сүүлийн 56 хоногийг нэмнэ — бүх period харагдана
+  const seen=new Set();
+  for(let i=0;i<56;i++){
+    const d=new Date(n);d.setDate(d.getDate()-i);
+    const key=d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0")+" 7 хоног";
+    if(!seen.has(key)){seen.add(key);w.push(key);}
+  }
   for(let i=0;i<6;i++){let mm=m-i,yy=y;if(mm<=0){mm+=12;yy--;}mn.push(yy+" оны "+mm+"-р сар");}
   for(let i=0;i<4;i++){let qq=Math.ceil(m/3)-i,yy=y;if(qq<=0){qq+=4;yy--;}q.push(yy+" оны "+qq+"-р улирал");}
   return{w,mn,q};
