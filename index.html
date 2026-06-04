@@ -823,38 +823,69 @@ function tSummary(c){
     d.onclick=()=>{sFreq=f;renderTab("summary");};pt.appendChild(d);
   });
   card.appendChild(pt);
+  // Хугацааны муж
   const fr=mk("div","fr");
-  const fi1=mk("div","fi");fi1.innerHTML="<label>Хугацаа</label>";
-  const s1=mk("select");s1.id="sP";sps.forEach(p=>{const o=mk("option");o.textContent=p;s1.appendChild(o);});
+  const fi1=mk("div","fi");fi1.innerHTML="<label>Эхлэх огноо</label>";
+  const s1=mk("select");s1.id="sFrom";
+  const of0=mk("option");of0.value="";of0.textContent="— Сонгоно уу —";s1.appendChild(of0);
+  sps.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s1.appendChild(o);});
   s1.onchange=lSum;fi1.appendChild(s1);fr.appendChild(fi1);
-  const fi2=mk("div","fi");fi2.innerHTML="<label>Шүүлт — Төлөвлөгөө / АД</label>";
-  const s2=mk("select");s2.id="sPl";
-  const o0=mk("option");o0.value="all";o0.textContent="— Бүх үзүүлэлт —";s2.appendChild(o0);
-  S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s2.appendChild(o);});
+  const fi2=mk("div","fi");fi2.innerHTML="<label>Дуусах огноо</label>";
+  const s2=mk("select");s2.id="sTo";
+  const ot0=mk("option");ot0.value="";ot0.textContent="— Сонгоно уу —";s2.appendChild(ot0);
+  sps.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s2.appendChild(o);});
   s2.onchange=lSum;fi2.appendChild(s2);fr.appendChild(fi2);
   card.appendChild(fr);
+  const fi3=mk("div","fi fr one");fi3.style.marginBottom="10px";fi3.innerHTML="<label>Шүүлт — Төлөвлөгөө / АД</label>";
+  const s3=mk("select");s3.id="sPl";
+  const o0=mk("option");o0.value="all";o0.textContent="— Бүх үзүүлэлт —";s3.appendChild(o0);
+  S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s3.appendChild(o);});
+  s3.onchange=lSum;fi3.appendChild(s3);card.appendChild(fi3);
   const sRes=mk("div");sRes.id="sRes";card.appendChild(sRes);
   c.appendChild(card);
   setTimeout(lSum,50);
 }
 
 function lSum(){
-  const per=document.getElementById("sP")?.value,plan=document.getElementById("sPl")?.value||"all";if(!per)return;
+  const from=document.getElementById("sFrom")?.value;
+  const to=document.getElementById("sTo")?.value;
+  const plan=document.getElementById("sPl")?.value||"all";
+  if(!from&&!to)return;
+  // Сонгосон хугацааны мужид орох period-ууд
+  const P=getPer();
+  const sps=sFreq==="week"?P.w:sFreq==="month"?P.mn:P.q;
+  let selPeriods=[];
+  if(from&&to){
+    const fi=sps.indexOf(from),ti=sps.indexOf(to);
+    if(fi>=0&&ti>=0)selPeriods=sps.slice(Math.min(fi,ti),Math.max(fi,ti)+1);
+    else selPeriods=sps.filter(p=>p===from||p===to);
+  } else if(from){selPeriods=[from];}
+  else if(to){selPeriods=[to];}
+  if(!selPeriods.length)selPeriods=from?[from]:to?[to]:[];
   let inds=S.inds.filter(i=>i.freq===sFreq);
   if(plan!=="all")inds=inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===plan.trim()));
-  const entries=S.data.filter(d=>d.period===per&&d.freq===sFreq);
+  // Сонгосон бүх period-ийн мэдээг нэгтгэнэ
+  const entries=S.data.filter(d=>selPeriods.includes(d.period)&&d.freq===sFreq);
+  // Нэгж бүрийг нэг удаа тооцно (хамгийн сүүлийн мэдээг авна)
+  const unitMap={};
+  entries.forEach(e=>{
+    if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;
+  });
+  const uniqEntries=Object.values(unitMap);
   const totalU=S.units.filter(u=>!u.isAdmin&&!u.disabled).length;
-  const sub=new Set(entries.map(e=>e.unit)).size;
-  let h="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгээгүй</div></div></div>";
+  const sub=new Set(uniqEntries.map(e=>e.unit)).size;
+  const periodLabel=selPeriods.length>1?selPeriods[selPeriods.length-1]+" ~ "+selPeriods[0]:selPeriods[0]||"";
+  let h="<div style='font-size:12px;color:var(--tx2);margin-bottom:10px'>📅 "+periodLabel+" ("+selPeriods.length+" хугацаа)</div>";
+  h+="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгээгүй</div></div></div>";
   if(!inds.length){document.getElementById("sRes").innerHTML=h+"<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
-  h+="<div class='tw'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт / Дундаж</th><th>Бөглөлт</th></tr>";
+  h+="<div class='tw'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт</th><th>Бөглөлт</th></tr>";
   inds.forEach(ind=>{
-    const vals=entries.map(e=>e.values[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
+    const vals=uniqEntries.map(e=>e.values[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
     const nums=vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));
     let total="—";
     if(ind.type==="text"){
       if(vals.length){
-        const preview=vals.map((v,i)=>"<span style='font-size:11px;color:var(--tx2)'><b>"+entries[i]?.unit+":</b> "+(v.length>40?v.substring(0,40)+"...":v)+"</span>").join("<br>");
+        const preview=uniqEntries.filter(e=>e.values[ind.id]).map(e=>"<span style='font-size:11px;color:var(--tx2)'><b>"+e.unit+":</b> "+(String(e.values[ind.id]).length>40?String(e.values[ind.id]).substring(0,40)+"...":e.values[ind.id])+"</span>").join("<br>");
         total="<details><summary style='cursor:pointer;color:var(--bl2)'>"+vals.length+" хариу</summary><div style='margin-top:6px;line-height:1.8'>"+preview+"</div></details>";
       }
     } else if(ind.type==="pct"&&nums.length){total=(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1)+"%";}
@@ -863,17 +894,16 @@ function lSum(){
     h+="<tr><td style='font-size:12px;color:var(--tx2)'>"+ind.id+"</td><td>"+ind.name+"</td><td style='text-align:right;font-size:15px'>"+total+"</td><td><span style='font-size:12px;color:"+(fc>0?"var(--gr)":"var(--rd)")+"'>"+fc+"/"+sub+"</span> <div class='pb' style='width:60px;display:inline-block;vertical-align:middle'><div class='pf' style='width:"+pct+"%'></div></div></td></tr>";
   });
   h+="</table></div>";
-  if(!entries.length)h+="<div class='empty' style='margin-top:12px'>Мэдээ байхгүй</div>";
+  if(!uniqEntries.length)h+="<div class='empty' style='margin-top:12px'>Мэдээ байхгүй</div>";
   document.getElementById("sRes").innerHTML=h;
 }
-
-// ===== AI =====
 function tAI(c){
   const P=getPer();
   const card=mk("div","card");card.innerHTML="<h2>✨ AI Тайлан</h2>";
   const fr=mk("div","fr");
   const fi1=mk("div","fi");fi1.innerHTML="<label>Төлөвлөгөө / Албан даалгавар</label>";
   const s1=mk("select");s1.id="aP";S.plans.forEach(p=>{const o=mk("option");o.textContent=p;s1.appendChild(o);});fi1.appendChild(s1);fr.appendChild(fi1);
+
   const fi2=mk("div","fi");fi2.innerHTML="<label>Тайлант хугацаа</label><input id='aPer' value='"+P.q[0]+"'>";fr.appendChild(fi2);
   card.appendChild(fr);
   const fi3=mk("div","fi fr one");fi3.style.marginBottom="10px";fi3.innerHTML="<label>Нэмэлт мэдээлэл / Загвар</label><textarea id='aEx' placeholder='Өмнөх биелэлтийн хэлбэр...'></textarea>";card.appendChild(fi3);
