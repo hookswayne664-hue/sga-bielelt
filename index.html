@@ -1010,7 +1010,10 @@ function lSum(){
   entries.forEach(e=>{const k=e.unit+"||"+e.period;if(!keyMap[k]||e.date>keyMap[k].date)keyMap[k]=e;});
   const uniqEntries=Object.values(keyMap);
   const totalU=S.units.filter(u=>!u.isAdmin&&!u.disabled).length;
-  const sub=new Set(uniqEntries.map(e=>e.unit)).size;
+  // Төлөвлөгөө сонгогдсон бол зөвхөн тухайн төлөвлөгөөний үзүүлэлт бөглөсөн нэгжийг тоолно
+  const sub=(plan!=="all"&&inds.length)
+    ?new Set(uniqEntries.filter(e=>inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!=="")).map(e=>e.unit)).size
+    :new Set(uniqEntries.map(e=>e.unit)).size;
   const periodLabel=selPeriods.length>1?selPeriods[selPeriods.length-1]+" ~ "+selPeriods[0]:selPeriods[0]||"";
   let h="<div style='font-size:12px;color:var(--tx2);margin-bottom:10px'>📅 "+periodLabel+" ("+selPeriods.length+" хугацаа)</div>";
   h+="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгээгүй</div></div></div>";
