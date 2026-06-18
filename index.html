@@ -892,6 +892,11 @@ function tSummary(c){
   const uU0=mk("option");uU0.value="all";uU0.textContent="— Бүх нэгж —";uUnit.appendChild(uU0);
   S.units.filter(u=>!u.isAdmin&&!u.disabled).forEach(u=>{const o=mk("option");o.value=u.code;o.textContent=u.code+" — "+u.name;uUnit.appendChild(o);});
   uUnit.onchange=showUnitSum;ufi2.appendChild(uUnit);ufr.appendChild(ufi2);
+  const ufi3=mk("div","fi");ufi3.innerHTML="<label>Төлөвлөгөө</label>";
+  const uPlan=mk("select");uPlan.id="uPlan";
+  const uP0=mk("option");uP0.value="all";uP0.textContent="— Бүх үзүүлэлт —";uPlan.appendChild(uP0);
+  S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;if(p===S.activePlan)o.selected=true;uPlan.appendChild(o);});
+  uPlan.onchange=showUnitSum;ufi3.appendChild(uPlan);ufr.appendChild(ufi3);
   c2.appendChild(ufr);
   const uRes=mk("div");uRes.id="uRes";c2.appendChild(uRes);
   c.appendChild(c2);
@@ -904,7 +909,8 @@ function showUnitSum(){
   const ucode=document.getElementById("uUnit")?.value||"all";
   const res=document.getElementById("uRes");
   if(!per||!res)return;
-  const inds=S.inds.filter(i=>i.freq===sFreq&&(S.activePlan?(i.plans&&i.plans.some(p=>p.trim()===S.activePlan.trim())):true));
+  const uplanVal=document.getElementById("uPlan")?.value||"all";
+  const inds=S.inds.filter(i=>i.freq===sFreq&&(uplanVal!=="all"?(i.plans&&i.plans.some(p=>p.trim()===uplanVal.trim())):true));
   if(!inds.length){res.innerHTML="<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
   const entries=ucode==="all"
     ?S.data.filter(d=>d.period===per&&d.freq===sFreq)
@@ -949,12 +955,10 @@ function lSum(){
   if(plan!=="all")inds=inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===plan.trim()));
   // Сонгосон бүх period-ийн мэдээг нэгтгэнэ
   const entries=S.data.filter(d=>selPeriods.includes(d.period)&&d.freq===sFreq);
-  // Нэгж бүрийг нэг удаа тооцно (хамгийн сүүлийн мэдээг авна)
-  const unitMap={};
-  entries.forEach(e=>{
-    if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;
-  });
-  const uniqEntries=Object.values(unitMap);
+  // Нэгж+period тус бүрт хамгийн сүүлийн мэдээг авч, бүх period-ийг нийлүүлнэ
+  const keyMap={};
+  entries.forEach(e=>{const k=e.unit+"||"+e.period;if(!keyMap[k]||e.date>keyMap[k].date)keyMap[k]=e;});
+  const uniqEntries=Object.values(keyMap);
   const totalU=S.units.filter(u=>!u.isAdmin&&!u.disabled).length;
   const sub=new Set(uniqEntries.map(e=>e.unit)).size;
   const periodLabel=selPeriods.length>1?selPeriods[selPeriods.length-1]+" ~ "+selPeriods[0]:selPeriods[0]||"";
