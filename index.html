@@ -485,7 +485,7 @@ function tData(c){
   card.appendChild(fr);
   if(!inds.length){
     const d=mk("div","empty");d.textContent="⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
-    setTimeout(()=>{if(S.inds.filter(i=>i.freq===dFreq).length)renderTab("data");},2000);
+    setTimeout(()=>{const chk=S.inds.filter(i=>i.freq===dFreq&&(S.activePlan?(i.plans&&i.plans.some(p=>p===S.activePlan)):true));if(chk.length)renderTab("data");},3000);
   } else {
     const groups={};inds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
     Object.entries(groups).forEach(([pl,pInds])=>{
@@ -1060,7 +1060,10 @@ function showIndEdit(idx,c){
   const fN=mk("div","fi");fN.innerHTML="<label>Нэр</label><input id='eiN' value='"+esc(ind.name)+"'>";
   const fF=mk("div","fi");fF.innerHTML="<label>Давтамж</label><select id='eiF'><option value='week'"+(ind.freq==="week"?" selected":"")+">7 хоног бүр</option><option value='month'"+(ind.freq==="month"?" selected":"")+">Сар бүр</option><option value='quarter'"+(ind.freq==="quarter"?" selected":"")+">Улирал бүр</option></select>";
   const fT=mk("div","fi");fT.innerHTML="<label>Хэлбэр</label><select id='eiT'><option value='num'"+(ind.type==="num"?" selected":"")+">Тоо</option><option value='money'"+(ind.type==="money"?" selected":"")+">Мөнгөн дүн</option><option value='pct'"+(ind.type==="pct"?" selected":"")+">Хувь %</option><option value='text'"+(ind.type==="text"?" selected":"")+">Текст</option></select>";
-  const fP=mk("div","fi");fP.innerHTML="<label>Төлөвлөгөөнүүд <span style='font-size:10px;color:var(--tx3)'>(таслалаар тусгаарлах)</span></label><input id='eiP' value='"+esc((ind.plans||[]).join(", "))+"' placeholder='АД №01, АД №02'>";
+  const fP=mk("div","fi");fP.innerHTML="<label>Төлөвлөгөөнүүд</label>";
+  const eiPG=mk("div");eiPG.style.cssText="display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:4px";
+  S.plans.forEach(p=>{const lbl=mk("label");lbl.style.cssText="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:400";const cb=mk("input");cb.type="checkbox";cb.value=p;cb.className="eiPC";if((ind.plans||[]).includes(p))cb.checked=true;lbl.appendChild(cb);lbl.appendChild(document.createTextNode(p));eiPG.appendChild(lbl);});
+  fP.appendChild(eiPG);
   const fD=mk("div","fi");fD.innerHTML="<label>Дэд гарчиг / Тайлбар</label><input id='eiD' value='"+esc(ind.desc||"")+"' placeholder='Жш: хуулийн хугацаанд...'>";
   [fN,fF,fT,fP,fD].forEach(f=>box.appendChild(f));
   const br=mk("div","brow");br.style.marginTop="16px";
@@ -1070,7 +1073,7 @@ function showIndEdit(idx,c){
     S.inds[idx].name=n;
     S.inds[idx].freq=document.getElementById("eiF").value;
     S.inds[idx].type=document.getElementById("eiT").value;
-    S.inds[idx].plans=document.getElementById("eiP").value.split(",").map(x=>x.trim()).filter(Boolean);
+    S.inds[idx].plans=Array.from(document.querySelectorAll(".eiPC:checked")).map(cb=>cb.value);
     S.inds[idx].desc=document.getElementById("eiD").value.trim();
     saveInds();document.body.removeChild(ov);buildCfg(c);toast("✅ Хадгалагдлаа","ts");
   };
@@ -1102,7 +1105,10 @@ function buildCfg(c){
   sub1.appendChild(fr1);
   const fr1b=mk("div","fr");
   const fi1c=mk("div","fi");fi1c.innerHTML="<label>Хэлбэр</label><select id='niT'><option value='num'>Тоо</option><option value='money'>Мөнгөн дүн</option><option value='pct'>Хувь</option><option value='text'>Текст</option></select>";fr1b.appendChild(fi1c);
-  const fi1d=mk("div","fi");fi1d.innerHTML="<label>Төлөвлөгөөнүүд</label><input id='niP' placeholder='АД №01, АД №02'>";fr1b.appendChild(fi1d);
+  const fi1d=mk("div","fi");fi1d.innerHTML="<label>Төлөвлөгөөнүүд</label>";
+  const niPG=mk("div");niPG.style.cssText="display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:4px";
+  S.plans.forEach(p=>{const lbl=mk("label");lbl.style.cssText="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:400";const cb=mk("input");cb.type="checkbox";cb.value=p;cb.className="niPC";lbl.appendChild(cb);lbl.appendChild(document.createTextNode(p));niPG.appendChild(lbl);});
+  fi1d.appendChild(niPG);fr1b.appendChild(fi1d);
   sub1.appendChild(fr1b);
   const fr1c=mk("div","fr one");
   const fi1e=mk("div","fi");fi1e.innerHTML="<label>Дэд гарчиг / Тайлбар <span style='color:var(--tx3);font-weight:400;font-size:10px'>(мэдээ оруулах хуудсанд харагдана)</span></label><input id='niD' placeholder='Жш: Нийт ирсэн өргөдлийн хүрээнд, хуулийн хугацаанд...'>";fr1c.appendChild(fi1e);
@@ -1111,7 +1117,7 @@ function buildCfg(c){
   b1.onclick=()=>{
     const n=document.getElementById("niN").value.trim();if(!n)return toast("Нэр оруулна уу","te");
     const f=document.getElementById("niF").value,t=document.getElementById("niT").value;
-    const p=document.getElementById("niP").value.split(",").map(x=>x.trim()).filter(Boolean);
+    const p=Array.from(document.querySelectorAll(".niPC:checked")).map(cb=>cb.value);
     const d=document.getElementById("niD").value.trim();
     const ind={id:"i"+Date.now(),name:n,type:t,freq:f,plans:p};
     if(d)ind.desc=d;
