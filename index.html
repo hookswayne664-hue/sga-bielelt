@@ -800,13 +800,20 @@ function lPlanCov(){
   let tot=0,filled=0,h="<div class='tw'><table><tr><th>Код</th><th>Нэгж</th><th>Дүүрсэн</th><th>Явц</th><th></th></tr>";
   active.forEach(u=>{
     const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===planFreq);
-    const f=inds.filter(i=>e&&e.values&&e.values[i.id]).length;
+    const f=inds.filter(i=>e&&e.values&&e.values[i.id]!==undefined&&e.values[i.id]!=="").length;
+    const planSubbed=f>0; // энэ төлөвлөгөөний үзүүлэлт бөглөсөн эсэх
     tot+=inds.length;filled+=f;const pct=Math.round(f/inds.length*100);
-    h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td><td>"+f+"/"+inds.length+"</td><td><div class='pb'><div class='pf' style='width:"+pct+"%'></div></div> <span style='font-size:11px'>"+pct+"%</span></td><td>"+(e?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>❌</span>")+"</td></tr>";
+    h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td><td>"+f+"/"+inds.length+"</td><td><div class='pb'><div class='pf' style='width:"+pct+"%'></div></div> <span style='font-size:11px'>"+pct+"%</span></td><td>"+(planSubbed?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>❌</span>")+"</td></tr>";
   });
   h+="</table></div>";
-  const oPct=tot?Math.round(filled/tot*100):0;
-  el.innerHTML="<div style='margin-bottom:10px;font-size:13px'><b style='color:var(--bl2)'>"+plan+"</b> — Нийт хамрагдалт: <b style='color:"+(oPct>=80?"var(--gr)":"var(--or)")+"'>"+oPct+"%</b></div>"+h;
+  // Нэгж тус бүр дор хаяж 1 үзүүлэлт бөглөсөн = илгээсэн гэж тооцно
+  // Тоон дээр ажиллахад "filled" нь 0-тэй тэнцэх учир нэгж-д суурилсан хамрагдалт авъя
+  const doneUnits=active.filter((_,idx)=>{
+    const u2=active[idx];const e2=S.data.find(d=>d.unit===u2.code&&d.period===per&&d.freq===planFreq);
+    return e2&&inds.some(i=>e2.values&&e2.values[i.id]!==undefined&&e2.values[i.id]!=="");
+  }).length;
+  const oPct=active.length?Math.round(doneUnits/active.length*100):0;
+  el.innerHTML="<div style='margin-bottom:10px;font-size:13px'><b style='color:var(--bl2)'>"+plan+"</b> — Нийт хамрагдалт: <b style='color:"+(oPct>=80?"var(--gr)":"var(--or)")+"'>"+oPct+"% ("+doneUnits+"/"+active.length+" нэгж)</b></div>"+h;
 }
 
 function showUnitDetail(ucode,uname,selPer){
