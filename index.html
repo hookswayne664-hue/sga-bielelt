@@ -928,17 +928,25 @@ function showUnitSum(){
   const km={};baseEntries.forEach(e=>{const k=e.unit+"||"+e.period;if(!km[k]||e.date>km[k].date)km[k]=e;});
   const entries=Object.values(km);
   if(!entries.length){res.innerHTML="<div class='empty'>"+(selPers.length>1?selPers[0]+" ~ "+selPers[selPers.length-1]:selPers[0])+" — мэдээ байхгүй</div>";return;}
-  // Хүснэгт: үзүүлэлт × нэгж
-  const units=ucode==="all"?entries.map(e=>({code:e.unit,name:e.unitName||e.unit})):entries.map(e=>({code:e.unit,name:e.unitName||e.unit}));
-  let h="<div class='tw' style='margin-top:10px'><table><tr><th>Үзүүлэлт</th>";
-  units.forEach(u=>{h+="<th style='font-size:11px'>"+u.name+"</th>";});
+  // Нэгж бүрийг нэг удаа (unique), утгуудыг period-ээр нийлүүлнэ
+  const uniqUnits=Array.from(new Map(entries.map(e=>[e.unit,{code:e.unit,name:e.unitName||e.unit}])).values());
+  const rangeLabel=selPers.length>1?selPers[0]+" ~ "+selPers[selPers.length-1]:selPers[0]||"";
+  let h="<div style='font-size:12px;color:var(--tx2);margin:8px 0'>📅 "+rangeLabel+" · "+selPers.length+" хугацаа · "+uniqUnits.length+" нэгж</div>";
+  h+="<div class='tw'><table><tr><th>Үзүүлэлт</th>";
+  uniqUnits.forEach(u=>{h+="<th style='font-size:11px'>"+u.name+"</th>";});
   h+="</tr>";
   inds.forEach(ind=>{
     h+="<tr><td style='font-size:12px'>"+ind.name+"</td>";
-    units.forEach(u=>{
-      const e=entries.find(d=>d.unit===u.code);
-      const v=e?e.values[ind.id]:"";
-      const disp=v!==""&&v!==undefined?fV(v,ind.type):"<span style='color:var(--tx3)'>—</span>";
+    uniqUnits.forEach(u=>{
+      // Нэгжийн бүх period-ийн утгуудыг нийлүүлнэ
+      const uEntries=entries.filter(e=>e.unit===u.code);
+      const vals=uEntries.map(e=>e.values[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
+      let disp="<span style='color:var(--tx3)'>—</span>";
+      if(vals.length){
+        if(ind.type==="text"){disp="<span style='font-size:11px'>"+vals[vals.length-1]+"</span>";}
+        else if(ind.type==="pct"){const nums=vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));disp=nums.length?(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1)+"%":"—";}
+        else{const nums=vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));disp=nums.length?fV(nums.reduce((a,b)=>a+b,0),ind.type):"—";}
+      }
       h+="<td style='text-align:right;font-size:13px'>"+disp+"</td>";
     });
     h+="</tr>";
