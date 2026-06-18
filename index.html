@@ -461,7 +461,7 @@ function renderTab(id){
 function tData(c){
   const P=getPer();if(!dPer)dPer=P.w[0];
   const ps=dFreq==="week"?P.w:dFreq==="month"?P.mn:P.q;
-  const inds=S.inds.filter(i=>i.freq===dFreq&&(S.activePlan?(i.plans&&i.plans.some(p=>p===S.activePlan)):true));
+  const inds=S.inds.filter(i=>i.freq===dFreq&&(S.activePlan?(i.plans&&i.plans.some(p=>p.trim()===S.activePlan.trim())):true));
   const entry=S.data.find(d=>d.unit===S.user.code&&d.period===dPer&&d.freq===dFreq)||{values:{}};
   // Хаалттай period шалгана
   const activeLocked=S.lockedPeriods.find(lp=>lp.active);
@@ -484,8 +484,24 @@ function tData(c){
   const fi2=mk("div","fi");fi2.innerHTML="<label>Нэгж</label><input value='"+S.user.name+"' disabled>";fr.appendChild(fi2);
   card.appendChild(fr);
   if(!inds.length){
-    const d=mk("div","empty");d.textContent="⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
-    setTimeout(()=>{const chk=S.inds.filter(i=>i.freq===dFreq&&(S.activePlan?(i.plans&&i.plans.some(p=>p===S.activePlan)):true));if(chk.length)renderTab("data");},3000);
+    const dLoad=mk("div","empty");dLoad.id="dLoad";dLoad.textContent="⏳ Үзүүлэлт ачаалж байна...";card.appendChild(dLoad);
+    const tryLoad=async()=>{
+      // Firebase-аас дахин татах
+      if(fbDB&&window._get){
+        try{
+          const si=await window._get(window._r(fbDB,"config/indicators"));
+          if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){S.inds=v;try{localStorage.setItem("sga_inds",JSON.stringify(v));}catch{}}}
+          const sap=await window._get(window._r(fbDB,"config/activePlan"));
+          if(sap&&sap.exists&&sap.exists()){const v=sap.val();if(v){S.activePlan=v;try{localStorage.setItem("sga_activePlan",v);}catch{}}}
+        }catch{}
+      }
+      const chk=S.inds.filter(i=>i.freq===dFreq&&(S.activePlan?(i.plans&&i.plans.some(p=>p.trim()===S.activePlan.trim())):true));
+      if(chk.length){renderTab("data");return;}
+      // Үзүүлэлт олдохгүй бол мессеж
+      const el=document.getElementById("dLoad");
+      if(el){el.innerHTML="⚠️ Үзүүлэлт олдсонгүй"+(S.activePlan?" — идэвхтэй төлөвлөгөө: <b>"+S.activePlan+"</b>":"")+"<br><button class='btn bi' style='margin-top:10px' onclick='renderTab("data")'>🔄 Дахин ачаалах</button>";}
+    };
+    setTimeout(tryLoad,3000);
   } else {
     const groups={};inds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
     Object.entries(groups).forEach(([pl,pInds])=>{
@@ -515,7 +531,7 @@ async function subData(){
     renderTab("data");
     return;
   }
-  const inds=S.inds.filter(i=>i.freq===dFreq&&(S.activePlan?(i.plans&&i.plans.some(p=>p===S.activePlan)):true)),vals={};
+  const inds=S.inds.filter(i=>i.freq===dFreq&&(S.activePlan?(i.plans&&i.plans.some(p=>p.trim()===S.activePlan.trim())):true)),vals={};
   inds.forEach(i=>{const el=document.getElementById("v_"+i.id);if(el)vals[i.id]=parseVal(el.value);});
   const entry={unit:S.user.code,unitName:S.user.name,period:dPer,freq:dFreq,values:vals,date:new Date().toLocaleString("mn-MN")};
   const idx=S.data.findIndex(d=>d.unit===entry.unit&&d.period===entry.period&&d.freq===entry.freq);
