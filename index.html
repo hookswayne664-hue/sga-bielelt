@@ -491,12 +491,15 @@ function tData(c){
     };
     setTimeout(tryLoad,3000);
   } else {
-    const groups={};inds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
-    Object.entries(groups).forEach(([pl,pInds])=>{
-      const sub=mk("div","sub");sub.innerHTML="<h3>"+pl+"</h3>";const ig=mk("div","ig");
+    // desc-ээр бүлэглэх; desc байхгүй бол "—" бүлэгт
+    const groups={};
+    inds.forEach(i=>{const grp=i.desc||"—";if(!groups[grp])groups[grp]=[];groups[grp].push(i);});
+    Object.entries(groups).forEach(([grp,pInds])=>{
+      const sub=mk("div","sub");
+      if(grp!=="—"){const gh=mk("h3");gh.style.cssText="color:var(--tx2);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;border-bottom:1px solid var(--bd);padding-bottom:4px";gh.textContent=grp;sub.appendChild(gh);}
+      const ig=mk("div","ig");
       pInds.forEach(i=>{
         const fi=mk("div","fi");const lbl=mk("label");lbl.textContent=i.name;fi.appendChild(lbl);
-        if(i.desc){const ds=mk("div");ds.style.cssText="font-size:10px;color:var(--tx3);margin-bottom:4px;margin-top:-2px";ds.textContent=i.desc;fi.appendChild(ds);}
         const val=entry.values[i.id]||"";
         if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;fi.appendChild(ta);}
         else{const inp=mk("input");inp.type="text";inp.id="v_"+i.id;inp.style.textAlign="right";inp.placeholder="0";inp.value=val?fN(val):"";inp.oninput=()=>fmtInput(inp);fi.appendChild(inp);}
