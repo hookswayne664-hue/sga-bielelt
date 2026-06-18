@@ -316,6 +316,8 @@ async function initLogin(){
     } else {
       try{const r=await api("getPasswords");if(r&&r.passwords){Object.entries(r.passwords).forEach(([k,v])=>{if(v!==0&&v!==null&&v!=="")S.pwds[k]=String(v);});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
     }
+    // Firebase дуусмагц нэвтэрсэн байвал tab дахин харуул
+    if(S.user){if(S.tab==="data"||S.tab==="")renderTab("data");else if(S.tab)renderTab(S.tab);}
   })();
   pf.value="";
 }
