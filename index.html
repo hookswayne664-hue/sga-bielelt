@@ -952,6 +952,19 @@ function showUnitSum(){
     h+="</tr>";
   });
   h+="</table></div>";
+  // Period тус бүрийн задаргаа (нэг нэгж сонгосон үед)
+  if(ucode!=="all"&&entries.length>1){
+    h+="<details style='margin-top:10px'><summary style='cursor:pointer;font-size:12px;color:var(--tx2);padding:4px 0'>📋 Period тус бүрийн задаргаа харах ("+entries.length+")</summary>";
+    h+="<div class='tw' style='margin-top:6px'><table><tr><th>Period</th><th>Огноо</th>";
+    inds.forEach(i=>{h+="<th style='font-size:10px'>"+i.name+"</th>";});
+    h+="</tr>";
+    entries.sort((a,b)=>a.period>b.period?1:-1).forEach(e=>{
+      h+="<tr><td style='font-size:11px'>"+e.period+"</td><td style='font-size:10px;color:var(--tx3)'>"+( e.date||"")+"</td>";
+      inds.forEach(i=>{const v=e.values[i.id];h+="<td style='text-align:right;font-size:11px'>"+(v!==""&&v!==undefined?fV(v,i.type):"<span style='color:var(--tx3)'>—</span>")+"</td>";});
+      h+="</tr>";
+    });
+    h+="</table></div></details>";
+  }
   res.innerHTML=h;
 }
 
