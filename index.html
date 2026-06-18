@@ -113,6 +113,9 @@ tr:hover td{background:var(--bg3)}
 <div class="toast" id="tst"></div>
 <script>
 const SU="https://script.google.com/macros/s/AKfycbyQiqM_tR91U163Xwn1NCCYTxq5zJrVNaydfDdVk-TpZFMCltHoKjXss_WApp9Bt_0/exec";
+// Хуучин indicator ID → шинэ ID хөрвүүлэх (мэдээ ачааллах үед автомат)
+const ID_MIG={"i1780366342100":"i1781751921829","i1780366356364":"i1781752026541","i1780366373252":"i1781752058237","i1780366403364":"i1781753647162","i1780366440052":"i1781753719194","i1780366466748":"i1781753799666","i1780366475716":"i1781753934090"};
+function migrateEntry(e){if(!e||!e.values)return e;const nv={};Object.keys(e.values).forEach(k=>{const nk=ID_MIG[k]||k;nv[nk]=e.values[k];});return{...e,values:nv};}
 const FC={apiKey:"AIzaSyDkxCrZG8aQ96mA02s72M3Pb7i23Nt2MW8",authDomain:"shga-bilelt.firebaseapp.com",databaseURL:"https://shga-bilelt-default-rtdb.firebaseio.com",projectId:"shga-bilelt"};
 let fbDB=null;
 // ===== НЭГЖҮҮД =====
@@ -291,7 +294,7 @@ async function loadSheetJS(){if(window.XLSX)return;await new Promise((res,rej)=>
 
 // ===== INIT =====
 async function initLogin(){
-  try{const ld=localStorage.getItem("sga_data");if(ld)S.data=JSON.parse(ld);}catch{}
+  try{const ld=localStorage.getItem("sga_data");if(ld){S.data=JSON.parse(ld).map(migrateEntry);}}catch{}
   try{const lp=localStorage.getItem("sga_p");if(lp)Object.assign(S.pwds,JSON.parse(lp));}catch{}
   try{const li=localStorage.getItem("sga_inds");if(li){const p=JSON.parse(li);if(p&&p.length)S.inds=p;}}catch{}
   try{const ll=localStorage.getItem("sga_locked");if(ll)S.lockedPeriods=JSON.parse(ll);}catch{}
@@ -329,6 +332,7 @@ async function loadAllData(){
     const r=await api("getAllData");
     if(r&&r.data&&r.data.length){
       r.data.forEach(e=>{
+        e=migrateEntry(e); // хуучин ID → шинэ ID
         const i=S.data.findIndex(x=>x.unit===e.unit&&x.period===e.period&&x.freq===e.freq);
         if(i>=0)S.data[i]=e;else S.data.push(e);
       });
