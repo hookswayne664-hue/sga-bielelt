@@ -487,7 +487,7 @@ function tData(c){
       if(chk.length){renderTab("data");return;}
       // Үзүүлэлт олдохгүй бол мессеж
       const el=document.getElementById("dLoad");
-      if(el){el.innerHTML="⚠️ Үзүүлэлт олдсонгүй"+(S.activePlan?" — идэвхтэй төлөвлөгөө: <b>"+S.activePlan+"</b>":"")+"<br><button class='btn bi' style='margin-top:10px' onclick='renderTab("data")'>🔄 Дахин ачаалах</button>";}
+      if(el){el.innerHTML="⚠️ Үзүүлэлт олдсонгүй"+(S.activePlan?" — идэвхтэй төлөвлөгөө: <b>"+S.activePlan+"</b>":"")+"<br><button class='btn bi' style='margin-top:10px' onclick='renderTab(&quot;data&quot;)'>🔄 Дахин ачаалах</button>";}
     };
     setTimeout(tryLoad,3000);
   } else {
