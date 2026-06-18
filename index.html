@@ -753,8 +753,17 @@ function lMon(){
   if(grp==="niislel")active=active.filter(u=>NIIS.includes(u.code));
   else if(grp==="bank")active=active.filter(u=>u.name.includes("Банк"));
   else if(grp==="aimag")active=active.filter(u=>u.name.includes("аймаг"));
-  const sub=new Set(S.data.filter(d=>d.period===per&&d.freq===mFreq).map(d=>d.unit));
-  const done=active.filter(u=>sub.has(u.code)),miss=active.filter(u=>!sub.has(u.code));
+  // Идэвхтэй төлөвлөгөөний үзүүлэлтүүд
+  const monPlanInds=S.activePlan?S.inds.filter(i=>i.freq===mFreq&&i.plans&&i.plans.some(p=>p.trim()===S.activePlan.trim())):[];
+  const allPerEntries=S.data.filter(d=>d.period===per&&d.freq===mFreq);
+  // Илгээсэн гэж тооцох: идэвхтэй төлөвлөгөө байвал тухайн төлөвлөгөөний хамгийн багадаа 1 үзүүлэлт бөглөсөн байх ёстой
+  const hasSub=u=>{
+    const e=allPerEntries.find(d=>d.unit===u.code);
+    if(!e)return false;
+    if(!monPlanInds.length)return true; // төлөвлөгөө сонгоогүй бол дурын илгээлт тооцно
+    return monPlanInds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!=="");
+  };
+  const done=active.filter(u=>hasSub(u)),miss=active.filter(u=>!hasSub(u));
   const pct=active.length?Math.round(done.length/active.length*100):0;
   const el=document.getElementById("mRes");if(!el)return;
   const statsDiv=mk("div","stats");
@@ -766,13 +775,14 @@ function lMon(){
   const hdr=mk("tr");["Код","Нэгж","Статус","Огноо"].forEach(t=>{const th=mk("th");th.textContent=t;hdr.appendChild(th);});tbl.appendChild(hdr);
   active.forEach(u=>{
     const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);
+    const submitted=hasSub(u);
     const tr=mk("tr");
     const td1=mk("td");td1.innerHTML="<b>"+u.code+"</b>";tr.appendChild(td1);
     const td2=mk("td");
     const sp=mk("span");sp.textContent=u.name;sp.style.cssText="cursor:pointer;color:var(--bl2)";sp.title="Дэлгэрэнгүй";
     sp.onclick=(function(c,n,p){return function(){showUnitDetail(c,n,p);};})(u.code,u.name,per);
     td2.appendChild(sp);tr.appendChild(td2);
-    const td3=mk("td");const badge=mk("span","badge "+(e?"bok":"bfail"));badge.textContent=e?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);tr.appendChild(td3);
+    const td3=mk("td");const badge=mk("span","badge "+(submitted?"bok":"bfail"));badge.textContent=submitted?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);tr.appendChild(td3);
     const td4=mk("td");td4.style.cssText="font-size:12px;color:var(--tx3)";td4.textContent=e?e.date:"";tr.appendChild(td4);
     tbl.appendChild(tr);
   });
