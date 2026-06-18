@@ -251,13 +251,13 @@ function getPer(){
 // ===== API =====
 async function api(action,params){
   // config хадгалахад POST ашиглана (том payload)
-  const isLarge=params&&JSON.stringify(params).length>1000;
+  // Threshold 7500: 43 indicator бүгдийг бөглөсөн ч ~3400 char URL болдог тул хэвийн GET-ээр явна
+  const isLarge=params&&JSON.stringify(params).length>7500;
   if(isLarge){
-    // GET-ээр write parameter дамжуулна
+    // Маш том payload-д (>7500) compact формат ашиглана
     const u=new URL(SU);
-    const payload={action,...params};
-    u.searchParams.set("write","1");
-    u.searchParams.set("payload",JSON.stringify(payload));
+    u.searchParams.set("action",action);
+    if(params)Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,typeof v==="object"?JSON.stringify(v):v));
     try{
       const r=await fetch(u.toString(),{redirect:"follow"});
       const t=await r.text();
