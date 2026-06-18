@@ -881,12 +881,17 @@ function tSummary(c){
   // === Нэгжийн тайлан ===
   const c2=mk("div","card");c2.style.marginTop="12px";c2.innerHTML="<h2>📋 Нэгжийн тайлан</h2>";
   const ufr=mk("div","fr");
-  const ufi1=mk("div","fi");ufi1.innerHTML="<label>Хугацаа</label>";
-  const uSel=mk("select");uSel.id="uPer";
-  const uO0=mk("option");uO0.value="";uO0.textContent="— Сонгоно уу —";uSel.appendChild(uO0);
   const uPers=Array.from(new Set(S.data.filter(d=>d.freq===sFreq).map(d=>d.period))).sort((a,b)=>b>a?1:-1);
-  uPers.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;uSel.appendChild(o);});
-  uSel.onchange=showUnitSum;ufi1.appendChild(uSel);ufr.appendChild(ufi1);
+  const ufi1a=mk("div","fi");ufi1a.innerHTML="<label>Эхлэх огноо</label>";
+  const uSelF=mk("select");uSelF.id="uPerF";
+  const uOF0=mk("option");uOF0.value="";uOF0.textContent="— Сонгоно уу —";uSelF.appendChild(uOF0);
+  uPers.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;uSelF.appendChild(o);});
+  uSelF.onchange=showUnitSum;ufi1a.appendChild(uSelF);ufr.appendChild(ufi1a);
+  const ufi1b=mk("div","fi");ufi1b.innerHTML="<label>Дуусах огноо</label>";
+  const uSelT=mk("select");uSelT.id="uPerT";
+  const uOT0=mk("option");uOT0.value="";uOT0.textContent="— Сонгоно уу —";uSelT.appendChild(uOT0);
+  uPers.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;uSelT.appendChild(o);});
+  uSelT.onchange=showUnitSum;ufi1b.appendChild(uSelT);ufr.appendChild(ufi1b);
   const ufi2=mk("div","fi");ufi2.innerHTML="<label>Нэгж</label>";
   const uUnit=mk("select");uUnit.id="uUnit";
   const uU0=mk("option");uU0.value="all";uU0.textContent="— Бүх нэгж —";uUnit.appendChild(uU0);
@@ -905,17 +910,24 @@ function tSummary(c){
 }
 
 function showUnitSum(){
-  const per=document.getElementById("uPer")?.value;
+  const perF=document.getElementById("uPerF")?.value;
+  const perT=document.getElementById("uPerT")?.value;
   const ucode=document.getElementById("uUnit")?.value||"all";
   const res=document.getElementById("uRes");
-  if(!per||!res)return;
+  if((!perF&&!perT)||!res)return;
   const uplanVal=document.getElementById("uPlan")?.value||"all";
   const inds=S.inds.filter(i=>i.freq===sFreq&&(uplanVal!=="all"?(i.plans&&i.plans.some(p=>p.trim()===uplanVal.trim())):true));
   if(!inds.length){res.innerHTML="<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
-  const entries=ucode==="all"
-    ?S.data.filter(d=>d.period===per&&d.freq===sFreq)
-    :S.data.filter(d=>d.period===per&&d.freq===sFreq&&d.unit===ucode);
-  if(!entries.length){res.innerHTML="<div class='empty'>"+per+" — мэдээ байхгүй</div>";return;}
+  // Period муж
+  const allPers=Array.from(new Set(S.data.filter(d=>d.freq===sFreq).map(d=>d.period))).sort((a,b)=>a>b?1:-1);
+  let selPers;
+  if(perF&&perT){const fi=allPers.indexOf(perF),ti=allPers.indexOf(perT);selPers=fi>=0&&ti>=0?allPers.slice(Math.min(fi,ti),Math.max(fi,ti)+1):[perF,perT];}
+  else{selPers=[perF||perT];}
+  const baseEntries=S.data.filter(d=>selPers.includes(d.period)&&d.freq===sFreq&&(ucode==="all"||d.unit===ucode));
+  // нэгж+period бүрт хамгийн сүүлийн мэдээг авна
+  const km={};baseEntries.forEach(e=>{const k=e.unit+"||"+e.period;if(!km[k]||e.date>km[k].date)km[k]=e;});
+  const entries=Object.values(km);
+  if(!entries.length){res.innerHTML="<div class='empty'>"+(selPers.length>1?selPers[0]+" ~ "+selPers[selPers.length-1]:selPers[0])+" — мэдээ байхгүй</div>";return;}
   // Хүснэгт: үзүүлэлт × нэгж
   const units=ucode==="all"?entries.map(e=>({code:e.unit,name:e.unitName||e.unit})):entries.map(e=>({code:e.unit,name:e.unitName||e.unit}));
   let h="<div class='tw' style='margin-top:10px'><table><tr><th>Үзүүлэлт</th>";
