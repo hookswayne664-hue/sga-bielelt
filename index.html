@@ -856,15 +856,18 @@ function tSummary(c){
   card.appendChild(pt);
   // Хугацааны муж
   const fr=mk("div","fr");
+  // Зөвхөн мэдээ байгаа period-ийг харуул
+  const dataPers=Array.from(new Set(S.data.filter(d=>d.freq===sFreq).map(d=>d.period))).sort((a,b)=>b>a?1:-1);
+  const spsFilt=dataPers.length?dataPers:sps.slice(0,10);
   const fi1=mk("div","fi");fi1.innerHTML="<label>Эхлэх огноо</label>";
   const s1=mk("select");s1.id="sFrom";
   const of0=mk("option");of0.value="";of0.textContent="— Сонгоно уу —";s1.appendChild(of0);
-  sps.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s1.appendChild(o);});
+  spsFilt.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s1.appendChild(o);});
   s1.onchange=lSum;fi1.appendChild(s1);fr.appendChild(fi1);
   const fi2=mk("div","fi");fi2.innerHTML="<label>Дуусах огноо</label>";
   const s2=mk("select");s2.id="sTo";
   const ot0=mk("option");ot0.value="";ot0.textContent="— Сонгоно уу —";s2.appendChild(ot0);
-  sps.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s2.appendChild(o);});
+  spsFilt.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s2.appendChild(o);});
   s2.onchange=lSum;fi2.appendChild(s2);fr.appendChild(fi2);
   card.appendChild(fr);
   const fi3=mk("div","fi fr one");fi3.style.marginBottom="10px";fi3.innerHTML="<label>Шүүлт — Төлөвлөгөө / АД</label>";
@@ -874,7 +877,56 @@ function tSummary(c){
   s3.onchange=lSum;fi3.appendChild(s3);card.appendChild(fi3);
   const sRes=mk("div");sRes.id="sRes";card.appendChild(sRes);
   c.appendChild(card);
+
+  // === Нэгжийн тайлан ===
+  const c2=mk("div","card");c2.style.marginTop="12px";c2.innerHTML="<h2>📋 Нэгжийн тайлан</h2>";
+  const ufr=mk("div","fr");
+  const ufi1=mk("div","fi");ufi1.innerHTML="<label>Хугацаа</label>";
+  const uSel=mk("select");uSel.id="uPer";
+  const uO0=mk("option");uO0.value="";uO0.textContent="— Сонгоно уу —";uSel.appendChild(uO0);
+  const uPers=Array.from(new Set(S.data.filter(d=>d.freq===sFreq).map(d=>d.period))).sort((a,b)=>b>a?1:-1);
+  uPers.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;uSel.appendChild(o);});
+  uSel.onchange=showUnitSum;ufi1.appendChild(uSel);ufr.appendChild(ufi1);
+  const ufi2=mk("div","fi");ufi2.innerHTML="<label>Нэгж</label>";
+  const uUnit=mk("select");uUnit.id="uUnit";
+  const uU0=mk("option");uU0.value="all";uU0.textContent="— Бүх нэгж —";uUnit.appendChild(uU0);
+  S.units.filter(u=>!u.isAdmin&&!u.disabled).forEach(u=>{const o=mk("option");o.value=u.code;o.textContent=u.code+" — "+u.name;uUnit.appendChild(o);});
+  uUnit.onchange=showUnitSum;ufi2.appendChild(uUnit);ufr.appendChild(ufi2);
+  c2.appendChild(ufr);
+  const uRes=mk("div");uRes.id="uRes";c2.appendChild(uRes);
+  c.appendChild(c2);
+
   setTimeout(lSum,50);
+}
+
+function showUnitSum(){
+  const per=document.getElementById("uPer")?.value;
+  const ucode=document.getElementById("uUnit")?.value||"all";
+  const res=document.getElementById("uRes");
+  if(!per||!res)return;
+  const inds=S.inds.filter(i=>i.freq===sFreq&&(S.activePlan?(i.plans&&i.plans.some(p=>p.trim()===S.activePlan.trim())):true));
+  if(!inds.length){res.innerHTML="<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
+  const entries=ucode==="all"
+    ?S.data.filter(d=>d.period===per&&d.freq===sFreq)
+    :S.data.filter(d=>d.period===per&&d.freq===sFreq&&d.unit===ucode);
+  if(!entries.length){res.innerHTML="<div class='empty'>"+per+" — мэдээ байхгүй</div>";return;}
+  // Хүснэгт: үзүүлэлт × нэгж
+  const units=ucode==="all"?entries.map(e=>({code:e.unit,name:e.unitName||e.unit})):entries.map(e=>({code:e.unit,name:e.unitName||e.unit}));
+  let h="<div class='tw' style='margin-top:10px'><table><tr><th>Үзүүлэлт</th>";
+  units.forEach(u=>{h+="<th style='font-size:11px'>"+u.name+"</th>";});
+  h+="</tr>";
+  inds.forEach(ind=>{
+    h+="<tr><td style='font-size:12px'>"+ind.name+"</td>";
+    units.forEach(u=>{
+      const e=entries.find(d=>d.unit===u.code);
+      const v=e?e.values[ind.id]:"";
+      const disp=v!==""&&v!==undefined?fV(v,ind.type):"<span style='color:var(--tx3)'>—</span>";
+      h+="<td style='text-align:right;font-size:13px'>"+disp+"</td>";
+    });
+    h+="</tr>";
+  });
+  h+="</table></div>";
+  res.innerHTML=h;
 }
 
 function lSum(){
