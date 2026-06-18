@@ -277,7 +277,7 @@ async function api(action,params){
 }
 async function initFB(){
   try{
-    const t=new Promise((_,r)=>setTimeout(()=>r("timeout"),5000));
+    const t=new Promise((_,r)=>setTimeout(()=>r("timeout"),2000));
     const l=async()=>{
       const{initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
       const{getDatabase,ref,get,set}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
@@ -301,36 +301,22 @@ async function initLogin(){
   S.units.filter(u=>!u.disabled).forEach(u=>{const o=document.createElement("option");o.value=u.code;o.textContent=u.code+" — "+u.name;sel.appendChild(o);});
   const pf=document.getElementById("lP");pf.value="";
   pf.onkeydown=e=>{if(e.key==="Enter")doLogin();};
-  document.getElementById("lB").textContent="⏳ Ачаалж байна...";
-  document.getElementById("lB").disabled=true;
-  // Firebase-аар нэвтрэх
-  await initFB();
-  if(fbDB&&window._get){
-    try{
-      const si=await window._get(window._r(fbDB,"config/indicators"));
-      if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){S.inds=v;try{localStorage.setItem("sga_inds",JSON.stringify(v));}catch{}}}
-    }catch{}
-    try{
-      const sp=await window._get(window._r(fbDB,"config/plans"));
-      if(sp&&sp.exists&&sp.exists()){const v=sp.val();if(v&&v.length){S.plans=v;try{localStorage.setItem("sga_plans",JSON.stringify(v));}catch{}}}
-    }catch{}
-    try{
-      const sap=await window._get(window._r(fbDB,"config/activePlan"));
-      if(sap&&sap.exists&&sap.exists()){const v=sap.val();if(v){S.activePlan=v;try{localStorage.setItem("sga_activePlan",v);}catch{}}}
-    }catch{}
-    try{
-      const sw=await window._get(window._r(fbDB,"passwords"));
-      if(sw&&sw.exists&&sw.exists()){Object.assign(S.pwds,sw.val());try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}
-    }catch{}
-    try{
-      const sl=await window._get(window._r(fbDB,"locked"));
-      if(sl&&sl.exists&&sl.exists()){S.lockedPeriods=sl.val()||[];try{localStorage.setItem("sga_locked",JSON.stringify(S.lockedPeriods));}catch{}}
-    }catch{}
-  } else {
-    try{const r=await api("getPasswords");if(r&&r.passwords){Object.entries(r.passwords).forEach(([k,v])=>{if(v!==0&&v!==null&&v!=="")S.pwds[k]=String(v);});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
-  }
+  // Firebase-г дэвшилтэт дуусгавар (ар талд) ачаална — товч шууд идэвхтэй
   document.getElementById("lB").textContent="Нэвтрэх →";
   document.getElementById("lB").disabled=false;
+  // Ар талд Firebase ачаална
+  (async()=>{
+    await initFB();
+    if(fbDB&&window._get){
+      try{const si=await window._get(window._r(fbDB,"config/indicators"));if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){S.inds=v;try{localStorage.setItem("sga_inds",JSON.stringify(v));}catch{}}}}catch{}
+      try{const sp=await window._get(window._r(fbDB,"config/plans"));if(sp&&sp.exists&&sp.exists()){const v=sp.val();if(v&&v.length){S.plans=v;try{localStorage.setItem("sga_plans",JSON.stringify(v));}catch{}}}}catch{}
+      try{const sap=await window._get(window._r(fbDB,"config/activePlan"));if(sap&&sap.exists&&sap.exists()){const v=sap.val();if(v){S.activePlan=v;try{localStorage.setItem("sga_activePlan",v);}catch{}}}}catch{}
+      try{const sw=await window._get(window._r(fbDB,"passwords"));if(sw&&sw.exists&&sw.exists()){Object.assign(S.pwds,sw.val());try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
+      try{const sl=await window._get(window._r(fbDB,"locked"));if(sl&&sl.exists&&sl.exists()){S.lockedPeriods=sl.val()||[];try{localStorage.setItem("sga_locked",JSON.stringify(S.lockedPeriods));}catch{}}}catch{}
+    } else {
+      try{const r=await api("getPasswords");if(r&&r.passwords){Object.entries(r.passwords).forEach(([k,v])=>{if(v!==0&&v!==null&&v!=="")S.pwds[k]=String(v);});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
+    }
+  })();
   pf.value="";
 }
 
