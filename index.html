@@ -530,7 +530,11 @@ async function subData(){
   if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
   toast("✅ Мэдээ хадгалагдлаа!","ts");
   try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
-  api("saveData",{data:JSON.stringify(entry)});
+  // GAS-д зөвхөн бөглөгдсөн утгыг явуул (URL payload хэмжээ багасгах)
+  const compactVals={};
+  Object.entries(vals).forEach(([k,v])=>{if(v!==null&&v!==undefined&&v!=="")compactVals[k]=v;});
+  const entryToSend={...entry,values:compactVals};
+  api("saveData",{data:JSON.stringify(entryToSend)});
 }
 
 function prtCur(){
