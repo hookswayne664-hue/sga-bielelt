@@ -781,7 +781,7 @@ function lMon(){
 
 function lPlanCov(){
   const plan=document.getElementById("mPl")?.value,per=document.getElementById("mPP")?.value;if(!plan||!per)return;
-  const inds=S.inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===plan.trim()));
+  const inds=S.inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===plan.trim()||pl.trim().includes(plan.trim())||plan.trim().includes(pl.trim())));
   const el=document.getElementById("pRes");if(!el)return;
   if(!inds.length){el.innerHTML="<div class='empty'>Энэ төлөвлөгөөнд үзүүлэлт байхгүй</div>";return;}
   const planFreq=inds[0].freq;
@@ -883,7 +883,7 @@ function lSum(){
   else if(to){selPeriods=[to];}
   if(!selPeriods.length)selPeriods=from?[from]:to?[to]:[];
   let inds=S.inds.filter(i=>i.freq===sFreq);
-  if(plan!=="all")inds=inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===plan.trim()));
+  if(plan!=="all")inds=inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===plan.trim()||pl.trim().includes(plan.trim())||plan.trim().includes(pl.trim())));
   // Сонгосон бүх period-ийн мэдээг нэгтгэнэ
   const entries=S.data.filter(d=>selPeriods.includes(d.period)&&d.freq===sFreq);
   // Нэгж бүрийг нэг удаа тооцно (хамгийн сүүлийн мэдээг авна)
