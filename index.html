@@ -1058,7 +1058,32 @@ function buildCfg(c){
     const un=mk("span","un");un.textContent=ind.name;row.appendChild(un);
     const badge=mk("span","badge "+(ind.freq==="week"?"bok":ind.freq==="month"?"bwarn":"bfail"));badge.textContent=ind.freq==="week"?"7 хоног":ind.freq==="month"?"Сар":"Улирал";row.appendChild(badge);
     const be=mk("button","btn bi");be.textContent="✏️";
-    be.onclick=(function(idx){return function(){const n=prompt("Нэр:",S.inds[idx].name);if(n){S.inds[idx].name=n;saveInds();buildCfg(c);}};})(i);row.appendChild(be);
+    be.onclick=(function(idx){return function(){
+      const ind=S.inds[idx];
+      const overlay=mk("div","modal-overlay");
+      const box=mk("div","modal-box");
+      box.innerHTML="<h3>✏️ Үзүүлэлт засах</h3>";
+      const f1=mk("div","mfi");f1.innerHTML="<label>Нэр</label><input id='ei_n' value='"+ind.name.replace(/'/g,"&#39;")+"'>";box.appendChild(f1);
+      const f2=mk("div","mfi");f2.innerHTML="<label>Давтамж</label><select id='ei_f'><option value='week'"+(ind.freq==="week"?" selected":"")+" >7 хоног</option><option value='month'"+(ind.freq==="month"?" selected":"")+">Сар бүр</option><option value='quarter'"+(ind.freq==="quarter"?" selected":"")+">Улирал бүр</option></select>";box.appendChild(f2);
+      const f3=mk("div","mfi");f3.innerHTML="<label>Хэлбэр</label><select id='ei_t'><option value='num'"+(ind.type==="num"?" selected":"")+">Тоо</option><option value='money'"+(ind.type==="money"?" selected":"")+">Мөнгөн дүн</option><option value='pct'"+(ind.type==="pct"?" selected":"")+">Хувь</option><option value='text'"+(ind.type==="text"?" selected":"")+">Текст</option></select>";box.appendChild(f3);
+      const f4=mk("div","mfi");f4.innerHTML="<label>Төлөвлөгөөнүүд</label><input id='ei_p' value='"+(ind.plans||[]).join(", ")+"'>";box.appendChild(f4);
+      const br=mk("div","brow");
+      const bOk=mk("button","btn bp");bOk.textContent="💾 Хадгалах";
+      bOk.onclick=()=>{
+        const n=document.getElementById("ei_n").value.trim();
+        if(!n)return;
+        S.inds[idx].name=n;
+        S.inds[idx].freq=document.getElementById("ei_f").value;
+        S.inds[idx].type=document.getElementById("ei_t").value;
+        S.inds[idx].plans=document.getElementById("ei_p").value.split(",").map(x=>x.trim()).filter(Boolean);
+        document.body.removeChild(overlay);
+        saveInds();buildCfg(c);
+      };
+      const bCan=mk("button","btn bx");bCan.textContent="Болих";bCan.onclick=()=>document.body.removeChild(overlay);
+      br.appendChild(bOk);br.appendChild(bCan);box.appendChild(br);
+      overlay.onclick=e=>{if(e.target===overlay)document.body.removeChild(overlay);};
+      overlay.appendChild(box);document.body.appendChild(overlay);
+    };})(i);row.appendChild(be);
     const bd=mk("button","btn bd_");bd.textContent="🗑️";
     bd.onclick=(function(idx){return function(){if(confirm("Устгах уу?")){S.inds.splice(idx,1);saveInds();buildCfg(c);}};})(i);row.appendChild(bd);
     il.appendChild(row);
