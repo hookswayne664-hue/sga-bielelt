@@ -191,17 +191,17 @@ const DINDS=[
   {id:"es14",name:"Үндэслэлгүй гэж сэргээсэн ГББ (тоо)",type:"num",freq:"month",plans:["Эрс сайжруулах"]},
   {id:"es15",name:"Байгууллагын данснаас олгосон мөнгөн дүн (мян.₮)",type:"money",freq:"month",plans:["Эрс сайжруулах"]},
   {id:"esn",name:"Сарын ажлын талаар",type:"text",freq:"month",plans:["Эрс сайжруулах"]},
-  {id:"m1",name:"Нийт өргөдөл, гомдол ирсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"m2",name:"Хуулийн хугацаанд шийдвэрлэсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"m3",name:"Хугацаа хэтэрсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"m4",name:"Ахлах ШГ-ээс бичгээр үүрэг чиглэл өгсөн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"m5",name:"Сахилгын шийтгэл /өргөдлийн хүрээнд/ (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"m6",name:"11-11 гомдол ирсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"m7",name:"11-11 гомдол шийдвэрлэсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"m8",name:"Хугацаатай аян зохион байгуулсан (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"m9",name:"Зөвлөлийн хурлаар хэлэлцсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"m10",name:"Зөвлөлийн шийдвэрлэлтээр арга хэмжээ авсан (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
-  {id:"mn",name:"Өргөдөл гомдлын талаар хийсэн ажил",type:"text",freq:"quarter",plans:["АД №02"]},
+  {id:"m1",name:"Нийт өргөдөл, гомдол ирсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m2",name:"Хуулийн хугацаанд шийдвэрлэсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m3",name:"Хугацаа хэтэрсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m4",name:"Ахлах ШГ-ээс бичгээр үүрэг чиглэл өгсөн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m5",name:"Сахилгын шийтгэл /өргөдлийн хүрээнд/ (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m6",name:"11-11 гомдол ирсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m7",name:"11-11 гомдол шийдвэрлэсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m8",name:"Хугацаатай аян зохион байгуулсан (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m9",name:"Зөвлөлийн хурлаар хэлэлцсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m10",name:"Зөвлөлийн шийдвэрлэлтээр арга хэмжээ авсан (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"mn",name:"Өргөдөл гомдлын талаар хийсэн ажил",type:"text",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
   {id:"q1",name:"Сахилгын шийтгэл авагдсан алба хаагчийн тоо",type:"num",freq:"quarter",plans:["АД №01"]},
   {id:"q2",name:"Ёс зүйн зөрчил гаргасан алба хаагчийн тоо",type:"num",freq:"quarter",plans:["АД №01"]},
   {id:"q3",name:"Ёс зүйн зөрчилд хариуцлага тооцсон тоо",type:"num",freq:"quarter",plans:["АД №01"]},
@@ -303,7 +303,7 @@ async function initLogin(){
     try{
       const si=await window._get(window._r(fbDB,"config/indicators"));
       if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){
-        const merged=v.map(fi=>{if(!fi.subgroup){const def=DINDS.find(d=>d.id===fi.id);if(def&&def.subgroup)return{...fi,subgroup:def.subgroup};}return fi;});
+        const merged=v.map(fi=>{const def=DINDS.find(d=>d.id===fi.id);if(def){const upd={...fi};if(!fi.subgroup&&def.subgroup)upd.subgroup=def.subgroup;if(def.plans)upd.plans=def.plans;return upd;}return fi;});
         S.inds=merged;try{localStorage.setItem("sga_inds",JSON.stringify(merged));}catch{}
       }}
     }catch{}
