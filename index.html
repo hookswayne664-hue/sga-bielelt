@@ -509,7 +509,8 @@ function tData(c){
   }
   Object.entries(groups).forEach(([pl,pInds])=>{
     const sub=mk("div","sub");sub.innerHTML="<h3>"+pl+"</h3>";
-    const hasSubgroup=pInds.some(i=>i.subgroup);
+    const hasSubgroup=pInds.some(i=>i.subgroup&&String(i.subgroup).trim().length>0);
+    console.log("[SGA subgroup]",pl,"hasSubgroup:",hasSubgroup,"subgrouped:",pInds.filter(i=>i.subgroup).map(i=>i.name+":"+i.subgroup));
     if(hasSubgroup){
       const subgroups={};const sgOrder=[];
       pInds.forEach(i=>{const sg=i.subgroup||"Бусад";if(!subgroups[sg]){subgroups[sg]=[];sgOrder.push(sg);}subgroups[sg].push(i);});
