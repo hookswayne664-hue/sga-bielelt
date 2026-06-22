@@ -1255,7 +1255,8 @@ async function saveInds(){
   try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
   if(fbDB&&window._set){
     try{
-      await window._set(window._r(fbDB,"config/indicators"),S.inds);
+      const _cleanInds=JSON.parse(JSON.stringify(S.inds));
+      await window._set(window._r(fbDB,"config/indicators"),_cleanInds);
       const sg=S.inds.filter(i=>i.subgroup).map(i=>i.id+":"+i.subgroup);
       console.log("[SGA saveInds] Firebase OK. Subgroups:",sg);
       toast("✅ Хадгалагдлаа (Firebase OK)","ts");
