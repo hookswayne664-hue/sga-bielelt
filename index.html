@@ -1123,14 +1123,21 @@ function buildCfg(c){
   sub1.appendChild(fr1);
   const fr1b=mk("div","fr");
   const fi1c=mk("div","fi");fi1c.innerHTML="<label>Хэлбэр</label><select id='niT'><option value='num'>Тоо</option><option value='money'>Мөнгөн дүн</option><option value='pct'>Хувь</option><option value='text'>Текст</option></select>";fr1b.appendChild(fi1c);
-  const fi1d=mk("div","fi");fi1d.innerHTML="<label>Төлөвлөгөөнүүд</label><input id='niP' placeholder='АД №01, АД №02'>";fr1b.appendChild(fi1d);
+  const fi1d=mk("div","fi");fi1d.innerHTML="<label>Төлөвлөгөөнүүд</label>";
+  const niPsel=mk("select");niPsel.id="niP";niPsel.style.cssText="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px";
+  S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;niPsel.appendChild(o);});
+  fi1d.appendChild(niPsel);fr1b.appendChild(fi1d);
   sub1.appendChild(fr1b);
+  const fr1c=mk("div","fr");
+  const fi1e=mk("div","fi");fi1e.innerHTML="<label>Дэд бүлэг</label><input id='niSG' placeholder='жишээ: Шууд ач сурвалжаар нь'>";fr1c.appendChild(fi1e);
+  sub1.appendChild(fr1c);
   const b1=mk("button","btn bs");b1.textContent="➕ Нэмэх";
   b1.onclick=()=>{
     const n=document.getElementById("niN").value.trim();if(!n)return toast("Нэр оруулна уу","te");
     const f=document.getElementById("niF").value,t=document.getElementById("niT").value;
-    const p=document.getElementById("niP").value.split(",").map(x=>x.trim()).filter(Boolean);
-    S.inds.push({id:"i"+Date.now(),name:n,type:t,freq:f,plans:p});
+    const p=document.getElementById("niP").value;
+    const sg=document.getElementById("niSG").value.trim()||undefined;
+    S.inds.push({id:"i"+Date.now(),name:n,type:t,freq:f,plans:p?[p]:[],subgroup:sg});
     saveInds();buildCfg(c);toast("✅ Нэмэгдлээ","ts");
   };sub1.appendChild(b1);c1.appendChild(sub1);c.appendChild(c1);
 
