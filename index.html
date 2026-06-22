@@ -1254,9 +1254,18 @@ function buildCfg(c){
 async function saveInds(){
   try{localStorage.setItem("sga_inds",JSON.stringify(S.inds));}catch{}
   if(fbDB&&window._set){
-    try{await window._set(window._r(fbDB,"config/indicators"),S.inds);}catch{}
+    try{
+      await window._set(window._r(fbDB,"config/indicators"),S.inds);
+      const sg=S.inds.filter(i=>i.subgroup).map(i=>i.id+":"+i.subgroup);
+      console.log("[SGA saveInds] Firebase OK. Subgroups:",sg);
+      toast("✅ Хадгалагдлаа (Firebase OK)","ts");
+    }catch(e){
+      console.error("[SGA saveInds] Firebase FAIL:",e);
+      toast("⚠️ Firebase алдаа: "+e.message,"te");
+    }
+  } else {
+    toast("⚠️ Firebase холбогдоогүй","te");
   }
-  toast("✅ Үзүүлэлтүүд хадгалагдлаа","ts");
 }
 async function saveActivePlans(){
   try{localStorage.setItem("sga_aplans",JSON.stringify(S.activePlans));}catch{}
