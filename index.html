@@ -488,7 +488,9 @@ function tData(c){
   const fi2=mk("div","fi");fi2.innerHTML="<label>Нэгж</label><input value='"+S.user.name+"' disabled>";fr.appendChild(fi2);
   card.appendChild(fr);
   // activePlans идэвхтэй бол шүүнэ, үгүй бол бүгдийг харуулна
-  const filteredInds=(S.activePlans&&S.activePlans.length>0)?inds.filter(i=>i.plans&&i.plans.some(p=>S.activePlans.includes(p))):inds;
+  // "Өргөдөл, гомдлын судалгаа" нь "АД №02"-тай адилхан
+  const expandedPlans=(S.activePlans&&S.activePlans.length>0)?[...S.activePlans,...(S.activePlans.includes("Өргөдөл, гомдлын судалгаа")?["АД №02"]:[])]:[];
+  const filteredInds=expandedPlans.length>0?inds.filter(i=>i.plans&&i.plans.some(p=>expandedPlans.includes(p))):inds;
   if(!filteredInds.length){
     const d=mk("div","empty");d.textContent="Идэвхтэй төлөвлөгөө тохируулаагүй байна";card.appendChild(d);
   } else {
