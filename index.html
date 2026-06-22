@@ -191,17 +191,17 @@ const DINDS=[
   {id:"es14",name:"Үндэслэлгүй гэж сэргээсэн ГББ (тоо)",type:"num",freq:"month",plans:["Эрс сайжруулах"]},
   {id:"es15",name:"Байгууллагын данснаас олгосон мөнгөн дүн (мян.₮)",type:"money",freq:"month",plans:["Эрс сайжруулах"]},
   {id:"esn",name:"Сарын ажлын талаар",type:"text",freq:"month",plans:["Эрс сайжруулах"]},
-  {id:"m1",name:"Нийт өргөдөл, гомдол ирсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"m2",name:"Хуулийн хугацаанд шийдвэрлэсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"m3",name:"Хугацаа хэтэрсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"m4",name:"Ахлах ШГ-ээс бичгээр үүрэг чиглэл өгсөн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"m5",name:"Сахилгын шийтгэл /өргөдлийн хүрээнд/ (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"m6",name:"11-11 гомдол ирсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"m7",name:"11-11 гомдол шийдвэрлэсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"m8",name:"Хугацаатай аян зохион байгуулсан (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"m9",name:"Зөвлөлийн хурлаар хэлэлцсэн (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"m10",name:"Зөвлөлийн шийдвэрлэлтээр арга хэмжээ авсан (тоо)",type:"num",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
-  {id:"mn",name:"Өргөдөл гомдлын талаар хийсэн ажил",type:"text",freq:"quarter",plans:["Өргөдөл, гомдлын судалгаа"]},
+  {id:"m1",name:"Нийт өргөдөл, гомдол ирсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"m2",name:"Хуулийн хугацаанд шийдвэрлэсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"m3",name:"Хугацаа хэтэрсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"m4",name:"Ахлах ШГ-ээс бичгээр үүрэг чиглэл өгсөн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"m5",name:"Сахилгын шийтгэл /өргөдлийн хүрээнд/ (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"m6",name:"11-11 гомдол ирсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"m7",name:"11-11 гомдол шийдвэрлэсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"m8",name:"Хугацаатай аян зохион байгуулсан (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"m9",name:"Зөвлөлийн хурлаар хэлэлцсэн (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"m10",name:"Зөвлөлийн шийдвэрлэлтээр арга хэмжээ авсан (тоо)",type:"num",freq:"quarter",plans:["АД №02"]},
+  {id:"mn",name:"Өргөдөл гомдлын талаар хийсэн ажил",type:"text",freq:"quarter",plans:["АД №02"]},
   {id:"q1",name:"Сахилгын шийтгэл авагдсан алба хаагчийн тоо",type:"num",freq:"quarter",plans:["АД №01"]},
   {id:"q2",name:"Ёс зүйн зөрчил гаргасан алба хаагчийн тоо",type:"num",freq:"quarter",plans:["АД №01"]},
   {id:"q3",name:"Ёс зүйн зөрчилд хариуцлага тооцсон тоо",type:"num",freq:"quarter",plans:["АД №01"]},
@@ -1154,6 +1154,16 @@ function buildCfg(c){
     const badge=mk("span","badge "+(S.activePlans.includes(p)?"bok":""));
     badge.textContent=S.activePlans.includes(p)?"✅ Идэвхтэй":"";
     badge.style.minWidth="80px";row.appendChild(badge);
+    const bRen=mk("button","btn bi");bRen.textContent="✏️";bRen.title="Нэр өөрчлөх";
+    bRen.onclick=(function(oldName,idx){return function(){
+      const nn=prompt("Шинэ нэр:",oldName);if(!nn||!nn.trim()||nn.trim()===oldName)return;
+      const newName=nn.trim();
+      S.plans[idx]=newName;
+      S.inds=S.inds.map(i=>({...i,plans:(i.plans||[]).map(p=>p===oldName?newName:p)}));
+      S.activePlans=S.activePlans.map(p=>p===oldName?newName:p);
+      savePlans();saveActivePlans();saveInds();buildCfg(c);toast("✅ '"+oldName+"' → '"+newName+"'","ts");
+    };})(p,i);
+    row.appendChild(bRen);
     const bd=mk("button","btn bd_");bd.textContent="🗑️";
     bd.onclick=(function(idx){return function(){if(confirm("Устгах уу?")){S.plans.splice(idx,1);S.activePlans=S.activePlans.filter(x=>x!==S.plans[idx]);savePlans();saveActivePlans();buildCfg(c);}};})(i);
     row.appendChild(bd);c2.appendChild(row);
