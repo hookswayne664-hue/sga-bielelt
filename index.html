@@ -513,7 +513,7 @@ function tData(c){
       pInds.forEach(i=>{const sg=i.subgroup||"Бусад";if(!subgroups[sg]){subgroups[sg]=[];sgOrder.push(sg);}subgroups[sg].push(i);});
       sgOrder.forEach(sg=>{
         const sgDiv=mk("div");sgDiv.style.cssText="margin-bottom:12px";
-        const sgHdr=mk("div");sgHdr.style.cssText="font-size:11px;font-weight:700;color:var(--bl2);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--bd);text-transform:uppercase;letter-spacing:.5px";sgHdr.textContent=sg;sgDiv.appendChild(sgHdr);
+        const sgHdr=mk("div");sgHdr.style.cssText="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:8px;margin-top:4px;padding:3px 8px;border-left:3px solid var(--bl);background:rgba(31,111,235,.07);border-radius:0 4px 4px 0";sgHdr.textContent=sg;sgDiv.appendChild(sgHdr);
         const ig=mk("div","ig");subgroups[sg].forEach(i=>mkIndInput(i,entry,ig));sgDiv.appendChild(ig);sub.appendChild(sgDiv);
       });
     } else {
