@@ -320,6 +320,8 @@ async function initLogin(){
     try{
       const sl=await window._get(window._r(fbDB,"locked"));
       if(sl&&sl.exists&&sl.exists()){S.lockedPeriods=sl.val()||[];try{localStorage.setItem("sga_locked",JSON.stringify(S.lockedPeriods));}catch{}}
+      const sa=await window._get(window._r(fbDB,"archives"));
+      if(sa&&sa.exists&&sa.exists()){S.archives=sa.val()||[];try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}}
     }catch{}
     try{
       const sa=await window._get(window._r(fbDB,"activePlans"));
@@ -427,6 +429,7 @@ function lockPeriod(){
   // Firebase-д хадгална
   if(fbDB&&window._set){try{window._set(window._r(fbDB,"locked"),S.lockedPeriods);}catch{}}
   toast("🔒 "+period+" хаагдлаа","ts");
+  if(confirm("📁 Архивлах уу?\n"+period+" — "+freqLabel+"\nОдоогийн мэдээг хадгалж архивт хийх уу?")){archivePeriod(freq,period,freqLabel);}
   renderTab("monitor");
 }
 
@@ -857,7 +860,7 @@ function showUnitDetail(ucode,uname){
 }
 
 // ===== SUMMARY =====
-function exportWordDoc(){
+async function exportExcel(){
   const from=document.getElementById("sFrom")?.value;
   const to=document.getElementById("sTo")?.value;
   const planF=document.getElementById("sPl")?.value||"all";
@@ -874,30 +877,39 @@ function exportWordDoc(){
   const unitMap={};entries.forEach(e=>{if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;});
   const perLabel=sel.length>1?sel[sel.length-1]+" ~ "+sel[0]:sel[0];
   const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":"Улирал бүр";
-  // Group inds by plan
   const planGroups={};const planOrder=[];
   inds.forEach(ind=>{(ind.plans||["Бусад"]).forEach(p=>{if(!planGroups[p]){planGroups[p]=[];planOrder.push(p);}planGroups[p].push(ind);});});
   const uniquePlans=[...new Set(planOrder)];
-  let h=`<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><style>@page{size:A3 landscape;margin:1cm}body{font-family:Arial,sans-serif;font-size:8pt}h1{font-size:13pt;margin-bottom:4px}h2{font-size:10pt;background:#dce3f5;padding:3px 6px;margin:10px 0 4px 0}table{border-collapse:collapse;width:100%;margin-bottom:8px}td,th{border:1px solid #aaa;padding:2px 4px;vertical-align:top;word-break:break-word}th{background:#e8ecf8;font-weight:bold;text-align:center}.ind{max-width:200px}.val{text-align:center}</style></head><body>`;
-  h+=`<h1>ШГА Биелэлт — ${perLabel}</h1><p style='font-size:9pt;color:#555'>Давтамж: ${freqLabel} &nbsp;|&nbsp; Гаргасан: ${new Date().toLocaleDateString('mn-MN')}</p>`;
+  await loadSheetJS();
+  const wb=XLSX.utils.book_new();
   uniquePlans.forEach(plan=>{
     const pInds=planGroups[plan];
-    h+=`<h2>${plan}</h2><table><tr><th class='ind'>Үзүүлэлт</th>`;
-    units.forEach(u=>h+=`<th style='font-size:7pt'>${u.code}<br/><span style='font-weight:normal;font-size:6pt'>${u.name.length>12?u.name.substring(0,12)+'…':u.name}</span></th>`);
-    h+=`</tr>`;
+    const rows=[["Үзүүлэлт",...units.map(u=>u.code+" "+u.name)]];
     pInds.forEach(ind=>{
-      h+=`<tr><td class='ind'>${ind.name}</td>`;
-      units.forEach(u=>{const e=unitMap[u.code];const v=e?.values?.[ind.id];h+=`<td class='val'>${(v===undefined||v===null||v==='')?' ':String(v)}</td>`;});
-      h+=`</tr>`;
+      const row=[ind.name];
+      units.forEach(u=>{const e=unitMap[u.code];const v=e?.values?.[ind.id];row.push(v===undefined||v===null||v===''?'':v);});
+      rows.push(row);
     });
-    h+=`</table>`;
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:35},...units.map(()=>({wch:12}))];
+    XLSX.utils.book_append_sheet(wb,ws,plan.substring(0,31));
   });
-  h+=`</body></html>`;
-  const blob=new Blob(['﻿',h],{type:'application/msword'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`ШГА_${perLabel}_${freqLabel}.doc`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  toast("📄 Word файл бэлэн болоо","ts");
+  XLSX.writeFile(wb,"ШГА_"+perLabel+"_"+freqLabel+".xlsx");
+  toast("📊 Excel файл бэлэн болоо","ts");
+}
+async function archivePeriod(freq,period,freqLabel,customName){
+  const name=customName||(prompt("Архивын нэр:",period+" "+freqLabel)||period);
+  if(!name)return;
+  const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+  const entries=S.data.filter(d=>d.period===period&&d.freq===freq);
+  const unitMap={};entries.forEach(e=>{if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;});
+  const indSnap=S.inds.filter(i=>i.freq===freq).map(i=>({id:i.id,name:i.name,plans:i.plans,subgroup:i.subgroup,type:i.type}));
+  const dataSnap={};units.forEach(u=>{if(unitMap[u.code])dataSnap[u.code]={name:u.name,values:unitMap[u.code].values||{}};});
+  const entry={type:'data',name,freq,freqLabel,period,date:new Date().toLocaleString('mn-MN'),author:S.user?.name||'admin',inds:indSnap,data:dataSnap};
+  S.archives.push(entry);
+  try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"archives"),S.archives);toast("📁 '"+name+"' архивлагдлаа","ts");}catch(e){toast("⚠️ Firebase алдаа: "+e.message,"te");}}
+  else toast("📁 '"+name+"' архивлагдлаа (local)","ts");
 }
 function tSummary(c){
   const P=getPer(),sps=sFreq==="week"?P.w:sFreq==="month"?P.mn:P.q;
@@ -926,7 +938,7 @@ function tSummary(c){
   const o0=mk("option");o0.value="all";o0.textContent="— Бүх үзүүлэлт —";s3.appendChild(o0);
   S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s3.appendChild(o);});
   s3.onchange=lSum;fi3.appendChild(s3);card.appendChild(fi3);
-  const bWord=mk("button","btn bs");bWord.style.cssText="margin-bottom:12px;width:100%";bWord.textContent="📄 Word файл татах";bWord.onclick=exportWordDoc;card.appendChild(bWord);
+  const bWord=mk("button","btn bs");bWord.style.cssText="margin-bottom:12px;width:100%";bWord.textContent="📊 Excel татах";bWord.onclick=exportExcel;card.appendChild(bWord);
   const sRes=mk("div");sRes.id="sRes";card.appendChild(sRes);
   c.appendChild(card);
   setTimeout(lSum,50);
