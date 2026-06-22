@@ -318,7 +318,10 @@ async function initLogin(){
     }catch{}
     try{
       const sa=await window._get(window._r(fbDB,"activePlans"));
-      if(sa&&sa.exists&&sa.exists()){S.activePlans=sa.val()||[];try{localStorage.setItem("sga_aplans",JSON.stringify(S.activePlans));}catch{}}
+      if(sa&&sa.exists&&sa.exists()){
+        S.activePlans=sa.val()||[];
+        try{localStorage.setItem("sga_aplans",JSON.stringify(S.activePlans));}catch{}
+      }
     }catch{}
   } else {
     try{const r=await api("getPasswords");if(r&&r.passwords){Object.entries(r.passwords).forEach(([k,v])=>{if(v!==0&&v!==null&&v!=="")S.pwds[k]=String(v);});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
@@ -365,24 +368,28 @@ function doLogin(){
   if(u.isAdmin){
     setTimeout(loadAllData,1500);
     setInterval(loadAllData,30000);
-    // Firebase-аас шинэ үзүүлэлт ирсэн бол tab refresh
     setTimeout(async()=>{
       if(fbDB&&window._get){
         try{
           const si=await window._get(window._r(fbDB,"config/indicators"));
-          if(si&&si.exists&&si.exists()){
-            const v=si.val();
-            if(v&&v.length&&v.length!==S.inds.length){
-              S.inds=v;
-              try{localStorage.setItem("sga_inds",JSON.stringify(v));}catch{}
-              if(S.tab)renderTab(S.tab);
-            }
-          }
+          if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length&&v.length!==S.inds.length){S.inds=v;try{localStorage.setItem("sga_inds",JSON.stringify(v));}catch{}if(S.tab)renderTab(S.tab);}}
         }catch{}
       }
     },1000);
   }
   startChat();
+  // activePlans ирсний дараа tab refresh хийнэ
+  if(!S.user.isAdmin&&S.activePlans.length===0&&fbDB&&window._get){
+    setTimeout(async()=>{
+      try{
+        const sa=await window._get(window._r(fbDB,"activePlans"));
+        if(sa&&sa.exists&&sa.exists()){
+          const v=sa.val()||[];
+          if(v.length>0){S.activePlans=v;try{localStorage.setItem("sga_aplans",JSON.stringify(v));}catch{}renderTab("data");}
+        }
+      }catch{}
+    },1500);
+  }
   renderTab(u.isAdmin?"monitor":"data");
 }
 
@@ -478,7 +485,8 @@ function tData(c){
   const fi2=mk("div","fi");fi2.innerHTML="<label>Нэгж</label><input value='"+S.user.name+"' disabled>";fr.appendChild(fi2);
   card.appendChild(fr);
   // Зөвхөн идэвхтэй төлөвлөгөөний үзүүлэлтүүдийг харуулна
-  const filteredInds=S.activePlans.length>0?inds.filter(i=>i.plans&&i.plans.some(p=>S.activePlans.includes(p))):inds;
+  // activePlans хоосон бол бүх үзүүлэлт харуулна
+  const filteredInds=(S.activePlans&&S.activePlans.length>0)?inds.filter(i=>i.plans&&i.plans.some(p=>S.activePlans.includes(p))):inds;
   if(!filteredInds.length){
     const d=mk("div","empty");d.textContent="⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
     setTimeout(()=>{if(S.inds.filter(i=>i.freq===dFreq).length)renderTab("data");},2000);
