@@ -488,8 +488,20 @@ function tData(c){
   // activePlans байвал шүүнэ, байхгүй бол бүгдийг харуулна
   const filteredInds=(S.activePlans&&S.activePlans.length>0)?inds.filter(i=>i.plans&&i.plans.some(p=>S.activePlans.includes(p))):inds;
   if(!filteredInds.length){
-    const d=mk("div","empty");d.textContent="⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
-    setTimeout(()=>{renderTab("data");},2000);
+    // activePlans шүүлтээс болж хоосон болсон бол бүгдийг харуулна
+    const allInds=inds;
+    const groups2={};allInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups2[pl])groups2[pl]=[];groups2[pl].push(i);});
+    Object.entries(groups2).forEach(([pl,pInds])=>{
+      const sub=mk("div","sub");sub.innerHTML="<h3>"+pl+"</h3>";const ig=mk("div","ig");
+      pInds.forEach(i=>{
+        const fi=mk("div","fi");const lbl=mk("label");lbl.textContent=i.name;fi.appendChild(lbl);
+        const entry=S.data.find(d=>d.unit===S.user.code&&d.period===dPer&&d.freq===dFreq)||{values:{}};
+        const val=entry.values[i.id]||"";
+        if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;fi.appendChild(ta);}
+        else{const inp=mk("input");inp.type="text";inp.id="v_"+i.id;inp.style.textAlign="right";inp.placeholder="0";inp.value=val?fN(val):"";inp.oninput=()=>fmtInput(inp);fi.appendChild(inp);}
+        ig.appendChild(fi);
+      });sub.appendChild(ig);card.appendChild(sub);
+    });
   } else {
   const groups={};filteredInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
     Object.entries(groups).forEach(([pl,pInds])=>{
