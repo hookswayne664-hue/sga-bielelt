@@ -1080,6 +1080,10 @@ function buildCfg(c){
     const uc=mk("span","uc");uc.textContent=ind.id;row.appendChild(uc);
     const un=mk("span","un");un.textContent=ind.name;row.appendChild(un);
     const badge=mk("span","badge "+(ind.freq==="week"?"bok":ind.freq==="month"?"bwarn":"bfail"));badge.textContent=ind.freq==="week"?"7 хоног":ind.freq==="month"?"Сар":"Улирал";row.appendChild(badge);
+    const bu=mk("button","btn bi");bu.textContent="↑";bu.title="Дээш";bu.style.cssText="font-size:12px;padding:2px 7px;opacity:"+(i===0?"0.3":"1");bu.disabled=(i===0);
+    bu.onclick=(function(idx){return function(){if(idx===0)return;const _sy=window.scrollY;const _il=document.querySelector("#MC .card div[style*='overflow-y']");const _isy=_il?_il.scrollTop:0;const tmp=S.inds[idx];S.inds[idx]=S.inds[idx-1];S.inds[idx-1]=tmp;saveInds();buildCfg(c);window.scrollTo(0,_sy);const _il2=document.querySelector("#MC .card div[style*='overflow-y']");if(_il2)_il2.scrollTop=_isy;};})(i);row.appendChild(bu);
+    const bdn=mk("button","btn bi");bdn.textContent="↓";bdn.title="Доош";bdn.style.cssText="font-size:12px;padding:2px 7px;opacity:"+(i===S.inds.length-1?"0.3":"1");bdn.disabled=(i===S.inds.length-1);
+    bdn.onclick=(function(idx){return function(){if(idx===S.inds.length-1)return;const _sy=window.scrollY;const _il=document.querySelector("#MC .card div[style*='overflow-y']");const _isy=_il?_il.scrollTop:0;const tmp=S.inds[idx];S.inds[idx]=S.inds[idx+1];S.inds[idx+1]=tmp;saveInds();buildCfg(c);window.scrollTo(0,_sy);const _il2=document.querySelector("#MC .card div[style*='overflow-y']");if(_il2)_il2.scrollTop=_isy;};})(i);row.appendChild(bdn);
     const be=mk("button","btn bi");be.textContent="✏️";
     be.onclick=(function(idx){return function(){
       const ind=S.inds[idx];
