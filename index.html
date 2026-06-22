@@ -429,7 +429,6 @@ function lockPeriod(){
   // Firebase-д хадгална
   if(fbDB&&window._set){try{window._set(window._r(fbDB,"locked"),S.lockedPeriods);}catch{}}
   toast("🔒 "+period+" хаагдлаа","ts");
-  if(confirm("📁 Архивлах уу?\n"+period+" — "+freqLabel+"\nОдоогийн мэдээг хадгалж архивт хийх уу?")){archivePeriod(freq,period,freqLabel);}
   renderTab("monitor");
 }
 
@@ -728,6 +727,64 @@ function tMonitor(c){
     },50);
   }
   c.appendChild(lockCard);
+  // ===== АРХИВЛАХ КАРТ =====
+  const archCard=mk("div","card");archCard.innerHTML="<h2>📁 Мэдээ архивлах</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Хугацааны мэдээг тухайн төлөвлөгөөгөөр тусад нь архивт хадгална.</p>";
+  const afr=mk("div","fr");
+  const afi1=mk("div","fi");afi1.innerHTML="<label>Давтамж</label><select id='aFreq'><option value='week'>7 Хоног</option><option value='month'>Сар бүр</option><option value='quarter'>Улирал бүр</option></select>";afr.appendChild(afi1);
+  const afi2=mk("div","fi");afi2.innerHTML="<label>Период</label><select id='aPeriod'></select>";afr.appendChild(afi2);
+  archCard.appendChild(afr);
+  const afr2=mk("div","fr");
+  const afi3=mk("div","fi");afi3.innerHTML="<label>Төлөвлөгөө</label><select id='aPlan'></select>";afr2.appendChild(afi3);
+  const afi4=mk("div","fi");afi4.innerHTML="<label>Архивын нэр</label><input id='aName' placeholder='жишээ: 2026.06.15 ХЗДХС АД №01'>";afr2.appendChild(afi4);
+  archCard.appendChild(afr2);
+  const abtn=mk("button","btn bs");abtn.style.marginTop="8px";abtn.textContent="📁 Архивлах";
+  abtn.onclick=async()=>{
+    const freq=document.getElementById("aFreq").value;
+    const period=document.getElementById("aPeriod").value;
+    const plan=document.getElementById("aPlan").value;
+    const name=(document.getElementById("aName").value.trim())||(period+" — "+plan);
+    if(!period||!plan){toast("Период болон төлөвлөгөө сонгоно уу","te");return;}
+    const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":"Улирал бүр";
+    const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+    const entries=S.data.filter(d=>d.period===period&&d.freq===freq);
+    const unitMap={};entries.forEach(e=>{if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;});
+    const planInds=plan==="__all__"?S.inds.filter(i=>i.freq===freq):S.inds.filter(i=>i.freq===freq&&(i.plans||[]).some(p=>p===plan));
+    const indSnap=planInds.map(i=>({id:i.id,name:i.name,plans:i.plans,subgroup:i.subgroup,type:i.type}));
+    const dataSnap={};units.forEach(u=>{const e=unitMap[u.code];if(e)dataSnap[u.code]={name:u.name,values:e.values||{}};});
+    const entry={type:"data",name,freq,freqLabel,plan,period,date:new Date().toLocaleString("mn-MN"),author:S.user?.name||"admin",inds:indSnap,data:dataSnap};
+    S.archives.push(entry);
+    try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}
+    if(fbDB&&window._set){try{await window._set(window._r(fbDB,"archives"),S.archives);toast("📁 '"+name+"' архивлагдлаа","ts");}catch(e){toast("⚠️ "+e.message,"te");}}
+    else toast("📁 '"+name+"' архивлагдлаа (local)","ts");
+  };
+  archCard.appendChild(abtn);
+  c.appendChild(archCard);
+  // Fill archive period/plan dropdowns
+  setTimeout(()=>{
+    const aFreq=document.getElementById("aFreq");
+    const aPeriod=document.getElementById("aPeriod");
+    const aPlan=document.getElementById("aPlan");
+    function fillArchPer(){
+      const P=getPer();const f=aFreq.value;
+      const ps=f==="week"?P.w:f==="month"?P.mn:P.q;
+      aPeriod.innerHTML="";ps.forEach(p=>{const o=mk("option");o.textContent=p;aPeriod.appendChild(o);});
+      // auto-fill name
+      fillArchName();
+    }
+    function fillArchName(){
+      const ni=document.getElementById("aName");
+      if(!ni)return;
+      const p=aPeriod.value,pl=aPlan.value;
+      if(!ni.value||ni.dataset.auto==="1")ni.value=p+(pl&&pl!=="__all__"?" — "+pl:"");ni.dataset.auto="1";
+    }
+    const allOpt=mk("option");allOpt.value="__all__";allOpt.textContent="— Бүх төлөвлөгөө —";aPlan.appendChild(allOpt);
+    S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;aPlan.appendChild(o);});
+    aPlan.onchange=fillArchName;
+    aPeriod.onchange=fillArchName;
+    aFreq.onchange=()=>{fillArchPer();};
+    document.getElementById("aName")?.addEventListener("input",function(){this.dataset.auto="0";});
+    fillArchPer();
+  },50);
   const c1=mk("div","card");c1.innerHTML="<h2>🔍 Мэдээний статус</h2>";
   const pt=mk("div","ptabs");
   [["week","7 Хоног"],["month","Сар бүр"],["quarter","Улирал бүр"]].forEach(([f,l])=>{
