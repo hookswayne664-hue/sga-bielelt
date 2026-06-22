@@ -319,8 +319,11 @@ async function initLogin(){
     try{
       const sa=await window._get(window._r(fbDB,"activePlans"));
       if(sa&&sa.exists&&sa.exists()){
-        S.activePlans=sa.val()||[];
-        try{localStorage.setItem("sga_aplans",JSON.stringify(S.activePlans));}catch{}
+        const av=sa.val();
+        if(av&&Array.isArray(av)&&av.length){
+          S.activePlans=av;
+          try{localStorage.setItem("sga_aplans",JSON.stringify(S.activePlans));}catch{}
+        }
       }
     }catch{}
   } else {
@@ -484,24 +487,10 @@ function tData(c){
   sel.onchange=()=>{dPer=sel.value;renderTab("data");};fi1.appendChild(sel);fr.appendChild(fi1);
   const fi2=mk("div","fi");fi2.innerHTML="<label>Нэгж</label><input value='"+S.user.name+"' disabled>";fr.appendChild(fi2);
   card.appendChild(fr);
-  // Зөвхөн идэвхтэй төлөвлөгөөний үзүүлэлтүүдийг харуулна
-  // activePlans байвал шүүнэ, байхгүй бол бүгдийг харуулна
+  // activePlans идэвхтэй бол шүүнэ, үгүй бол бүгдийг харуулна
   const filteredInds=(S.activePlans&&S.activePlans.length>0)?inds.filter(i=>i.plans&&i.plans.some(p=>S.activePlans.includes(p))):inds;
   if(!filteredInds.length){
-    // activePlans шүүлтээс болж хоосон болсон бол бүгдийг харуулна
-    const allInds=inds;
-    const groups2={};allInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups2[pl])groups2[pl]=[];groups2[pl].push(i);});
-    Object.entries(groups2).forEach(([pl,pInds])=>{
-      const sub=mk("div","sub");sub.innerHTML="<h3>"+pl+"</h3>";const ig=mk("div","ig");
-      pInds.forEach(i=>{
-        const fi=mk("div","fi");const lbl=mk("label");lbl.textContent=i.name;fi.appendChild(lbl);
-        const entry=S.data.find(d=>d.unit===S.user.code&&d.period===dPer&&d.freq===dFreq)||{values:{}};
-        const val=entry.values[i.id]||"";
-        if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;fi.appendChild(ta);}
-        else{const inp=mk("input");inp.type="text";inp.id="v_"+i.id;inp.style.textAlign="right";inp.placeholder="0";inp.value=val?fN(val):"";inp.oninput=()=>fmtInput(inp);fi.appendChild(inp);}
-        ig.appendChild(fi);
-      });sub.appendChild(ig);card.appendChild(sub);
-    });
+    const d=mk("div","empty");d.textContent="Идэвхтэй төлөвлөгөө тохируулаагүй байна";card.appendChild(d);
   } else {
   const groups={};filteredInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
     Object.entries(groups).forEach(([pl,pInds])=>{
