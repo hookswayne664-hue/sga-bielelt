@@ -477,12 +477,12 @@ function tData(c){
   sel.onchange=()=>{dPer=sel.value;renderTab("data");};fi1.appendChild(sel);fr.appendChild(fi1);
   const fi2=mk("div","fi");fi2.innerHTML="<label>Нэгж</label><input value='"+S.user.name+"' disabled>";fr.appendChild(fi2);
   card.appendChild(fr);
+  // Зөвхөн идэвхтэй төлөвлөгөөний үзүүлэлтүүдийг харуулна
+  const filteredInds=S.activePlans.length>0?inds.filter(i=>i.plans&&i.plans.some(p=>S.activePlans.includes(p))):inds;
   if(!filteredInds.length){
     const d=mk("div","empty");d.textContent="⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
     setTimeout(()=>{if(S.inds.filter(i=>i.freq===dFreq).length)renderTab("data");},2000);
   } else {
-    // Зөвхөн идэвхтэй төлөвлөгөөний үзүүлэлтүүдийг харуулна
-  const filteredInds=S.activePlans.length>0?inds.filter(i=>i.plans&&i.plans.some(p=>S.activePlans.includes(p))):inds;
   const groups={};filteredInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
     Object.entries(groups).forEach(([pl,pInds])=>{
       const sub=mk("div","sub");sub.innerHTML="<h3>"+pl+"</h3>";const ig=mk("div","ig");
