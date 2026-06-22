@@ -380,7 +380,11 @@ function doLogin(){
       if(fbDB&&window._get){
         try{
           const si=await window._get(window._r(fbDB,"config/indicators"));
-          if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length&&v.length!==S.inds.length){S.inds=v;try{localStorage.setItem("sga_inds",JSON.stringify(v));}catch{}if(S.tab)renderTab(S.tab);}}
+          if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){
+            const merged=v.map(fi=>{const def=DINDS.find(d=>d.id===fi.id);if(def){return{...fi,plans:def.plans||fi.plans,freq:def.freq||fi.freq,subgroup:fi.subgroup||def.subgroup||undefined};}return fi;});
+            const changed=JSON.stringify(merged)!==JSON.stringify(S.inds);
+            S.inds=merged;try{localStorage.setItem("sga_inds",JSON.stringify(merged));}catch{}
+            if(changed&&S.tab)renderTab(S.tab);}}
         }catch{}
       }
     },1000);
