@@ -304,6 +304,8 @@ async function initLogin(){
       const si=await window._get(window._r(fbDB,"config/indicators"));
       if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){
         const merged=v.map(fi=>{const def=DINDS.find(d=>d.id===fi.id);if(def){return{...fi,plans:def.plans||fi.plans,freq:def.freq||fi.freq,subgroup:fi.subgroup||def.subgroup||undefined};}return fi;});
+        // Reverse migration: restore indicators wrongly moved to АД №01 by previous migration
+        merged.forEach(fi=>{if((fi.plans||[]).join()===["АД №01"].join()&&fi.subgroup==="Өргөдөл, гомдлын нэгжийн судалгаа"&&!DINDS.find(d=>d.id===fi.id)){fi.plans=["Өргөдөл, гомдлын нэгжийн судалгаа"];fi.subgroup=undefined;}});
         S.inds=merged;try{localStorage.setItem("sga_inds",JSON.stringify(merged));}catch{}
         // Write corrected indicators back to Firebase so all clients get the fix
         try{await window._set(window._r(fbDB,"config/indicators"),merged);}catch{}
