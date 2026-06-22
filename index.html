@@ -302,7 +302,10 @@ async function initLogin(){
   if(fbDB&&window._get){
     try{
       const si=await window._get(window._r(fbDB,"config/indicators"));
-      if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){S.inds=v;try{localStorage.setItem("sga_inds",JSON.stringify(v));}catch{}}}
+      if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){
+        const merged=v.map(fi=>{if(!fi.subgroup){const def=DINDS.find(d=>d.id===fi.id);if(def&&def.subgroup)return{...fi,subgroup:def.subgroup};}return fi;});
+        S.inds=merged;try{localStorage.setItem("sga_inds",JSON.stringify(merged));}catch{}
+      }}
     }catch{}
     try{
       const sp=await window._get(window._r(fbDB,"config/plans"));
@@ -495,15 +498,28 @@ function tData(c){
   } else {
   const entry=S.data.find(d=>d.unit===S.user.code&&d.period===dPer&&d.freq===dFreq)||{values:{}};
   const groups={};filteredInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
+  function mkIndInput(i,entry,ig){
+    const fi=mk("div","fi");const lbl=mk("label");lbl.textContent=i.name;fi.appendChild(lbl);
+    const val=entry.values[i.id]||"";
+    if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;fi.appendChild(ta);}
+    else{const inp=mk("input");inp.type="text";inp.id="v_"+i.id;inp.style.textAlign="right";inp.placeholder="0";inp.value=val?fN(val):"";inp.oninput=()=>fmtInput(inp);fi.appendChild(inp);}
+    ig.appendChild(fi);
+  }
   Object.entries(groups).forEach(([pl,pInds])=>{
-    const sub=mk("div","sub");sub.innerHTML="<h3>"+pl+"</h3>";const ig=mk("div","ig");
-    pInds.forEach(i=>{
-      const fi=mk("div","fi");const lbl=mk("label");lbl.textContent=i.name;fi.appendChild(lbl);
-      const val=entry.values[i.id]||"";
-      if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;fi.appendChild(ta);}
-      else{const inp=mk("input");inp.type="text";inp.id="v_"+i.id;inp.style.textAlign="right";inp.placeholder="0";inp.value=val?fN(val):"";inp.oninput=()=>fmtInput(inp);fi.appendChild(inp);}
-      ig.appendChild(fi);
-    });sub.appendChild(ig);card.appendChild(sub);
+    const sub=mk("div","sub");sub.innerHTML="<h3>"+pl+"</h3>";
+    const hasSubgroup=pInds.some(i=>i.subgroup);
+    if(hasSubgroup){
+      const subgroups={};const sgOrder=[];
+      pInds.forEach(i=>{const sg=i.subgroup||"Бусад";if(!subgroups[sg]){subgroups[sg]=[];sgOrder.push(sg);}subgroups[sg].push(i);});
+      sgOrder.forEach(sg=>{
+        const sgDiv=mk("div");sgDiv.style.cssText="margin-bottom:12px";
+        const sgHdr=mk("div");sgHdr.style.cssText="font-size:11px;font-weight:700;color:var(--bl2);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--bd);text-transform:uppercase;letter-spacing:.5px";sgHdr.textContent=sg;sgDiv.appendChild(sgHdr);
+        const ig=mk("div","ig");subgroups[sg].forEach(i=>mkIndInput(i,entry,ig));sgDiv.appendChild(ig);sub.appendChild(sgDiv);
+      });
+    } else {
+      const ig=mk("div","ig");pInds.forEach(i=>mkIndInput(i,entry,ig));sub.appendChild(ig);
+    }
+    card.appendChild(sub);
   });
   }
   const br=mk("div","brow");
@@ -1066,6 +1082,7 @@ function buildCfg(c){
       const f1=mk("div","mfi");f1.innerHTML="<label>Нэр</label><input id='ei_n' value='"+ind.name.replace(/'/g,"&#39;")+"'>";box.appendChild(f1);
       const f2=mk("div","mfi");f2.innerHTML="<label>Давтамж</label><select id='ei_f'><option value='week'"+(ind.freq==="week"?" selected":"")+" >7 хоног</option><option value='month'"+(ind.freq==="month"?" selected":"")+">Сар бүр</option><option value='quarter'"+(ind.freq==="quarter"?" selected":"")+">Улирал бүр</option></select>";box.appendChild(f2);
       const f3=mk("div","mfi");f3.innerHTML="<label>Хэлбэр</label><select id='ei_t'><option value='num'"+(ind.type==="num"?" selected":"")+">Тоо</option><option value='money'"+(ind.type==="money"?" selected":"")+">Мөнгөн дүн</option><option value='pct'"+(ind.type==="pct"?" selected":"")+">Хувь</option><option value='text'"+(ind.type==="text"?" selected":"")+">Текст</option></select>";box.appendChild(f3);
+      const f3b=mk("div","mfi");f3b.innerHTML="<label>Дэд бүлэг</label><input id='ei_sg' placeholder='жишээ: Гомдол гаргагчаар' value='"+(ind.subgroup||"").replace(/'/g,"&#39;")+"'>";box.appendChild(f3b);
       const f4=mk("div","mfi");f4.innerHTML="<label>Төлөвлөгөөнүүд</label><input id='ei_p' value='"+(ind.plans||[]).join(", ")+"'>";box.appendChild(f4);
       const br=mk("div","brow");
       const bOk=mk("button","btn bp");bOk.textContent="💾 Хадгалах";
@@ -1076,6 +1093,7 @@ function buildCfg(c){
         S.inds[idx].freq=document.getElementById("ei_f").value;
         S.inds[idx].type=document.getElementById("ei_t").value;
         S.inds[idx].plans=document.getElementById("ei_p").value.split(",").map(x=>x.trim()).filter(Boolean);
+        const sg=document.getElementById("ei_sg")?.value.trim();S.inds[idx].subgroup=sg||undefined;
         document.body.removeChild(overlay);
         saveInds();buildCfg(c);
       };
