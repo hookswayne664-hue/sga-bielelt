@@ -857,6 +857,48 @@ function showUnitDetail(ucode,uname){
 }
 
 // ===== SUMMARY =====
+function exportWordDoc(){
+  const from=document.getElementById("sFrom")?.value;
+  const to=document.getElementById("sTo")?.value;
+  const planF=document.getElementById("sPl")?.value||"all";
+  const freq=sFreq;
+  const P=getPer();const sps=freq==="week"?P.w:freq==="month"?P.mn:P.q;
+  let sel=[];
+  if(from&&to){const fi=sps.indexOf(from),ti=sps.indexOf(to);if(fi>=0&&ti>=0)sel=sps.slice(Math.min(fi,ti),Math.max(fi,ti)+1);else sel=sps.filter(p=>p===from||p===to);}
+  else if(from)sel=[from];else if(to)sel=[to];
+  if(!sel.length){toast("Хугацаа сонгоно уу","te");return;}
+  let inds=S.inds.filter(i=>i.freq===freq);
+  if(planF!=="all")inds=inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===planF.trim()||pl.includes(planF)||planF.includes(pl.trim())));
+  const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+  const entries=S.data.filter(d=>sel.includes(d.period)&&d.freq===freq);
+  const unitMap={};entries.forEach(e=>{if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;});
+  const perLabel=sel.length>1?sel[sel.length-1]+" ~ "+sel[0]:sel[0];
+  const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":"Улирал бүр";
+  // Group inds by plan
+  const planGroups={};const planOrder=[];
+  inds.forEach(ind=>{(ind.plans||["Бусад"]).forEach(p=>{if(!planGroups[p]){planGroups[p]=[];planOrder.push(p);}planGroups[p].push(ind);});});
+  const uniquePlans=[...new Set(planOrder)];
+  let h=`<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><style>@page{size:A3 landscape;margin:1cm}body{font-family:Arial,sans-serif;font-size:8pt}h1{font-size:13pt;margin-bottom:4px}h2{font-size:10pt;background:#dce3f5;padding:3px 6px;margin:10px 0 4px 0}table{border-collapse:collapse;width:100%;margin-bottom:8px}td,th{border:1px solid #aaa;padding:2px 4px;vertical-align:top;word-break:break-word}th{background:#e8ecf8;font-weight:bold;text-align:center}.ind{max-width:200px}.val{text-align:center}</style></head><body>`;
+  h+=`<h1>ШГА Биелэлт — ${perLabel}</h1><p style='font-size:9pt;color:#555'>Давтамж: ${freqLabel} &nbsp;|&nbsp; Гаргасан: ${new Date().toLocaleDateString('mn-MN')}</p>`;
+  uniquePlans.forEach(plan=>{
+    const pInds=planGroups[plan];
+    h+=`<h2>${plan}</h2><table><tr><th class='ind'>Үзүүлэлт</th>`;
+    units.forEach(u=>h+=`<th style='font-size:7pt'>${u.code}<br/><span style='font-weight:normal;font-size:6pt'>${u.name.length>12?u.name.substring(0,12)+'…':u.name}</span></th>`);
+    h+=`</tr>`;
+    pInds.forEach(ind=>{
+      h+=`<tr><td class='ind'>${ind.name}</td>`;
+      units.forEach(u=>{const e=unitMap[u.code];const v=e?.values?.[ind.id];h+=`<td class='val'>${(v===undefined||v===null||v==='')?' ':String(v)}</td>`;});
+      h+=`</tr>`;
+    });
+    h+=`</table>`;
+  });
+  h+=`</body></html>`;
+  const blob=new Blob(['﻿',h],{type:'application/msword'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`ШГА_${perLabel}_${freqLabel}.doc`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  toast("📄 Word файл бэлэн болоо","ts");
+}
 function tSummary(c){
   const P=getPer(),sps=sFreq==="week"?P.w:sFreq==="month"?P.mn:P.q;
   const card=mk("div","card");card.innerHTML="<h2>📊 Нэгдсэн дүн</h2>";
@@ -884,6 +926,7 @@ function tSummary(c){
   const o0=mk("option");o0.value="all";o0.textContent="— Бүх үзүүлэлт —";s3.appendChild(o0);
   S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s3.appendChild(o);});
   s3.onchange=lSum;fi3.appendChild(s3);card.appendChild(fi3);
+  const bWord=mk("button","btn bs");bWord.style.cssText="margin-bottom:12px;width:100%";bWord.textContent="📄 Word файл татах";bWord.onclick=exportWordDoc;card.appendChild(bWord);
   const sRes=mk("div");sRes.id="sRes";card.appendChild(sRes);
   c.appendChild(card);
   setTimeout(lSum,50);
