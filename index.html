@@ -344,16 +344,33 @@ async function initLogin(){
 function loadConfig(){return Promise.resolve();}
 
 async function loadAllData(){
+  // 1. Firebase-аас мэдээ уншина (үндсэн)
+  if(fbDB&&window._get){
+    try{
+      const fd=await window._get(window._r(fbDB,"data"));
+      if(fd&&fd.exists&&fd.exists()){
+        const fbVals=fd.val();
+        if(fbVals&&typeof fbVals==="object"){
+          Object.values(fbVals).forEach(e=>{
+            if(!e||!e.unit)return;
+            const i=S.data.findIndex(x=>x.unit===e.unit&&x.period===e.period&&x.freq===e.freq);
+            if(i>=0){if(!S.data[i].date||e.date>S.data[i].date)S.data[i]=e;}else S.data.push(e);
+          });
+          try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
+        }
+      }
+    }catch(e){console.error("[SGA loadAllData] Firebase read fail:",e);}
+  }
+  // 2. GAS-аас нөөцлөн уншина
   try{
     const r=await api("getAllData");
     if(r&&r.data&&r.data.length){
       r.data.forEach(e=>{
         const i=S.data.findIndex(x=>x.unit===e.unit&&x.period===e.period&&x.freq===e.freq);
-        if(i>=0)S.data[i]=e;else S.data.push(e);
+        if(i>=0){if(!S.data[i].date||e.date>S.data[i].date)S.data[i]=e;}else S.data.push(e);
       });
       try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
-      toast("☁️ "+r.data.length+" мэдээ ачаалагдлаа","ts");
-      // Tab дахин render хийхгүй — зөвхөн тоог шинэчилнэ
+      toast("☁️ "+S.data.length+" мэдээ ачаалагдлаа","ts");
       if(S.tab==="summary")lSum();
       else if(S.tab==="monitor")lMon();
     }
@@ -551,9 +568,18 @@ async function subData(){
   const entry={unit:S.user.code,unitName:S.user.name,period:dPer,freq:dFreq,values:vals,date:new Date().toLocaleString("mn-MN")};
   const idx=S.data.findIndex(d=>d.unit===entry.unit&&d.period===entry.period&&d.freq===entry.freq);
   if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
-  toast("✅ Мэдээ хадгалагдлаа!","ts");
   try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
+  // Firebase-д хадгална (үндсэн, найдвартай)
+  let fbOk=false;
+  if(fbDB&&window._set){
+    try{
+      await window._set(window._r(fbDB,"data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_")),entry);
+      fbOk=true;
+    }catch(e){console.error("[SGA subData] Firebase FAIL:",e);}
+  }
+  // GAS-д нөөцлөн илгээнэ
   api("saveData",{data:JSON.stringify(entry)});
+  toast(fbOk?"✅ Мэдээ хадгалагдлаа!":"✅ Мэдээ хадгалагдлаа (local)","ts");
 }
 
 function prtCur(){
