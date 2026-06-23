@@ -526,7 +526,7 @@ function tData(c){
   function mkIndInput(i,entry,ig){
     const fi=mk("div","fi");const lbl=mk("label");lbl.textContent=i.name;fi.appendChild(lbl);
     const val=entry.values[i.id]||"";
-    if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;fi.appendChild(ta);}
+    if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;ta.maxLength=1000;fi.appendChild(ta);}
     else{const inp=mk("input");inp.type="text";inp.id="v_"+i.id;inp.style.textAlign="right";inp.placeholder="0";inp.value=val?fN(val):"";inp.oninput=()=>fmtInput(inp);fi.appendChild(inp);}
     ig.appendChild(fi);
   }
