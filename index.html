@@ -164,17 +164,17 @@ const UNITS=[
   {code:"ШГА50",name:"Банкны төлбөр барагдуулах газар — БЗД",pwd:"sga2026"}
 ];
 const DINDS=[
-  {id:"w1",name:"Барьцаа хөрөнгөөр дууссан ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"w2",name:"Барьцаа хөрөнгийн мөнгөн дүн (мян.₮)",type:"money",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"w3",name:"Ахлах ШГ-ийн хүчингүй болгосон тогтоолын тоо",type:"num",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"w4",name:"Тэтгэлгийн тооцоог шинэчлэн гаргасан ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"w5",name:"Тэтгэлгийн тооцоог баталгаажуулсан ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"w6",name:"Тэтгэлэг төлөгчид хариуцлага хүлээлгэсэн (тоо)",type:"num",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"w7",name:"Хөрөнгө, орлого огт тогтоогдоогүй ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"w8",name:"Хэсэгчлэн төлүүлсэн ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"w9",name:"Хэсэгчлэн төлүүлсэн мөнгөн дүн (мян.₮)",type:"money",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"w10",name:"Санд буцаан төвлөрүүлсэн мөнгөн дүн (мян.₮)",type:"money",freq:"week",plans:["ХЗДХС АД №01"]},
-  {id:"wn",name:"7 хоногт хийсэн ажлын талаар",type:"text",freq:"week",plans:["ХЗДХС АД №01"]},
+  {id:"w1",name:"Барьцаа хөрөнгөөр дууссан ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"w2",name:"Барьцаа хөрөнгийн мөнгөн дүн (мян.₮)",type:"money",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"w3",name:"Ахлах ШГ-ийн хүчингүй болгосон тогтоолын тоо",type:"num",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"w4",name:"Тэтгэлгийн тооцоог шинэчлэн гаргасан ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"w5",name:"Тэтгэлгийн тооцоог баталгаажуулсан ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"w6",name:"Тэтгэлэг төлөгчид хариуцлага хүлээлгэсэн (тоо)",type:"num",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"w7",name:"Хөрөнгө, орлого огт тогтоогдоогүй ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"w8",name:"Хэсэгчлэн төлүүлсэн ГББ (тоо)",type:"num",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"w9",name:"Хэсэгчлэн төлүүлсэн мөнгөн дүн (мян.₮)",type:"money",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"w10",name:"Санд буцаан төвлөрүүлсэн мөнгөн дүн (мян.₮)",type:"money",freq:"week",plans:["ХЗДХС 01"]},
+  {id:"wn",name:"7 хоногт хийсэн ажлын талаар",type:"text",freq:"week",plans:["ХЗДХС 01"]},
   {id:"es1",name:"Хөрөнгө тогтоогдсон ГББ (тоо)",type:"num",freq:"month",plans:["Эрс сайжруулах"]},
   {id:"es2",name:"Битүүмжилсэн ГББ (тоо)",type:"num",freq:"month",plans:["Эрс сайжруулах"]},
   {id:"es3",name:"Хураасан ГББ (тоо)",type:"num",freq:"month",plans:["Эрс сайжруулах"]},
@@ -213,7 +213,7 @@ const DINDS=[
   {id:"q9",name:"Цэрэгжилт, жагсаалч байдал — арга хэмжээний тоо",type:"num",freq:"quarter",plans:["АД №01"]},
   {id:"qn",name:"Улирлын ажлын талаар",type:"text",freq:"quarter",plans:["АД №01","АД №02"]}
 ];
-const DPLANS=["АД №01","АД №02","ХЗДХС АД №01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030","Өргөдөл, гомдлын судалгаа","Өргөдөл, гомдлын нэгжийн судалгаа"];
+const DPLANS=["АД №01","АД №02","ХЗДХС 01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030","Өргөдөл, гомдлын судалгаа","Өргөдөл, гомдлын нэгжийн судалгаа"];
 
 let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[]};
 let aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";
@@ -303,7 +303,7 @@ async function initLogin(){
     try{
       const si=await window._get(window._r(fbDB,"config/indicators"));
       if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){
-        const merged=v.map(fi=>{const def=DINDS.find(d=>d.id===fi.id);if(def){return{...fi,plans:def.plans||fi.plans,freq:def.freq||fi.freq,subgroup:fi.subgroup||def.subgroup||undefined};}return fi;});
+        const merged=v.map(fi=>{const def=DINDS.find(d=>d.id===fi.id);if(def){return{...fi,plans:fi.plans||def.plans,freq:def.freq||fi.freq,subgroup:fi.subgroup||def.subgroup||undefined};}return fi;});
         S.inds=merged;try{localStorage.setItem("sga_inds",JSON.stringify(merged));}catch{}
         // Write corrected indicators back to Firebase so all clients get the fix
         try{await window._set(window._r(fbDB,"config/indicators"),merged);}catch{}
@@ -400,7 +400,7 @@ function doLogin(){
         try{
           const si=await window._get(window._r(fbDB,"config/indicators"));
           if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){
-            const merged=v.map(fi=>{const def=DINDS.find(d=>d.id===fi.id);if(def){return{...fi,plans:def.plans||fi.plans,freq:def.freq||fi.freq,subgroup:fi.subgroup||def.subgroup||undefined};}return fi;});
+            const merged=v.map(fi=>{const def=DINDS.find(d=>d.id===fi.id);if(def){return{...fi,plans:fi.plans||def.plans,freq:def.freq||fi.freq,subgroup:fi.subgroup||def.subgroup||undefined};}return fi;});
             const changed=JSON.stringify(merged)!==JSON.stringify(S.inds);
             S.inds=merged;try{localStorage.setItem("sga_inds",JSON.stringify(merged));}catch{}
             if(changed&&S.tab)renderTab(S.tab);}}
