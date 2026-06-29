@@ -1033,7 +1033,6 @@ async function archivePeriod(freq,period,freqLabel,customName){
   try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}
   if(fbDB&&window._set){try{await window._set(window._r(fbDB,"archives"),S.archives);}catch(e){console.warn("[SGA] Archive Firebase FAIL:",e);}}
   toast("📁 '"+name+"' архивлагдлаа","ts");
-  else toast("📁 '"+name+"' архивлагдлаа (local)","ts");
 }
 function tSummary(c){
   const P=getPer(),sps=sFreq==="week"?P.w:sFreq==="month"?P.mn:P.q;
