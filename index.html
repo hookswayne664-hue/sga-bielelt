@@ -215,7 +215,7 @@ const DINDS=[
 ];
 const DPLANS=["АД №01","АД №02","ХЗДХС 01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030","Өргөдөл, гомдлын судалгаа","Өргөдөл, гомдлын нэгжийн судалгаа"];
 
-let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[],activeSurvey:null,surveyResp:{},planHints:{}};
+let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[],activeSurvey:null,surveyResp:{},planHints:{},planFreqs:{}};
 let aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";
 let chatMsgs=[],chatLastId=0,chatTimer=null;
 
@@ -292,6 +292,7 @@ async function initLogin(){
   try{const la=localStorage.getItem("sga_aplans");if(la)S.activePlans=JSON.parse(la);}catch{}
   try{const lpl=localStorage.getItem("sga_plans");if(lpl){const p=JSON.parse(lpl);if(p&&p.length)S.plans=p;}}catch{}
   try{const lph=localStorage.getItem("sga_planHints");if(lph)S.planHints=JSON.parse(lph)||{};}catch{}
+  try{const lpf=localStorage.getItem("sga_planFreqs");if(lpf)S.planFreqs=JSON.parse(lpf)||{};}catch{}
   const sel=document.getElementById("lC");
   S.units.filter(u=>!u.disabled).forEach(u=>{const o=document.createElement("option");o.value=u.code;o.textContent=u.code+" — "+u.name;sel.appendChild(o);});
   const pf=document.getElementById("lP");pf.value="";
@@ -315,6 +316,8 @@ async function initLogin(){
       if(sp&&sp.exists&&sp.exists()){const v=sp.val();if(v&&v.length){S.plans=v;try{localStorage.setItem("sga_plans",JSON.stringify(v));}catch{}}}
       const sph=await window._get(window._r(fbDB,"config/planHints"));
       if(sph&&sph.exists&&sph.exists()&&sph.val()){S.planHints=sph.val();try{localStorage.setItem("sga_planHints",JSON.stringify(S.planHints));}catch{}}
+      const spf=await window._get(window._r(fbDB,"config/planFreqs"));
+      if(spf&&spf.exists&&spf.exists()&&spf.val()){S.planFreqs=spf.val();try{localStorage.setItem("sga_planFreqs",JSON.stringify(S.planFreqs));}catch{}}
     }catch{}
     try{
       const sw=await window._get(window._r(fbDB,"passwords"));
@@ -874,8 +877,7 @@ function tMonitor(c){
   const sPl=mk("select");sPl.id="mPlan";
   const allOpt2=mk("option");allOpt2.value="all";allOpt2.textContent="— Бүх төлөвлөгөө —";sPl.appendChild(allOpt2);
   // Only show plans that have at least one indicator matching current mFreq
-  const freqPlans=new Set();S.inds.filter(i=>i.freq===mFreq).forEach(i=>(i.plans||[]).forEach(p=>freqPlans.add(p)));
-  S.plans.filter(p=>freqPlans.has(p)).forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;sPl.appendChild(o);});
+  S.plans.filter(p=>!S.planFreqs[p]||S.planFreqs[p]===mFreq).forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;sPl.appendChild(o);});
   sPl.onchange=lMon;fiPl.appendChild(sPl);fr1.appendChild(fiPl);
   c1.appendChild(fr1);
   const mRes=mk("div");mRes.id="mRes";c1.appendChild(mRes);c.appendChild(c1);
@@ -1038,8 +1040,7 @@ function tSummary(c){
   const fi3=mk("div","fi fr one");fi3.style.marginBottom="10px";fi3.innerHTML="<label>Шүүлт — Төлөвлөгөө / АД</label>";
   const s3=mk("select");s3.id="sPl";
   const o0=mk("option");o0.value="all";o0.textContent="— Бүх үзүүлэлт —";s3.appendChild(o0);
-  const sFreqPlans=new Set();S.inds.filter(i=>i.freq===sFreq).forEach(i=>(i.plans||[]).forEach(p=>sFreqPlans.add(p)));
-  S.plans.filter(p=>sFreqPlans.has(p)).forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s3.appendChild(o);});
+  S.plans.filter(p=>!S.planFreqs[p]||S.planFreqs[p]===sFreq).forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s3.appendChild(o);});
   s3.onchange=lSum;fi3.appendChild(s3);card.appendChild(fi3);
   const bWord=mk("button","btn bs");bWord.style.cssText="margin-bottom:12px;width:100%";bWord.textContent="📊 Excel татах";bWord.onclick=exportExcel;card.appendChild(bWord);
   const sRes=mk("div");sRes.id="sRes";card.appendChild(sRes);
@@ -1440,6 +1441,7 @@ function buildCfg(c){
       const ov=mk("div","modal-overlay");
       const bx=mk("div","modal-box");bx.innerHTML="<h3>✏️ Төлөвлөгөө засах</h3>";
       const pf1=mk("div","mfi");pf1.innerHTML="<label>Нэр</label><input id='pe_n' value='"+oldName.replace(/'/g,"&#39;")+"'>";bx.appendChild(pf1);
+      const pf1b=mk("div","mfi");const curF=S.planFreqs[oldName]||"";pf1b.innerHTML="<label>Давтамж</label><select id='pe_f'><option value=''"+(!curF?" selected":"")+">— Бүх давтамж —</option><option value='week'"+(curF==="week"?" selected":"")+">7 хоног</option><option value='month'"+(curF==="month"?" selected":"")+">Сар бүр</option><option value='quarter'"+(curF==="quarter"?" selected":"")+">Улирал бүр</option></select>";bx.appendChild(pf1b);
       const pf2=mk("div","mfi");pf2.innerHTML="<label>Анхааруулга (нэгжүүдэд бөглөх хэсгийн дээр харагдана)</label><input id='pe_h' placeholder='жишээ: Дүнг өссөн байдлаар, оны эхнээс нийлүүлэн бичнэ үү' value='"+(S.planHints[oldName]||"").replace(/'/g,"&#39;")+"'>";bx.appendChild(pf2);
       const pbr=mk("div","brow");
       const pbOk=mk("button","btn bp");pbOk.textContent="💾 Хадгалах";
@@ -1451,10 +1453,13 @@ function buildCfg(c){
           S.inds=S.inds.map(i=>({...i,plans:(i.plans||[]).map(p=>p===oldName?newName:p)}));
           S.activePlans=S.activePlans.map(p=>p===oldName?newName:p);
           if(S.planHints[oldName]){S.planHints[newName]=S.planHints[oldName];delete S.planHints[oldName];}
+          if(S.planFreqs[oldName]){S.planFreqs[newName]=S.planFreqs[oldName];delete S.planFreqs[oldName];}
           savePlans();saveActivePlans();saveInds();
         }
         if(h)S.planHints[newName||oldName]=h;else delete S.planHints[newName||oldName];
-        await savePlanHints();
+        const pef=document.getElementById("pe_f").value;
+        if(pef){S.planFreqs[newName||oldName]=pef;}else{delete S.planFreqs[newName||oldName];}
+        await savePlanFreqs();await savePlanHints();
         document.body.removeChild(ov);buildCfg(c);toast("✅ Хадгалагдлаа","ts");
       };
       const pbCan=mk("button","btn bx");pbCan.textContent="Болих";pbCan.onclick=()=>document.body.removeChild(ov);
@@ -1468,13 +1473,18 @@ function buildCfg(c){
     row.appendChild(bd);c2.appendChild(row);
   });
   const sub2=mk("div","sub");sub2.style.marginTop="10px";
-  const np_fr1=mk("div","fr one");const np_fi1=mk("div","fi");np_fi1.innerHTML="<label>Шинэ төлөвлөгөөний нэр</label><input id='nPl' placeholder='Нэр'>";np_fr1.appendChild(np_fi1);sub2.appendChild(np_fr1);
+  const np_fr1=mk("div","fr");
+  const np_fi1=mk("div","fi");np_fi1.innerHTML="<label>Шинэ төлөвлөгөөний нэр</label><input id='nPl' placeholder='Нэр'>";np_fr1.appendChild(np_fi1);
+  const np_fi1b=mk("div","fi");np_fi1b.innerHTML="<label>Давтамж</label><select id='nPlF'><option value=''>— Бүх давтамж —</option><option value='week'>7 хоног</option><option value='month'>Сар бүр</option><option value='quarter'>Улирал бүр</option></select>";np_fr1.appendChild(np_fi1b);
+  sub2.appendChild(np_fr1);
   const np_fr2=mk("div","fr one");const np_fi2=mk("div","fi");np_fi2.innerHTML="<label>Анхааруулга (нэгжүүдэд харагдана)</label><input id='nPlH' placeholder='жишээ: Дүнг өссөн байдлаар, оны эхнээс нийлүүлэн бичнэ үү'>";np_fr2.appendChild(np_fi2);sub2.appendChild(np_fr2);
   const b2=mk("button","btn bs");b2.textContent="➕ Нэмэх";
   b2.onclick=async()=>{
     const p=document.getElementById("nPl").value.trim();if(!p)return;
     const h=document.getElementById("nPlH").value.trim();
+    const pf=document.getElementById("nPlF").value;
     S.plans.push(p);
+    if(pf){S.planFreqs[p]=pf;await savePlanFreqs();}
     if(h){S.planHints[p]=h;await savePlanHints();}
     savePlans();buildCfg(c);
   };
@@ -1574,6 +1584,10 @@ async function savePlans(){
     const u=SU+"?action=saveConfig&key=plans&value="+encodeURIComponent(JSON.stringify(S.plans));
     await fetch(u,{redirect:"follow"});
   }catch{}
+}
+async function savePlanFreqs(){
+  try{localStorage.setItem("sga_planFreqs",JSON.stringify(S.planFreqs));}catch{}
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"config/planFreqs"),S.planFreqs);}catch{}}
 }
 async function savePlanHints(){
   try{localStorage.setItem("sga_planHints",JSON.stringify(S.planHints));}catch{}
