@@ -215,7 +215,7 @@ const DINDS=[
 ];
 const DPLANS=["АД №01","АД №02","ХЗДХС 01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030","Өргөдөл, гомдлын судалгаа","Өргөдөл, гомдлын нэгжийн судалгаа"];
 
-let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[]};
+let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[],activeSurvey:null,surveyResp:{}};
 let aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";
 let chatMsgs=[],chatLastId=0,chatTimer=null;
 
@@ -322,6 +322,8 @@ async function initLogin(){
       if(sl&&sl.exists&&sl.exists()){S.lockedPeriods=sl.val()||[];try{localStorage.setItem("sga_locked",JSON.stringify(S.lockedPeriods));}catch{}}
       const sa=await window._get(window._r(fbDB,"archives"));
       if(sa&&sa.exists&&sa.exists()){S.archives=sa.val()||[];try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}}
+      const sv=await window._get(window._r(fbDB,"survey/current"));
+      if(sv&&sv.exists&&sv.exists()&&sv.val()){S.activeSurvey=sv.val();const sr=await window._get(window._r(fbDB,"survey/responses"));if(sr&&sr.exists&&sr.exists())S.surveyResp=sr.val()||{};}
     }catch{}
     try{
       const sa=await window._get(window._r(fbDB,"activePlans"));
@@ -465,7 +467,7 @@ function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];
   if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
   tabs.push({id:"chat",l:"💬 Чат"});
-  if(isA){tabs.push({id:"monitor",l:"🔍 Хяналт"});tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
+  if(isA){tabs.push({id:"monitor",l:"🔍 Хяналт"});tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"survey",l:"📋 Судалгаа"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
   const tb=document.getElementById("TB");tb.innerHTML="";
   tabs.forEach(t=>{
     const d=mk("div","tab"+(S.tab===t.id?" on":""));
@@ -485,6 +487,7 @@ function renderTab(id){
   else if(id==="summary")tSummary(c);
   else if(id==="ai")tAI(c);
   else if(id==="files")tFiles(c);
+  else if(id==="survey")tSurvey(c);
   else if(id==="archive")tArchive(c);
   else if(id==="config")tConfig(c);
 }
@@ -521,6 +524,39 @@ function tData(c){
     const d=mk("div","empty");d.textContent="⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
     setTimeout(()=>{renderTab("data");},2000);
   } else {
+  // Яаралтай судалгааны мэдэгдэл
+  if(S.activeSurvey&&!S.user.isAdmin){
+    const svDone=S.surveyResp&&S.surveyResp[S.user.code];
+    const svBanner=mk("div","card");svBanner.style.cssText="border:2px solid var(--or);margin-bottom:12px";
+    svBanner.innerHTML="<div style='display:flex;align-items:center;gap:12px;flex-wrap:wrap'><span style='font-size:14px;font-weight:700;color:var(--or)'>📋 Яаралтай судалгаа!</span><span style='font-size:13px;color:var(--tx)'>"+S.activeSurvey.title+"</span>"+(svDone?"<span class='badge bok'>✅ Бөглөсөн</span>":"")+"</div>";
+    if(!svDone){
+      const bFill=mk("button","btn bw");bFill.style.marginTop="8px";bFill.textContent="📝 Бөглөх";
+      bFill.onclick=()=>{
+        const overlay=mk("div","modal-overlay");const box=mk("div","modal-box");
+        box.innerHTML="<h3>📋 "+S.activeSurvey.title+"</h3>";
+        S.activeSurvey.questions.forEach(q=>{
+          const f=mk("div","fi");
+          f.innerHTML="<label>"+q.text+"</label>"+(q.type==="text"?"<textarea id='sv_"+q.id+"' maxlength='500'></textarea>":"<input id='sv_"+q.id+"' type='number'>");
+          box.appendChild(f);
+        });
+        const br=mk("div","brow");
+        const bOk=mk("button","btn bp");bOk.textContent="✅ Илгээх";
+        bOk.onclick=async()=>{
+          const vals={};S.activeSurvey.questions.forEach(q=>{const el=document.getElementById("sv_"+q.id);if(el)vals[q.id]=el.value;});
+          const resp={values:vals,date:new Date().toLocaleString("mn-MN"),unitName:S.user.name};
+          if(!S.surveyResp)S.surveyResp={};S.surveyResp[S.user.code]=resp;
+          if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/responses/"+S.user.code),resp);}catch{}}
+          document.body.removeChild(overlay);toast("✅ Судалгаа илгээгдлээ","ts");renderTab("data");
+        };
+        const bCan=mk("button","btn bx");bCan.textContent="Болих";bCan.onclick=()=>document.body.removeChild(overlay);
+        br.appendChild(bOk);br.appendChild(bCan);box.appendChild(br);
+        overlay.onclick=e=>{if(e.target===overlay)document.body.removeChild(overlay);};
+        overlay.appendChild(box);document.body.appendChild(overlay);
+      };
+      svBanner.appendChild(bFill);
+    }
+    card.appendChild(svBanner);
+  }
   const entry=S.data.find(d=>d.unit===S.user.code&&d.period===dPer&&d.freq===dFreq)||{values:{}};
   const groups={};filteredInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
   function mkIndInput(i,entry,ig){
@@ -826,47 +862,36 @@ function tMonitor(c){
   const s2=mk("select");s2.id="mG";
   [["all","Бүх нэгж"],["niislel","Нийслэл"],["bank","Банкны газар"],["aimag","Аймгууд"]].forEach(([v,l])=>{const o=mk("option");o.value=v;o.textContent=l;s2.appendChild(o);});
   s2.onchange=lMon;fi2.appendChild(s2);fr1.appendChild(fi2);
+  const fiPl=mk("div","fi");fiPl.innerHTML="<label>Төлөвлөгөө</label>";
+  const sPl=mk("select");sPl.id="mPlan";
+  const allOpt2=mk("option");allOpt2.value="all";allOpt2.textContent="— Бүх төлөвлөгөө —";sPl.appendChild(allOpt2);
+  S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;sPl.appendChild(o);});
+  sPl.onchange=lMon;fiPl.appendChild(sPl);fr1.appendChild(fiPl);
   c1.appendChild(fr1);
   const mRes=mk("div");mRes.id="mRes";c1.appendChild(mRes);c.appendChild(c1);
-  // Төлөвлөгөөний хамрагдалт
-  const c2=mk("div","card");c2.innerHTML="<h2>📋 Төлөвлөгөө / АД-ын хамрагдалт</h2>";
-  const fr2=mk("div","fr");
-  const fi3=mk("div","fi");fi3.innerHTML="<label>Төлөвлөгөө / АД</label>";
-  const s3=mk("select");s3.id="mPl";S.plans.forEach(p=>{const o=mk("option");o.textContent=p;s3.appendChild(o);});
-  fi3.appendChild(s3);fr2.appendChild(fi3);
-  const fi4=mk("div","fi");fi4.innerHTML="<label>Хугацаа</label>";
-  const s4=mk("select");s4.id="mPP";s4.onchange=lPlanCov;fi4.appendChild(s4);fr2.appendChild(fi4);
-  s3.onchange=()=>updPlanPer();
-  c2.appendChild(fr2);
-  const pRes=mk("div");pRes.id="pRes";c2.appendChild(pRes);c.appendChild(c2);
-  setTimeout(()=>{lMon();updPlanPer();},50);
-}
-
-function updPlanPer(){
-  const s3=document.getElementById("mPl"),s4=document.getElementById("mPP");
-  if(!s3||!s4)return;
-  const P=getPer(),pv=s3.value;
-  const pi=S.inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===pv.trim()));
-  const pf=pi.length?pi[0].freq:"week";
-  const pp=pf==="week"?P.w:pf==="month"?P.mn:P.q;
-  s4.innerHTML="";pp.forEach(p=>{const o=mk("option");o.textContent=p;s4.appendChild(o);});
-  lPlanCov();
+  setTimeout(()=>{lMon();},50);
 }
 
 function lMon(){
-  const per=document.getElementById("mP")?.value,grp=document.getElementById("mG")?.value||"all";
+  const per=document.getElementById("mP")?.value,grp=document.getElementById("mG")?.value||"all",plan=document.getElementById("mPlan")?.value||"all";
   if(!per)return;
   const NIIS=["ШГА01","ШГА02","ШГА03","ШГА04","ШГА05","ШГА06","ШГА07","ШГА08","ШГА09","ШГА10","ШГА11","ШГА12","ШГА13","ШГА14"];
   let active=S.units.filter(u=>!u.isAdmin&&!u.disabled);
   if(grp==="niislel")active=active.filter(u=>NIIS.includes(u.code));
-  else if(grp==="bank")active=active.filter(u=>u.name.includes("Банк"));
-  else if(grp==="aimag")active=active.filter(u=>u.name.includes("аймаг"));
-  const sub=new Set(S.data.filter(d=>d.period===per&&d.freq===mFreq).map(d=>d.unit));
-  const done=active.filter(u=>sub.has(u.code)),miss=active.filter(u=>!sub.has(u.code));
-  const pct=active.length?Math.round(done.length/active.length*100):0;
+  else if(grp==="bank")active=active.filter(u=>u.name.includes("Банк")||u.name.toLowerCase().includes("bank"));
+  else if(grp==="aimag")active=active.filter(u=>!NIIS.includes(u.code)&&!u.name.includes("Банк")&&!u.name.toLowerCase().includes("bank"));
+  // Plan-specific check: unit must have at least 1 plan indicator filled
+  const planInds=plan==="all"?[]:S.inds.filter(i=>i.freq===mFreq&&(i.plans||[]).some(p=>p===plan));
+  const hasSent=(u)=>{
+    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);
+    if(!e)return false;
+    if(plan==="all")return true;
+    return planInds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
+  };
+  const done=active.filter(u=>hasSent(u)),miss=active.filter(u=>!hasSent(u));
   const el=document.getElementById("mRes");if(!el)return;
   const statsDiv=mk("div","stats");
-  [{n:active.length,l:"Нийт нэгж",c:""},{n:done.length,l:"✅ Илгээсэн",c:"g"},{n:miss.length,l:"❌ Илгээгээгүй",c:"r"},{n:pct+"%",l:"Хамрагдалт",c:"o"}].forEach(s=>{
+  [{n:active.length,l:"Нийт нэгж",c:""},{n:done.length,l:"✅ Илгээсэн",c:"g"},{n:miss.length,l:"❌ Илгээгээгүй",c:"r"}].forEach(s=>{
     const sc=mk("div","sc "+(s.c||""));sc.innerHTML="<div class='n'>"+s.n+"</div><div class='l'>"+s.l+"</div>";statsDiv.appendChild(sc);
   });
   el.innerHTML="";el.appendChild(statsDiv);
@@ -874,37 +899,19 @@ function lMon(){
   const hdr=mk("tr");["Код","Нэгж","Статус","Огноо"].forEach(t=>{const th=mk("th");th.textContent=t;hdr.appendChild(th);});tbl.appendChild(hdr);
   active.forEach(u=>{
     const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);
+    const sent=hasSent(u);
     const tr=mk("tr");
     const td1=mk("td");td1.innerHTML="<b>"+u.code+"</b>";tr.appendChild(td1);
     const td2=mk("td");
     const sp=mk("span");sp.textContent=u.name;sp.style.cssText="cursor:pointer;color:var(--bl2)";sp.title="Дэлгэрэнгүй";
     sp.onclick=(function(c,n){return function(){showUnitDetail(c,n);};})(u.code,u.name);
     td2.appendChild(sp);tr.appendChild(td2);
-    const td3=mk("td");const badge=mk("span","badge "+(e?"bok":"bfail"));badge.textContent=e?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);tr.appendChild(td3);
+    const td3=mk("td");const badge=mk("span","badge "+(sent?"bok":"bfail"));badge.textContent=sent?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);tr.appendChild(td3);
     const td4=mk("td");td4.style.cssText="font-size:12px;color:var(--tx3)";td4.textContent=e?e.date:"";tr.appendChild(td4);
     tbl.appendChild(tr);
   });
   tw.appendChild(tbl);el.appendChild(tw);
   if(miss.length){const md=mk("div");md.style.cssText="margin-top:8px;font-size:12px;color:var(--rd)";md.textContent="❌ "+miss.map(u=>u.code).join(", ");el.appendChild(md);}
-}
-
-function lPlanCov(){
-  const plan=document.getElementById("mPl")?.value,per=document.getElementById("mPP")?.value;if(!plan||!per)return;
-  const inds=S.inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===plan.trim()||pl.trim().includes(plan.trim())||plan.trim().includes(pl.trim())));
-  const el=document.getElementById("pRes");if(!el)return;
-  if(!inds.length){el.innerHTML="<div class='empty'>Энэ төлөвлөгөөнд үзүүлэлт байхгүй</div>";return;}
-  const planFreq=inds[0].freq;
-  const active=S.units.filter(u=>!u.isAdmin&&!u.disabled);
-  let tot=0,filled=0,h="<div class='tw'><table><tr><th>Код</th><th>Нэгж</th><th>Дүүрсэн</th><th>Явц</th><th></th></tr>";
-  active.forEach(u=>{
-    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===planFreq);
-    const f=inds.filter(i=>e&&e.values&&e.values[i.id]).length;
-    tot+=inds.length;filled+=f;const pct=Math.round(f/inds.length*100);
-    h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td><td>"+f+"/"+inds.length+"</td><td><div class='pb'><div class='pf' style='width:"+pct+"%'></div></div> <span style='font-size:11px'>"+pct+"%</span></td><td>"+(e?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>❌</span>")+"</td></tr>";
-  });
-  h+="</table></div>";
-  const oPct=tot?Math.round(filled/tot*100):0;
-  el.innerHTML="<div style='margin-bottom:10px;font-size:13px'><b style='color:var(--bl2)'>"+plan+"</b> — Нийт хамрагдалт: <b style='color:"+(oPct>=80?"var(--gr)":"var(--or)")+"'>"+oPct+"%</b></div>"+h;
 }
 
 function showUnitDetail(ucode,uname){
@@ -1182,6 +1189,94 @@ async function loadFileList(){
       d.appendChild(bDel);el.appendChild(d);
     });
   }catch(e){el.innerHTML="<div class='empty'>Алдаа: "+e.message+"</div>";}
+}
+
+// ===== SURVEY =====
+function tSurvey(c){
+  const card=mk("div","card");card.innerHTML="<h2>📋 Яаралтай судалгаа</h2>";
+  const sv=S.activeSurvey;
+  if(sv){
+    // Current active survey status
+    const sub=mk("div","sub");sub.innerHTML="<h3 style='color:var(--or)'>🟡 Идэвхтэй: "+sv.title+"</h3>";
+    const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+    const resp=S.surveyResp||{};
+    const done=units.filter(u=>resp[u.code]);
+    const miss=units.filter(u=>!resp[u.code]);
+    const statsDiv=mk("div","stats");
+    [{n:done.length,l:"✅ Хариулсан",c:"g"},{n:miss.length,l:"❌ Хариулаагүй",c:"r"}].forEach(s=>{
+      const sc=mk("div","sc "+(s.c||""));sc.innerHTML="<div class='n'>"+s.n+"</div><div class='l'>"+s.l+"</div>";statsDiv.appendChild(sc);
+    });
+    sub.appendChild(statsDiv);
+    if(miss.length){const md=mk("div");md.style.cssText="margin-top:6px;font-size:12px;color:var(--rd)";md.textContent="❌ "+miss.map(u=>u.code).join(", ");sub.appendChild(md);}
+    // Responses table
+    if(done.length){
+      const tw=mk("div","tw");let h="<table><tr><th>Код</th><th>Нэгж</th>";
+      sv.questions.forEach(q=>h+="<th>"+q.text.substring(0,25)+"</th>");
+      h+="<th>Огноо</th></tr>";
+      done.forEach(u=>{
+        const r=resp[u.code];h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td>";
+        sv.questions.forEach(q=>h+="<td>"+(r.values[q.id]||"")+"</td>");
+        h+="<td style='font-size:11px;color:var(--tx3)'>"+r.date+"</td></tr>";
+      });
+      h+="</table>";tw.innerHTML=h;sub.appendChild(tw);
+    }
+    // Excel download
+    const bExcel=mk("button","btn bs");bExcel.style.marginTop="10px";bExcel.textContent="📊 Excel татах";
+    bExcel.onclick=async()=>{
+      await loadSheetJS();
+      const wb=XLSX.utils.book_new();
+      const rows=[["Код","Нэгж",...sv.questions.map(q=>q.text),"Огноо"]];
+      units.forEach(u=>{const r=resp[u.code];rows.push([u.code,u.name,...sv.questions.map(q=>r?r.values[q.id]||"":"")]);});
+      const ws=XLSX.utils.aoa_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,"Судалгаа");
+      XLSX.writeFile(wb,"Судалгаа_"+sv.title+".xlsx");toast("📊 Excel бэлэн","ts");
+    };
+    sub.appendChild(bExcel);
+    // Close survey button
+    const bClose=mk("button","btn bx");bClose.style.cssText="margin-top:10px;margin-left:8px";bClose.textContent="🔴 Судалгаа хаах";
+    bClose.onclick=async()=>{
+      if(!confirm("Судалгааг хаах уу? Нэгжүүд цаашид бөглөж чадахгүй болно."))return;
+      S.activeSurvey=null;S.surveyResp={};
+      if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/current"),null);await window._set(window._r(fbDB,"survey/responses"),null);}catch{}}
+      toast("✅ Судалгаа хаагдлаа","ts");renderTab("survey");
+    };
+    sub.appendChild(bClose);
+    card.appendChild(sub);
+  }
+  // New survey form
+  const sub2=mk("div","sub");sub2.innerHTML="<h3>➕ Шинэ судалгаа үүсгэх</h3>";
+  const titleDiv=mk("div","fi");titleDiv.innerHTML="<label>Судалгааны гарчиг</label><input id='svTitle' placeholder='жишээ: 2026.06.30 яаралтай мэдээлэл'>";sub2.appendChild(titleDiv);
+  sub2.innerHTML+="";
+  const qList=mk("div");qList.id="svQList";sub2.appendChild(qList);
+  let qCount=0;
+  function addQ(txt,typ){
+    qCount++;const qi=qCount;
+    const qDiv=mk("div","fr");qDiv.style.marginBottom="6px";qDiv.id="svQ_"+qi;
+    const qi1=mk("div","fi");qi1.innerHTML="<label>Асуулт "+qi+"</label><input id='svQT_"+qi+"' placeholder='Асуултын текст' value='"+(txt||"").replace(/'/g,"&#39;")+"'>";qDiv.appendChild(qi1);
+    const qi2=mk("div","fi");qi2.innerHTML="<label>Төрөл</label><select id='svQF_"+qi+"'><option value='num'"+(typ==="num"?" selected":"")+">Тоо</option><option value='text'"+(typ==="text"?" selected":"")+">Текст</option></select>";qDiv.appendChild(qi2);
+    const qDel=mk("button","btn bd_");qDel.textContent="✕";qDel.style.marginTop="20px";qDel.onclick=()=>qDiv.remove();qDiv.appendChild(qDel);
+    qList.appendChild(qDiv);
+  }
+  addQ("","num");
+  const bAddQ=mk("button","btn bi");bAddQ.textContent="+ Асуулт нэмэх";bAddQ.style.marginBottom="10px";bAddQ.onclick=()=>addQ("","num");sub2.appendChild(bAddQ);
+  const bCreate=mk("button","btn bs");bCreate.textContent="🚀 Судалгаа эхлүүлэх";bCreate.style.cssText="margin-left:8px;margin-bottom:10px";
+  bCreate.onclick=async()=>{
+    const title=document.getElementById("svTitle")?.value.trim();
+    if(!title){toast("Гарчиг оруулна уу","te");return;}
+    const questions=[];
+    qList.querySelectorAll("[id^='svQ_']").forEach(qd=>{
+      const qi=qd.id.replace("svQ_","");
+      const t=document.getElementById("svQT_"+qi)?.value.trim();
+      const f=document.getElementById("svQF_"+qi)?.value||"num";
+      if(t)questions.push({id:"q"+qi,text:t,type:f});
+    });
+    if(!questions.length){toast("Ядаж 1 асуулт нэмнэ үү","te");return;}
+    const survey={id:"sv_"+Date.now(),title,questions,createdAt:new Date().toLocaleString("mn-MN"),createdBy:S.user?.name||"admin"};
+    S.activeSurvey=survey;S.surveyResp={};
+    if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/current"),survey);await window._set(window._r(fbDB,"survey/responses"),null);toast("🚀 Судалгаа эхэллээ!","ts");}catch(e){toast("⚠️ "+e.message,"te");return;}}
+    renderTab("survey");
+  };
+  sub2.appendChild(bCreate);
+  card.appendChild(sub2);c.appendChild(card);
 }
 
 // ===== ARCHIVE =====
