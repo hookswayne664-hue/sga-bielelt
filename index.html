@@ -534,10 +534,15 @@ function tData(c){
       bFill.onclick=()=>{
         const overlay=mk("div","modal-overlay");const box=mk("div","modal-box");
         box.innerHTML="<h3>📋 "+S.activeSurvey.title+"</h3>";
-        S.activeSurvey.questions.forEach(q=>{
-          const f=mk("div","fi");
-          f.innerHTML="<label>"+q.text+"</label>"+(q.type==="text"?"<textarea id='sv_"+q.id+"' maxlength='500'></textarea>":"<input id='sv_"+q.id+"' type='number'>");
-          box.appendChild(f);
+        const svGroups={};const svOrder=[];
+        S.activeSurvey.questions.forEach(q=>{const sg=q.subgroup||"";if(!svGroups[sg]){svGroups[sg]=[];svOrder.push(sg);}svGroups[sg].push(q);});
+        svOrder.forEach(sg=>{
+          if(sg){const hdr=mk("div");hdr.style.cssText="font-size:11px;font-weight:600;color:var(--tx2);margin:10px 0 6px 0;padding:3px 8px;border-left:3px solid var(--bl);background:rgba(31,111,235,.07);border-radius:0 4px 4px 0";hdr.textContent=sg;box.appendChild(hdr);}
+          svGroups[sg].forEach(q=>{
+            const f=mk("div","fi");
+            f.innerHTML="<label>"+q.text+"</label>"+(q.type==="text"?"<textarea id='sv_"+q.id+"' maxlength='500'></textarea>":"<input id='sv_"+q.id+"' type='number'>");
+            box.appendChild(f);
+          });
         });
         const br=mk("div","brow");
         const bOk=mk("button","btn bp");bOk.textContent="✅ Илгээх";
@@ -896,7 +901,8 @@ function lMon(){
   });
   el.innerHTML="";el.appendChild(statsDiv);
   const tw=mk("div","tw"),tbl=mk("table");
-  const hdr=mk("tr");["Код","Нэгж","Статус","Огноо"].forEach(t=>{const th=mk("th");th.textContent=t;hdr.appendChild(th);});tbl.appendChild(hdr);
+  const hasSv=!!S.activeSurvey;
+  const hdr=mk("tr");["Код","Нэгж","Статус","Огноо",...(hasSv?["📋 Судалгаа"]:[""])].filter(Boolean).forEach(t=>{const th=mk("th");th.textContent=t;hdr.appendChild(th);});tbl.appendChild(hdr);
   active.forEach(u=>{
     const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);
     const sent=hasSent(u);
@@ -908,6 +914,7 @@ function lMon(){
     td2.appendChild(sp);tr.appendChild(td2);
     const td3=mk("td");const badge=mk("span","badge "+(sent?"bok":"bfail"));badge.textContent=sent?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);tr.appendChild(td3);
     const td4=mk("td");td4.style.cssText="font-size:12px;color:var(--tx3)";td4.textContent=e?e.date:"";tr.appendChild(td4);
+    if(hasSv){const td5=mk("td");const svR=S.surveyResp&&S.surveyResp[u.code];const svB=mk("span","badge "+(svR?"bok":"bfail"));svB.textContent=svR?"✅":"❌";td5.appendChild(svB);tr.appendChild(td5);}
     tbl.appendChild(tr);
   });
   tw.appendChild(tbl);el.appendChild(tw);
@@ -1267,7 +1274,8 @@ function tSurvey(c){
       const qi=qd.id.replace("svQ_","");
       const t=document.getElementById("svQT_"+qi)?.value.trim();
       const f=document.getElementById("svQF_"+qi)?.value||"num";
-      if(t)questions.push({id:"q"+qi,text:t,type:f});
+      const g=document.getElementById("svQG_"+qi)?.value.trim()||"";
+      if(t)questions.push({id:"q"+qi,text:t,type:f,subgroup:g});
     });
     if(!questions.length){toast("Ядаж 1 асуулт нэмнэ үү","te");return;}
     const survey={id:"sv_"+Date.now(),title,questions,createdAt:new Date().toLocaleString("mn-MN"),createdBy:S.user?.name||"admin"};
