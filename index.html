@@ -827,8 +827,8 @@ function tMonitor(c){
     const entry={type:"data",name,freq,freqLabel,plan,period,date:new Date().toLocaleString("mn-MN"),author:S.user?.name||"admin",inds:indSnap,data:dataSnap};
     S.archives.push(entry);
     try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}
-    if(fbDB&&window._set){try{await window._set(window._r(fbDB,"archives"),S.archives);toast("📁 '"+name+"' архивлагдлаа","ts");}catch(e){toast("⚠️ "+e.message,"te");}}
-    else toast("📁 '"+name+"' архивлагдлаа (local)","ts");
+    if(fbDB&&window._set){try{await window._set(window._r(fbDB,"archives"),S.archives);}catch(e){console.warn("[SGA] Archive Firebase FAIL:",e);}}
+    toast("📁 '"+name+"' архивлагдлаа","ts");
   };
   archCard.appendChild(abtn);
   c.appendChild(archCard);
@@ -1012,7 +1012,8 @@ async function archivePeriod(freq,period,freqLabel,customName){
   const entry={type:'data',name,freq,freqLabel,period,date:new Date().toLocaleString('mn-MN'),author:S.user?.name||'admin',inds:indSnap,data:dataSnap};
   S.archives.push(entry);
   try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}
-  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"archives"),S.archives);toast("📁 '"+name+"' архивлагдлаа","ts");}catch(e){toast("⚠️ Firebase алдаа: "+e.message,"te");}}
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"archives"),S.archives);}catch(e){console.warn("[SGA] Archive Firebase FAIL:",e);}}
+  toast("📁 '"+name+"' архивлагдлаа","ts");
   else toast("📁 '"+name+"' архивлагдлаа (local)","ts");
 }
 function tSummary(c){
