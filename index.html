@@ -1333,21 +1333,31 @@ function tSurvey(c){
       bMaster.onclick=async()=>{
         await loadSheetJS();
         const wb=XLSX.utils.book_new();
-        // Sheet 1: Мастер — асуулт бүрийн нийт + нэгж бүрийн утга
-        const hdr=["Асуулт","Нийт",...done.map(u=>u.code)];
+        // Sheet 1: Мастер — q.aggr-аар нэгтгэл эсвэл бүртгэл
+        const hdr=["Асуулт","Хэлбэр","Нийт/Нэгтгэл",...done.map(u=>u.code)];
         const masterRows=[hdr];
-        numQs.forEach(q=>{
-          const vals=done.map(u=>{const r=resp[u.code];if(!r)return 0;const v=r.values[q.id];const n=parseFloat((v||"").toString().replace(/,/g,""));return isNaN(n)?0:n;});
-          const total=vals.reduce((a,b)=>a+b,0);
-          masterRows.push([q.text,total,...vals]);
+        sv.questions.forEach(q=>{
+          const isNum=q.type==="num"||q.type==="money";
+          const isSum=q.aggr!=="list";
+          const vals=done.map(u=>{
+            const r=resp[u.code];if(!r)return"";
+            const v=r.values[q.id];
+            if(v&&typeof v==="object"&&v.name)return v.name;
+            return v||"";
+          });
+          let totalCell="";
+          if(isNum&&isSum){
+            const nums=vals.map(v=>{const n=parseFloat((v||"").toString().replace(/,/g,""));return isNaN(n)?0:n;});
+            totalCell=nums.reduce((a,b)=>a+b,0);
+          }else if(isSum){
+            totalCell=vals.filter(v=>v!=="").join("; ");
+          }else{
+            totalCell="Бүртгэл";
+          }
+          masterRows.push([q.text,(q.aggr==="list"?"Бүртгэл":"Нэгтгэл"),totalCell,...vals]);
         });
-        // Нийт мөр (footer)
-        const totRow=["НИЙТ ДҮН",numQs.reduce((s,q)=>{return s+done.reduce((a,u)=>{const r=resp[u.code];if(!r)return a;const v=r.values[q.id];const n=parseFloat((v||"").toString().replace(/,/g,""));return a+(isNaN(n)?0:n);},0);},0),...done.map(u=>numQs.reduce((s,q)=>{const r=resp[u.code];if(!r)return s;const v=r.values[q.id];const n=parseFloat((v||"").toString().replace(/,/g,""));return s+(isNaN(n)?0:n);},0))];
-        masterRows.push(totRow);
         const wsMaster=XLSX.utils.aoa_to_sheet(masterRows);
-        // Тоднох (bold header + total)
-        const range=XLSX.utils.decode_range(wsMaster["!ref"]||"A1");
-        wsMaster["!cols"]=[{wch:50},{wch:14},...done.map(()=>({wch:12}))];
+        wsMaster["!cols"]=[{wch:50},{wch:12},{wch:18},...done.map(()=>({wch:14}))];
         XLSX.utils.book_append_sheet(wb,wsMaster,"Мастер нэгтгэл");
         // Sheet 2: Бүртгэл — нэгж бүр мөрөнд
         const regRows=[["Код","Нэгж",...sv.questions.map(q=>q.text),"Огноо"]];
@@ -1401,11 +1411,12 @@ function tSurvey(c){
   sub2.innerHTML+="";
   const qList=mk("div");qList.id="svQList";sub2.appendChild(qList);
   let qCount=0;
-  function addQ(txt,typ){
+  function addQ(txt,typ,aggr){
     qCount++;const qi=qCount;
     const qDiv=mk("div","fr");qDiv.style.marginBottom="6px";qDiv.id="svQ_"+qi;
     const qi1=mk("div","fi");qi1.innerHTML="<label>Асуулт "+qi+"</label><input id='svQT_"+qi+"' placeholder='Асуултын текст' value='"+(txt||"").replace(/'/g,"&#39;")+"'>";qDiv.appendChild(qi1);
     const qi2=mk("div","fi");qi2.innerHTML="<label>Төрөл</label><select id='svQF_"+qi+"'><option value='num'"+(typ==="num"?" selected":"")+">Тоо</option><option value='money'"+(typ==="money"?" selected":"")+">Мөнгөн дүн</option><option value='text'"+(typ==="text"?" selected":"")+">Текст</option><option value='file'"+(typ==="file"?" selected":"")+">Файл</option></select>";qDiv.appendChild(qi2);
+    const qi3=mk("div","fi");qi3.innerHTML="<label>Мастер шийт</label><select id='svQA_"+qi+"'><option value='sum'"+(aggr==="sum"?" selected":"")+">Нэгтгэл (нийлбэр)</option><option value='list'"+(aggr==="list"?" selected":"")+">Бүртгэл (тусдаа)</option></select>";qDiv.appendChild(qi3);
     const qDel=mk("button","btn bd_");qDel.textContent="✕";qDel.style.marginTop="20px";qDel.onclick=()=>qDiv.remove();qDiv.appendChild(qDel);
     qList.appendChild(qDiv);
   }
@@ -1427,7 +1438,8 @@ function tSurvey(c){
       const t=document.getElementById("svQT_"+qi)?.value.trim();
       const f=document.getElementById("svQF_"+qi)?.value||"num";
       const g=document.getElementById("svQG_"+qi)?.value.trim()||"";
-      if(t)questions.push({id:"q"+qi,text:t,type:f,subgroup:g});
+      const a=document.getElementById("svQA_"+qi)?.value||"sum";
+      if(t)questions.push({id:"q"+qi,text:t,type:f,subgroup:g,aggr:a});
     });
     if(!questions.length){toast("Ядаж 1 асуулт нэмнэ үү","te");return;}
     // Загвар файл уншина
