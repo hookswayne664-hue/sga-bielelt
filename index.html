@@ -569,12 +569,13 @@ function tData(c){
     const val=entry.values[i.id]||"";
     if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;ta.maxLength=1000;fi.appendChild(ta);}
     else{const inp=mk("input");inp.type="text";inp.id="v_"+i.id;inp.style.textAlign="right";inp.placeholder="0";inp.value=val?fN(val):"";inp.oninput=()=>fmtInput(inp);fi.appendChild(inp);}
+    if(i.hint){const ht=mk("div");ht.style.cssText="font-size:10px;color:var(--tx3);margin-top:3px;padding:3px 6px;background:rgba(255,200,0,.07);border-left:2px solid var(--or);border-radius:0 3px 3px 0";ht.textContent="ℹ️ "+i.hint;fi.appendChild(ht);}
     ig.appendChild(fi);
   }
   Object.entries(groups).forEach(([pl,pInds])=>{
     const sub=mk("div","sub");sub.innerHTML="<h3>"+pl+"</h3>";
     const hasSubgroup=pInds.some(i=>i.subgroup&&String(i.subgroup).trim().length>0);
-    console.log("[SGA subgroup]",pl,"hasSubgroup:",hasSubgroup,"subgrouped:",pInds.filter(i=>i.subgroup).map(i=>i.name+":"+i.subgroup));
+
     if(hasSubgroup){
       const subgroups={};const sgOrder=[];
       pInds.forEach(i=>{const sg=i.subgroup||"Бусад";if(!subgroups[sg]){subgroups[sg]=[];sgOrder.push(sg);}subgroups[sg].push(i);});
@@ -1335,6 +1336,7 @@ function buildCfg(c){
       const f2=mk("div","mfi");f2.innerHTML="<label>Давтамж</label><select id='ei_f'><option value='week'"+(ind.freq==="week"?" selected":"")+" >7 хоног</option><option value='month'"+(ind.freq==="month"?" selected":"")+">Сар бүр</option><option value='quarter'"+(ind.freq==="quarter"?" selected":"")+">Улирал бүр</option></select>";box.appendChild(f2);
       const f3=mk("div","mfi");f3.innerHTML="<label>Хэлбэр</label><select id='ei_t'><option value='num'"+(ind.type==="num"?" selected":"")+">Тоо</option><option value='money'"+(ind.type==="money"?" selected":"")+">Мөнгөн дүн</option><option value='pct'"+(ind.type==="pct"?" selected":"")+">Хувь</option><option value='text'"+(ind.type==="text"?" selected":"")+">Текст</option></select>";box.appendChild(f3);
       const f3b=mk("div","mfi");f3b.innerHTML="<label>Дэд бүлэг</label><input id='ei_sg' placeholder='жишээ: Гомдол гаргагчаар' value='"+(ind.subgroup||"").replace(/'/g,"&#39;")+"'>";box.appendChild(f3b);
+      const f3c=mk("div","mfi");f3c.innerHTML="<label>Бөглөх заавар</label><input id='ei_hint' placeholder='жишээ: Зөвхөн энэ 7 хоногт шинээр...' value='"+(ind.hint||"").replace(/'/g,"&#39;")+"'>";box.appendChild(f3c);
       const f4=mk("div","mfi");f4.innerHTML="<label>Төлөвлөгөөнүүд</label>";
       const sel4=mk("select");sel4.id="ei_p";sel4.style.cssText="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px";
       S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;o.selected=(ind.plans||[]).includes(p);sel4.appendChild(o);});
@@ -1350,6 +1352,7 @@ function buildCfg(c){
         S.inds[idx].type=document.getElementById("ei_t").value;
         S.inds[idx].plans=[document.getElementById("ei_p").value].filter(Boolean);
         const sg=document.getElementById("ei_sg")?.value.trim();S.inds[idx].subgroup=sg||undefined;
+        const ht=document.getElementById("ei_hint")?.value.trim();S.inds[idx].hint=ht||undefined;
         document.body.removeChild(overlay);
         const _sy=window.scrollY;const _il=document.querySelector("#MC .card div[style*='overflow-y']");const _isy=_il?_il.scrollTop:0;const _iidx=idx;
         saveInds();buildCfg(c);
