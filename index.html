@@ -584,6 +584,22 @@ function tData(c){
       };
       svBanner.appendChild(bFill);
     }
+    // Бөглөсөн бол файлуудыг харуулна
+    if(svDone){
+      const fileQs=S.activeSurvey.questions.filter(q=>q.type==="file");
+      if(fileQs.length){
+        const fDiv=mk("div");fDiv.style.marginTop="8px";
+        fileQs.forEach(q=>{
+          const v=svDone.values&&svDone.values[q.id];
+          if(v&&typeof v==="object"&&v.data){
+            const dl=mk("a");dl.href=v.data;dl.download=v.name;dl.className="btn bs";
+            dl.style.cssText="display:inline-block;margin-right:6px;font-size:12px;text-decoration:none";
+            dl.textContent="📥 "+v.name;fDiv.appendChild(dl);
+          }
+        });
+        svBanner.appendChild(fDiv);
+      }
+    }
     card.appendChild(svBanner);
   }
   const entry=S.data.find(d=>d.unit===S.user.code&&d.period===dPer&&d.freq===dFreq)||{values:{}};
@@ -1271,6 +1287,25 @@ function tSurvey(c){
         h+="<td style='font-size:11px;color:var(--tx3)'>"+r.date+"</td></tr>";
       });
       h+="</table>";tw.innerHTML=h;sub.appendChild(tw);
+    }
+    // File downloads section
+    const fileQs=sv.questions.filter(q=>q.type==="file");
+    if(fileQs.length&&done.length){
+      const fSec=mk("div");fSec.style.marginTop="16px";
+      fSec.innerHTML="<div style='font-size:13px;font-weight:700;color:var(--tx2);margin-bottom:8px'>📥 Ирсэн файлууд</div>";
+      done.forEach(u=>{
+        const r=resp[u.code];
+        fileQs.forEach(q=>{
+          const v=r.values&&r.values[q.id];
+          if(v&&typeof v==="object"&&v.data){
+            const row=mk("div");row.style.cssText="display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:4px;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;flex-wrap:wrap";
+            const lbl=mk("div");lbl.style.cssText="flex:1;min-width:120px";lbl.innerHTML="<span style='font-size:12px;font-weight:700;color:var(--bl2)'>"+u.code+"</span><span style='font-size:11px;color:var(--tx3);margin-left:8px'>"+q.text.substring(0,30)+"</span>";
+            const dl=mk("a");dl.href=v.data;dl.download=v.name;dl.className="btn bp";dl.style.cssText="font-size:11px;padding:4px 12px;text-decoration:none;white-space:nowrap";dl.textContent="📥 "+v.name;
+            row.appendChild(lbl);row.appendChild(dl);fSec.appendChild(row);
+          }
+        });
+      });
+      if(fSec.children.length>1)sub.appendChild(fSec);
     }
     // Excel download
     const bExcel=mk("button","btn bs");bExcel.style.marginTop="10px";bExcel.textContent="📊 Excel татах";
