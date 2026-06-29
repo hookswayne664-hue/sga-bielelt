@@ -274,9 +274,9 @@ async function initFB(){
     const t=new Promise((_,r)=>setTimeout(()=>r("timeout"),5000));
     const l=async()=>{
       const{initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
-      const{getDatabase,ref,get,set}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+      const{getDatabase,ref,get,set,onValue}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
       const app=initializeApp(FC);fbDB=getDatabase(app);
-      window._r=ref;window._get=get;window._set=set;
+      window._r=ref;window._get=get;window._set=set;window._onVal=onValue;
     };
     await Promise.race([l(),t]);
   }catch{fbDB=null;}
@@ -329,6 +329,8 @@ async function initLogin(){
       if(sa&&sa.exists&&sa.exists()){S.archives=sa.val()||[];try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}}
       const sv=await window._get(window._r(fbDB,"survey/current"));
       if(sv&&sv.exists&&sv.exists()&&sv.val()){S.activeSurvey=sv.val();const sr=await window._get(window._r(fbDB,"survey/responses"));if(sr&&sr.exists&&sr.exists())S.surveyResp=sr.val()||{};}
+      // Real-time: нэгж admin хааход шууд мэдэгдэнэ
+      if(window._onVal){window._onVal(window._r(fbDB,"survey/current"),snap=>{const nv=snap.exists()&&snap.val()?snap.val():null;const was=!!S.activeSurvey;if(JSON.stringify(nv)===JSON.stringify(S.activeSurvey))return;S.activeSurvey=nv;if(nv){window._get(window._r(fbDB,"survey/responses")).then(sr=>{S.surveyResp=(sr&&sr.exists&&sr.exists())?sr.val()||{}:{};if(S.tab==="data")renderTab("data");});}else{S.surveyResp={};if(was&&S.tab==="data")renderTab("data");}});}
     }catch{}
     try{
       const sa=await window._get(window._r(fbDB,"activePlans"));
@@ -1324,15 +1326,41 @@ function tSurvey(c){
       XLSX.writeFile(wb,"Судалгаа_"+sv.title+".xlsx");toast("📊 Excel бэлэн","ts");
     };
     sub.appendChild(bExcel);
-    // Close survey button
+    // ZIP download button
+    const fileQsZ=sv.questions.filter(q=>q.type==="file");
+    if(fileQsZ.length&&done.length){
+      const bZip=mk("button","btn bp");bZip.style.cssText="margin-top:10px;margin-left:8px";bZip.textContent="📦 ZIP татах";
+      bZip.onclick=async()=>{
+        if(!window.JSZip){await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+        const zip=new JSZip();let cnt=0;
+        done.forEach(u=>{const r=resp[u.code];fileQsZ.forEach(q=>{const v=r.values&&r.values[q.id];if(v&&typeof v==="object"&&v.data){zip.file(u.code+"_"+v.name,v.data.split(",")[1],{base64:true});cnt++;}});});
+        if(!cnt){toast("Файл байхгүй","te");return;}
+        const blob=await zip.generateAsync({type:"blob"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="Судалгаа_"+sv.title+".zip";a.click();URL.revokeObjectURL(url);
+        toast("📦 ZIP бэлэн ("+cnt+" файл)","ts");
+      };
+      sub.appendChild(bZip);
+    }
+    // Close survey button (archive-тай)
     const bClose=mk("button","btn bx");bClose.style.cssText="margin-top:10px;margin-left:8px";bClose.textContent="🔴 Судалгаа хаах";
     bClose.onclick=async()=>{
-      if(!confirm("Судалгааг хаах уу? Нэгжүүд цаашид бөглөж чадахгүй болно."))return;
+      if(!confirm("Судалгааг хаах уу? Нэгжүүд цаашид харахгүй болно."))return;
+      if(fbDB&&window._set){try{
+        await window._set(window._r(fbDB,"survey/archive/"+sv.id),{survey:sv,responses:S.surveyResp,closedAt:new Date().toLocaleString("mn-MN")});
+        await window._set(window._r(fbDB,"survey/current"),null);
+      }catch(e){toast("⚠️ "+e.message,"te");return;}}
       S.activeSurvey=null;S.surveyResp={};
-      if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/current"),null);await window._set(window._r(fbDB,"survey/responses"),null);}catch{}}
-      toast("✅ Судалгаа хаагдлаа","ts");renderTab("survey");
+      toast("✅ Судалгаа хаагдлаа (archive-д хадгалагдлаа)","ts");renderTab("survey");
     };
     sub.appendChild(bClose);
+    // Delete button (тест устгах)
+    const bDel=mk("button","btn bd_");bDel.style.cssText="margin-top:10px;margin-left:8px";bDel.textContent="🗑️ Устгах";
+    bDel.onclick=async()=>{
+      if(!confirm("Судалгааг бүрмөсөн устгах уу? Хариултууд ч устна."))return;
+      if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/current"),null);await window._set(window._r(fbDB,"survey/responses"),null);}catch{}}
+      S.activeSurvey=null;S.surveyResp={};
+      toast("🗑️ Судалгаа устгагдлаа","ts");renderTab("survey");
+    };
+    sub.appendChild(bDel);
     card.appendChild(sub);
   }
   // New survey form
