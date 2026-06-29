@@ -215,7 +215,7 @@ const DINDS=[
 ];
 const DPLANS=["АД №01","АД №02","ХЗДХС 01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030","Өргөдөл, гомдлын судалгаа","Өргөдөл, гомдлын нэгжийн судалгаа"];
 
-let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[],activeSurvey:null,surveyResp:{}};
+let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[],activeSurvey:null,surveyResp:{},planHints:{}};
 let aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";
 let chatMsgs=[],chatLastId=0,chatTimer=null;
 
@@ -291,6 +291,7 @@ async function initLogin(){
   try{const ll=localStorage.getItem("sga_locked");if(ll)S.lockedPeriods=JSON.parse(ll);}catch{}
   try{const la=localStorage.getItem("sga_aplans");if(la)S.activePlans=JSON.parse(la);}catch{}
   try{const lpl=localStorage.getItem("sga_plans");if(lpl){const p=JSON.parse(lpl);if(p&&p.length)S.plans=p;}}catch{}
+  try{const lph=localStorage.getItem("sga_planHints");if(lph)S.planHints=JSON.parse(lph)||{};}catch{}
   const sel=document.getElementById("lC");
   S.units.filter(u=>!u.disabled).forEach(u=>{const o=document.createElement("option");o.value=u.code;o.textContent=u.code+" — "+u.name;sel.appendChild(o);});
   const pf=document.getElementById("lP");pf.value="";
@@ -312,6 +313,8 @@ async function initLogin(){
     try{
       const sp=await window._get(window._r(fbDB,"config/plans"));
       if(sp&&sp.exists&&sp.exists()){const v=sp.val();if(v&&v.length){S.plans=v;try{localStorage.setItem("sga_plans",JSON.stringify(v));}catch{}}}
+      const sph=await window._get(window._r(fbDB,"config/planHints"));
+      if(sph&&sph.exists&&sph.exists()&&sph.val()){S.planHints=sph.val();try{localStorage.setItem("sga_planHints",JSON.stringify(S.planHints));}catch{}}
     }catch{}
     try{
       const sw=await window._get(window._r(fbDB,"passwords"));
@@ -569,11 +572,10 @@ function tData(c){
     const val=entry.values[i.id]||"";
     if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;ta.maxLength=1000;fi.appendChild(ta);}
     else{const inp=mk("input");inp.type="text";inp.id="v_"+i.id;inp.style.textAlign="right";inp.placeholder="0";inp.value=val?fN(val):"";inp.oninput=()=>fmtInput(inp);fi.appendChild(inp);}
-    if(i.hint){const ht=mk("div");ht.style.cssText="font-size:10px;color:var(--tx3);margin-top:3px;padding:3px 6px;background:rgba(255,200,0,.07);border-left:2px solid var(--or);border-radius:0 3px 3px 0";ht.textContent="ℹ️ "+i.hint;fi.appendChild(ht);}
     ig.appendChild(fi);
   }
   Object.entries(groups).forEach(([pl,pInds])=>{
-    const sub=mk("div","sub");sub.innerHTML="<h3>"+pl+"</h3>";
+    const sub=mk("div","sub");const phint=S.planHints&&S.planHints[pl];sub.innerHTML="<h3>"+pl+"</h3>"+(phint?"<div style='font-size:11px;color:var(--tx2);margin:-4px 0 8px 0;padding:4px 8px;background:rgba(255,200,0,.08);border-left:2px solid var(--or);border-radius:0 3px 3px 0'>ℹ️ "+phint+"</div>":"");
     const hasSubgroup=pInds.some(i=>i.subgroup&&String(i.subgroup).trim().length>0);
 
     if(hasSubgroup){
@@ -1316,16 +1318,37 @@ function buildCfg(c){
   c.innerHTML="";
   // Шалгуур үзүүлэлтүүд
   const c1=mk("div","card");c1.innerHTML="<h2>📊 Шалгуур үзүүлэлтүүд</h2>";
-  const il=mk("div");il.style.cssText="max-height:340px;overflow-y:auto";
-  S.inds.forEach((ind,i)=>{
+  // Plan filter
+  const cfgPlanFr=mk("div","fr");cfgPlanFr.style.marginBottom="8px";
+  const cfgPlanFi=mk("div","fi");cfgPlanFi.innerHTML="<label>Төлөвлөгөө</label>";
+  const cfgPlanSel=mk("select");cfgPlanSel.id="cfgPlan";
+  const cfgAll=mk("option");cfgAll.value="all";cfgAll.textContent="— Бүх үзүүлэлт —";cfgPlanSel.appendChild(cfgAll);
+  S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;cfgPlanSel.appendChild(o);});
+  cfgPlanFi.appendChild(cfgPlanSel);cfgPlanFr.appendChild(cfgPlanFi);c1.appendChild(cfgPlanFr);
+  // Plan hint edit row
+  const hintFr=mk("div","fr");hintFr.style.cssText="margin-bottom:10px;display:none";hintFr.id="cfgHintRow";
+  const hintFi=mk("div","fi");hintFi.style.flex="1";hintFi.innerHTML="<label>Анхааруулга (нэгжүүдэд харагдана)</label><input id='cfgHintInp' placeholder='жишээ: Дүнг оны эхнээс нийлүүлэн бичнэ үү'>";hintFr.appendChild(hintFi);
+  const hintBtn=mk("button","btn bs");hintBtn.textContent="💾 Хадгалах";hintBtn.style.marginTop="20px";
+  hintBtn.onclick=async()=>{const pl=cfgPlanSel.value;if(pl==="all")return;const h=document.getElementById("cfgHintInp")?.value.trim();if(h)S.planHints[pl]=h;else delete S.planHints[pl];await savePlanHints();toast("✅ Анхааруулга хадгалагдлаа","ts");};
+  hintFr.appendChild(hintBtn);c1.appendChild(hintFr);
+  const il=mk("div");il.style.cssText="max-height:400px;overflow-y:auto";
+  function rebuildIndList(){
+    il.innerHTML="";
+    const selPlan=document.getElementById("cfgPlan")?.value||"all";
+    // Show/hide hint row
+    const hr=document.getElementById("cfgHintRow");if(hr)hr.style.display=selPlan==="all"?"none":"flex";
+    if(selPlan!=="all"){const hi=document.getElementById("cfgHintInp");if(hi)hi.value=S.planHints[selPlan]||"";}
+    const filtered=selPlan==="all"?S.inds.map((ind,i)=>({ind,i})):S.inds.map((ind,i)=>({ind,i})).filter(({ind})=>(ind.plans||[]).some(p=>p===selPlan));
+    const filtLen=filtered.length;
+    filtered.forEach(({ind,i},fi)=>{
     const row=mk("div","urow");
     const uc=mk("span","uc");uc.textContent=ind.id;row.appendChild(uc);
     const un=mk("span","un");un.textContent=ind.name;row.appendChild(un);
     const badge=mk("span","badge "+(ind.freq==="week"?"bok":ind.freq==="month"?"bwarn":"bfail"));badge.textContent=ind.freq==="week"?"7 хоног":ind.freq==="month"?"Сар":"Улирал";row.appendChild(badge);
-    const bu=mk("button","btn bi");bu.textContent="↑";bu.title="Дээш";bu.style.cssText="font-size:12px;padding:2px 7px;opacity:"+(i===0?"0.3":"1");bu.disabled=(i===0);
-    bu.onclick=(function(idx){return function(){if(idx===0)return;const _sy=window.scrollY;const _il=document.querySelector("#MC .card div[style*='overflow-y']");const _isy=_il?_il.scrollTop:0;const tmp=S.inds[idx];S.inds[idx]=S.inds[idx-1];S.inds[idx-1]=tmp;saveInds();buildCfg(c);window.scrollTo(0,_sy);const _il2=document.querySelector("#MC .card div[style*='overflow-y']");if(_il2)_il2.scrollTop=_isy;};})(i);row.appendChild(bu);
-    const bdn=mk("button","btn bi");bdn.textContent="↓";bdn.title="Доош";bdn.style.cssText="font-size:12px;padding:2px 7px;opacity:"+(i===S.inds.length-1?"0.3":"1");bdn.disabled=(i===S.inds.length-1);
-    bdn.onclick=(function(idx){return function(){if(idx===S.inds.length-1)return;const _sy=window.scrollY;const _il=document.querySelector("#MC .card div[style*='overflow-y']");const _isy=_il?_il.scrollTop:0;const tmp=S.inds[idx];S.inds[idx]=S.inds[idx+1];S.inds[idx+1]=tmp;saveInds();buildCfg(c);window.scrollTo(0,_sy);const _il2=document.querySelector("#MC .card div[style*='overflow-y']");if(_il2)_il2.scrollTop=_isy;};})(i);row.appendChild(bdn);
+    const bu=mk("button","btn bi");bu.textContent="↑";bu.title="Дээш";bu.style.cssText="font-size:12px;padding:2px 7px;opacity:"+(fi===0?"0.3":"1");bu.disabled=(fi===0);
+    bu.onclick=(function(idx,fidx){return function(){if(fidx===0)return;const _sy=window.scrollY;const _il=document.querySelector("#MC .card div[style*='overflow-y']");const _isy=_il?_il.scrollTop:0;const tmp=S.inds[idx];S.inds[idx]=S.inds[idx-1];S.inds[idx-1]=tmp;saveInds();buildCfg(c);window.scrollTo(0,_sy);const _il2=document.querySelector("#MC .card div[style*='overflow-y']");if(_il2)_il2.scrollTop=_isy;};})(i,fi);row.appendChild(bu);
+    const bdn=mk("button","btn bi");bdn.textContent="↓";bdn.title="Доош";bdn.style.cssText="font-size:12px;padding:2px 7px;opacity:"+(fi===filtLen-1?"0.3":"1");bdn.disabled=(fi===filtLen-1);
+    bdn.onclick=(function(idx,fidx){return function(){if(fidx===filtLen-1)return;const _sy=window.scrollY;const _il=document.querySelector("#MC .card div[style*='overflow-y']");const _isy=_il?_il.scrollTop:0;const tmp=S.inds[idx];S.inds[idx]=S.inds[idx+1];S.inds[idx+1]=tmp;saveInds();buildCfg(c);window.scrollTo(0,_sy);const _il2=document.querySelector("#MC .card div[style*='overflow-y']");if(_il2)_il2.scrollTop=_isy;};})(i,fi);row.appendChild(bdn);
     const be=mk("button","btn bi");be.textContent="✏️";
     be.onclick=(function(idx){return function(){
       const ind=S.inds[idx];
@@ -1368,6 +1391,9 @@ function buildCfg(c){
     bd.onclick=(function(idx){return function(){if(confirm("Устгах уу?")){const _sy2=window.scrollY;const _il3=document.querySelector("#MC .card div[style*='overflow-y']");const _isy2=_il3?_il3.scrollTop:0;S.inds.splice(idx,1);saveInds();buildCfg(c);window.scrollTo(0,_sy2);const _il4=document.querySelector("#MC .card div[style*='overflow-y']");if(_il4)_il4.scrollTop=_isy2;}};})(i);row.appendChild(bd);
     il.appendChild(row);
   });
+  }
+  cfgPlanSel.onchange=rebuildIndList;
+  rebuildIndList();
   c1.appendChild(il);
   const sub1=mk("div","sub");sub1.innerHTML="<h3>➕ Шинэ үзүүлэлт</h3>";
   const fr1=mk("div","fr");
@@ -1527,6 +1553,10 @@ async function savePlans(){
     const u=SU+"?action=saveConfig&key=plans&value="+encodeURIComponent(JSON.stringify(S.plans));
     await fetch(u,{redirect:"follow"});
   }catch{}
+}
+async function savePlanHints(){
+  try{localStorage.setItem("sga_planHints",JSON.stringify(S.planHints));}catch{}
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"config/planHints"),S.planHints);}catch{}}
 }
 async function sAllPW(){
   const pwd=document.getElementById("allPW").value.trim();if(!pwd)return toast("Оруулна уу","te");
