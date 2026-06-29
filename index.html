@@ -1093,9 +1093,8 @@ function lSum(){
   });
   const allEntries=Object.values(upMap);
   const totalU=S.units.filter(u=>!u.isAdmin&&!u.disabled).length;
-  // Илгээсэн нэгж = аль нэг period-д оруулсан нэгжүүд (union)
-  const filledEntries=plan==="all"?allEntries:allEntries.filter(e=>inds.some(ind=>e.values&&e.values[ind.id]!==undefined&&e.values[ind.id]!==null&&e.values[ind.id]!==""));
-  const sub=new Set(filledEntries.map(e=>e.unit)).size;
+  // Илгээсэн = period-д ямар нэг мэдээ илгээсэн нэгжүүд (план харгалзахгүй)
+  const sub=new Set(allEntries.map(e=>e.unit)).size;
   const periodLabel=selPeriods.length>1?selPeriods[selPeriods.length-1]+" ~ "+selPeriods[0]:selPeriods[0]||"";
   let h="<div style='font-size:12px;color:var(--tx2);margin-bottom:10px'>📅 "+periodLabel+" ("+selPeriods.length+" хугацаа)</div>";
   h+="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгээгүй</div></div></div>";
