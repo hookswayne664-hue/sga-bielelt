@@ -640,27 +640,46 @@ function tMyData(c){
   const card=mk("div","card");card.innerHTML="<h2>📂 Миний мэдээ</h2>";
   if(!mine.length){card.innerHTML+="<div class='empty'>Мэдээ байхгүй</div>";}
   else{
-    const tw=mk("div","tw"),tbl=mk("table");
-    tbl.innerHTML="<tr><th>Хугацаа</th><th>Давтамж</th><th>Огноо</th><th></th></tr>";
+    // Group by plan: each entry can belong to multiple plans; show under each plan
+    const planGroups={};
     mine.forEach((e,i)=>{
-      const tr=mk("tr");
-      tr.innerHTML="<td>"+e.period+"</td><td>"+(e.freq==="week"?"7 хоног":e.freq==="month"?"Сар":"Улирал")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e.date||"")+"</td><td></td>";
-      const bp=mk("button","btn bi");bp.textContent="🖨️";
-      bp.onclick=(function(idx){return function(){const inds=S.inds.filter(ind=>ind.freq===mine[idx].freq);showPrintModal(S.user.name,mine[idx].period,inds.map(ind=>[ind.name,fV(mine[idx].values[ind.id],ind.type)]));}})(i);
-      tr.lastElementChild.appendChild(bp);
-      const bd=mk("button","btn bd_");bd.textContent="🗑️";
-      bd.onclick=(function(idx){return function(){
-        if(!confirm("Устгах уу?"))return;
-        const ent=mine[idx];
-        const si=S.data.findIndex(d=>d.unit===ent.unit&&d.period===ent.period&&d.freq===ent.freq);
-        if(si>=0){S.data.splice(si,1);try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
-        api("deleteData",{unit:ent.unit,period:ent.period,freq:ent.freq});
-        toast("✅ Устгагдлаа","ts");renderTab("mydata");}
-      }})(i);
-      tr.lastElementChild.appendChild(bd);
-      tbl.appendChild(tr);
+      // Find which plans this entry covers (has values for those plan's indicators)
+      const entryPlans=S.plans.filter(p=>{
+        const pInds=S.inds.filter(ind=>ind.freq===e.freq&&(ind.plans||[]).includes(p));
+        return pInds.some(ind=>e.values&&e.values[ind.id]!==undefined&&e.values[ind.id]!==null&&e.values[ind.id]!=="");
+      });
+      const groups=entryPlans.length?entryPlans:["(Ангилалгүй)"];
+      groups.forEach(p=>{if(!planGroups[p])planGroups[p]=[];planGroups[p].push({e,i});});
     });
-    tw.appendChild(tbl);card.appendChild(tw);
+    // Render each group
+    Object.keys(planGroups).forEach(plan=>{
+      const sub=mk("div","sub");sub.innerHTML="<h3>"+plan+"</h3>";
+      const tw=mk("div","tw"),tbl=mk("table");
+      tbl.innerHTML="<tr><th>Хугацаа</th><th>Давтамж</th><th>Огноо</th><th></th></tr>";
+      planGroups[plan].forEach(({e,i})=>{
+        const tr=mk("tr");
+        tr.innerHTML="<td>"+e.period+"</td><td>"+(e.freq==="week"?"7 хоног":e.freq==="month"?"Сар":"Улирал")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e.date||"")+"</td><td></td>";
+        const bp=mk("button","btn bi");bp.textContent="🖨️";
+        bp.onclick=(function(ent,pl){return function(){
+          const planInds=S.inds.filter(ind=>ind.freq===ent.freq&&(ind.plans||[]).includes(pl));
+          const rows=planInds.length?planInds.map(ind=>[ind.name,fV(ent.values[ind.id],ind.type)]):S.inds.filter(ind=>ind.freq===ent.freq).map(ind=>[ind.name,fV(ent.values[ind.id],ind.type)]);
+          showPrintModal(S.user.name,ent.period,rows);
+        };})(e,plan);
+        tr.lastElementChild.appendChild(bp);
+        const bd=mk("button","btn bd_");bd.textContent="🗑️";
+        bd.onclick=(function(idx){return function(){
+          if(!confirm("Устгах уу?"))return;
+          const ent=mine[idx];
+          const si=S.data.findIndex(d=>d.unit===ent.unit&&d.period===ent.period&&d.freq===ent.freq);
+          if(si>=0){S.data.splice(si,1);try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
+          api("deleteData",{unit:ent.unit,period:ent.period,freq:ent.freq});
+          toast("✅ Устгагдлаа","ts");renderTab("mydata");}
+        }})(i);
+        tr.lastElementChild.appendChild(bd);
+        tbl.appendChild(tr);
+      });
+      tw.appendChild(tbl);sub.appendChild(tw);card.appendChild(sub);
+    });
   }
   c.appendChild(card);
 }
