@@ -1315,17 +1315,49 @@ function tSurvey(c){
       });
       if(fSec.children.length>1)sub.appendChild(fSec);
     }
-    // Excel download
-    const bExcel=mk("button","btn bs");bExcel.style.marginTop="10px";bExcel.textContent="📊 Excel татах";
+    // Excel: Бүртгэл (нэгж бүрийн хариулт)
+    const bExcel=mk("button","btn bs");bExcel.style.marginTop="10px";bExcel.textContent="📋 Бүртгэл татах";
     bExcel.onclick=async()=>{
       await loadSheetJS();
       const wb=XLSX.utils.book_new();
       const rows=[["Код","Нэгж",...sv.questions.map(q=>q.text),"Огноо"]];
       units.forEach(u=>{const r=resp[u.code];rows.push([u.code,u.name,...sv.questions.map(q=>{if(!r)return"";const v=r.values[q.id];return(v&&typeof v==="object"&&v.name)?v.name:v||"";}),r?r.date:""]);});
-      const ws=XLSX.utils.aoa_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,"Судалгаа");
-      XLSX.writeFile(wb,"Судалгаа_"+sv.title+".xlsx");toast("📊 Excel бэлэн","ts");
+      const ws=XLSX.utils.aoa_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,"Бүртгэл");
+      XLSX.writeFile(wb,"Бүртгэл_"+sv.title+".xlsx");toast("📋 Бүртгэл Excel бэлэн","ts");
     };
     sub.appendChild(bExcel);
+    // Excel: Мастер нэгтгэл (тоон асуулт нийлбэр)
+    const numQs=sv.questions.filter(q=>q.type==="num"||q.type==="money");
+    if(numQs.length&&done.length){
+      const bMaster=mk("button","btn bg");bMaster.style.cssText="margin-top:10px;margin-left:8px;background:var(--gn);color:#fff";bMaster.textContent="📊 Мастер шийт татах";
+      bMaster.onclick=async()=>{
+        await loadSheetJS();
+        const wb=XLSX.utils.book_new();
+        // Sheet 1: Мастер — асуулт бүрийн нийт + нэгж бүрийн утга
+        const hdr=["Асуулт","Нийт",...done.map(u=>u.code)];
+        const masterRows=[hdr];
+        numQs.forEach(q=>{
+          const vals=done.map(u=>{const r=resp[u.code];if(!r)return 0;const v=r.values[q.id];const n=parseFloat((v||"").toString().replace(/,/g,""));return isNaN(n)?0:n;});
+          const total=vals.reduce((a,b)=>a+b,0);
+          masterRows.push([q.text,total,...vals]);
+        });
+        // Нийт мөр (footer)
+        const totRow=["НИЙТ ДҮН",numQs.reduce((s,q)=>{return s+done.reduce((a,u)=>{const r=resp[u.code];if(!r)return a;const v=r.values[q.id];const n=parseFloat((v||"").toString().replace(/,/g,""));return a+(isNaN(n)?0:n);},0);},0),...done.map(u=>numQs.reduce((s,q)=>{const r=resp[u.code];if(!r)return s;const v=r.values[q.id];const n=parseFloat((v||"").toString().replace(/,/g,""));return s+(isNaN(n)?0:n);},0))];
+        masterRows.push(totRow);
+        const wsMaster=XLSX.utils.aoa_to_sheet(masterRows);
+        // Тоднох (bold header + total)
+        const range=XLSX.utils.decode_range(wsMaster["!ref"]||"A1");
+        wsMaster["!cols"]=[{wch:50},{wch:14},...done.map(()=>({wch:12}))];
+        XLSX.utils.book_append_sheet(wb,wsMaster,"Мастер нэгтгэл");
+        // Sheet 2: Бүртгэл — нэгж бүр мөрөнд
+        const regRows=[["Код","Нэгж",...sv.questions.map(q=>q.text),"Огноо"]];
+        units.forEach(u=>{const r=resp[u.code];regRows.push([u.code,u.name,...sv.questions.map(q=>{if(!r)return"";const v=r.values[q.id];return(v&&typeof v==="object"&&v.name)?v.name:v||"";}),r?r.date:""]);});
+        const wsReg=XLSX.utils.aoa_to_sheet(regRows);wsReg["!cols"]=[{wch:10},{wch:30},...sv.questions.map(()=>({wch:16})),{wch:18}];
+        XLSX.utils.book_append_sheet(wb,wsReg,"Бүртгэл");
+        XLSX.writeFile(wb,"Мастер_"+sv.title+".xlsx");toast("📊 Мастер шийт бэлэн","ts");
+      };
+      sub.appendChild(bMaster);
+    }
     // ZIP download button
     const fileQsZ=sv.questions.filter(q=>q.type==="file");
     if(fileQsZ.length&&done.length){
