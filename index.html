@@ -524,16 +524,22 @@ function tData(c){
   const fi2=mk("div","fi");fi2.innerHTML="<label>Нэгж</label><input value='"+S.user.name+"' disabled>";fr.appendChild(fi2);
   card.appendChild(fr);
   // Зөвхөн идэвхтэй төлөвлөгөөний үзүүлэлтүүдийг харуулна
-  const filteredInds=S.activePlans.length>0?inds.filter(i=>(i.plans||[]).some(p=>S.activePlans.includes(p))):inds;
+  const filteredInds=S.activePlans.length>0?inds.filter(i=>(i.plans||[]).some(p=>S.activePlans.includes(p))):[];
   if(!filteredInds.length){
-    const d=mk("div","empty");d.textContent="⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
-    setTimeout(()=>{renderTab("data");},2000);
+    const d=mk("div","empty");d.textContent=S.activePlans.length===0?"Идэвхтэй төлөвлөгөө сонгогдоогүй байна":"⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
+    if(S.activePlans.length>0)setTimeout(()=>{renderTab("data");},2000);
   } else {
   // Яаралтай судалгааны мэдэгдэл
   if(S.activeSurvey&&!S.user.isAdmin){
     const svDone=S.surveyResp&&S.surveyResp[S.user.code];
     const svBanner=mk("div","card");svBanner.style.cssText="border:2px solid var(--or);margin-bottom:12px";
     svBanner.innerHTML="<div style='display:flex;align-items:center;gap:12px;flex-wrap:wrap'><span style='font-size:14px;font-weight:700;color:var(--or)'>📋 Яаралтай судалгаа!</span><span style='font-size:13px;color:var(--tx)'>"+S.activeSurvey.title+"</span>"+(svDone?"<span class='badge bok'>✅ Бөглөсөн</span>":"")+"</div>";
+    if(S.activeSurvey.templateFile){
+      const tf=S.activeSurvey.templateFile;
+      const dlTmpl=mk("a");dlTmpl.href=tf.data;dlTmpl.download=tf.name;dlTmpl.className="btn bs";
+      dlTmpl.style.cssText="display:inline-block;margin-top:8px;margin-right:8px;font-size:12px;text-decoration:none";
+      dlTmpl.textContent="📥 Загвар татах: "+tf.name;svBanner.appendChild(dlTmpl);
+    }
     if(!svDone){
       const bFill=mk("button","btn bw");bFill.style.marginTop="8px";bFill.textContent="📝 Бөглөх";
       bFill.onclick=()=>{
@@ -1345,7 +1351,13 @@ function tSurvey(c){
   }
   addQ("","num");
   const bAddQ=mk("button","btn bi");bAddQ.textContent="+ Асуулт нэмэх";bAddQ.style.marginBottom="10px";bAddQ.onclick=()=>addQ("","num");sub2.appendChild(bAddQ);
-  const bCreate=mk("button","btn bs");bCreate.textContent="🚀 Судалгаа эхлүүлэх";bCreate.style.cssText="margin-left:8px;margin-bottom:10px";
+  // Загвар файл хавсаргах
+  const tmplDiv=mk("div","fi");tmplDiv.style.cssText="margin-bottom:10px;padding:10px;background:var(--bg3);border:1px solid var(--bd);border-radius:6px";
+  tmplDiv.innerHTML="<label style='color:var(--tx2)'>📎 Загвар файл хавсаргах <span style='font-weight:400;font-size:11px'>(нэгжүүд татаж авна — заавал биш)</span></label>";
+  const tmplInp=mk("input");tmplInp.type="file";tmplInp.id="svTemplate";tmplInp.accept=".xlsx,.xls,.docx,.doc,.pdf,.jpg,.png,.zip,.csv";tmplInp.style.cssText="width:100%;padding:4px 0";
+  const tmplHint=mk("div");tmplHint.style.cssText="font-size:11px;color:var(--tx3);margin-top:2px";tmplHint.textContent="Дээд хэмжээ: 5MB";
+  tmplDiv.appendChild(tmplInp);tmplDiv.appendChild(tmplHint);sub2.appendChild(tmplDiv);
+  const bCreate=mk("button","btn bs");bCreate.textContent="🚀 Судалгаа эхлүүлэх";bCreate.style.cssText="margin-left:0;margin-bottom:10px";
   bCreate.onclick=async()=>{
     const title=document.getElementById("svTitle")?.value.trim();
     if(!title){toast("Гарчиг оруулна уу","te");return;}
@@ -1358,7 +1370,15 @@ function tSurvey(c){
       if(t)questions.push({id:"q"+qi,text:t,type:f,subgroup:g});
     });
     if(!questions.length){toast("Ядаж 1 асуулт нэмнэ үү","te");return;}
+    // Загвар файл уншина
+    let templateFile=null;
+    const tmplFile=document.getElementById("svTemplate")?.files?.[0];
+    if(tmplFile){
+      if(tmplFile.size>5*1024*1024){toast("⚠️ Загвар файл 5MB-аас их байна","te");return;}
+      templateFile=await new Promise(res=>{const rd=new FileReader();rd.onload=()=>res({name:tmplFile.name,data:rd.result});rd.readAsDataURL(tmplFile);});
+    }
     const survey={id:"sv_"+Date.now(),title,questions,createdAt:new Date().toLocaleString("mn-MN"),createdBy:S.user?.name||"admin"};
+    if(templateFile)survey.templateFile=templateFile;
     S.activeSurvey=survey;S.surveyResp={};
     if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/current"),survey);await window._set(window._r(fbDB,"survey/responses"),null);toast("🚀 Судалгаа эхэллээ!","ts");}catch(e){toast("⚠️ "+e.message,"te");return;}}
     renderTab("survey");
