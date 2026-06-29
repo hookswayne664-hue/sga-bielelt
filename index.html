@@ -1397,6 +1397,52 @@ function tSurvey(c){
         toast("📦 ZIP бэлэн ("+cnt+" файл)","ts");
       };
       sub.appendChild(bZip);
+      // Файл нэгтгэх (Excel файлуудын data мөрүүдийг нэгтгэнэ)
+      const excelFiles=[];
+      done.forEach(u=>{const r=resp[u.code];fileQsZ.forEach(q=>{const v=r.values&&r.values[q.id];if(v&&typeof v==="object"&&v.data&&v.name&&/\.(xlsx|xls)$/i.test(v.name)){excelFiles.push({unit:u.code,name:u.name,file:v});}});});
+      if(excelFiles.length){
+        const bMerge=mk("button","btn bm");bMerge.style.cssText="margin-top:10px;margin-left:8px;background:#7c3aed;color:#fff;border:none;border-radius:5px;padding:6px 12px;cursor:pointer;font-size:13px";bMerge.textContent="📊 Excel нэгтгэх";
+        bMerge.onclick=async()=>{
+          // Header мөрийн тоог асуух modal
+          const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.maxWidth="340px";
+          bx.innerHTML="<h3 style='margin-bottom:10px'>📊 Excel файлуудыг нэгтгэх</h3><p style='font-size:12px;color:var(--tx2);margin-bottom:10px'>"+excelFiles.length+" файл илэрсэн. Header мөрийн тоог оруулна уу (ихэвчлэн 1-3):</p>";
+          const fi=mk("div","fi");fi.innerHTML="<label>Header мөрийн тоо</label><input id='hdrRows' type='number' value='1' min='0' max='10' style='width:80px;text-align:center'>";bx.appendChild(fi);
+          const br2=mk("div","brow");br2.style.marginTop="12px";
+          const bOk=mk("button","btn bp");bOk.textContent="✅ Нэгтгэх";
+          bOk.onclick=async()=>{
+            const hdrN=parseInt(document.getElementById("hdrRows")?.value)||1;
+            document.body.removeChild(ov);
+            toast("⏳ Файлуудыг уншиж байна...","ts");
+            await loadSheetJS();
+            let headerRows=null;const dataRows=[];
+            for(const ef of excelFiles){
+              try{
+                const b64=ef.file.data.split(",")[1];
+                const wb2=XLSX.read(b64,{type:"base64"});
+                const ws2=wb2.Sheets[wb2.SheetNames[0]];
+                const aoa=XLSX.utils.sheet_to_json(ws2,{header:1,defval:""});
+                if(!headerRows&&hdrN>0)headerRows=aoa.slice(0,hdrN);
+                const rows=aoa.slice(hdrN).filter(r=>r.some(c=>c!==""));
+                rows.forEach(r=>dataRows.push([ef.unit,ef.name,...r]));
+              }catch(e){console.warn("Parse error",ef.unit,e);}
+            }
+            const wb=XLSX.utils.book_new();
+            const merged=[];
+            if(headerRows)merged.push(["Код","Нэгж",...(headerRows[0]||[])]);
+            dataRows.forEach(r=>merged.push(r));
+            const ws=XLSX.utils.aoa_to_sheet(merged);
+            ws["!cols"]=[{wch:10},{wch:30},...(headerRows?headerRows[0].map(()=>({wch:16})):[])];
+            XLSX.utils.book_append_sheet(wb,ws,"Нэгтгэл");
+            XLSX.writeFile(wb,"Нэгтгэл_"+sv.title+".xlsx");
+            toast("📊 Нэгтгэсэн Excel бэлэн ("+dataRows.length+" мөр)","ts");
+          };
+          const bCan=mk("button","btn bx");bCan.textContent="Болих";bCan.onclick=()=>document.body.removeChild(ov);
+          br2.appendChild(bOk);br2.appendChild(bCan);bx.appendChild(br2);
+          ov.onclick=e=>{if(e.target===ov)document.body.removeChild(ov);};
+          ov.appendChild(bx);document.body.appendChild(ov);
+        };
+        sub.appendChild(bMerge);
+      }
     }
     // Close survey button (archive-тай)
     const bClose=mk("button","btn bx");bClose.style.cssText="margin-top:10px;margin-left:8px";bClose.textContent="🔴 Судалгаа хаах";
