@@ -1327,7 +1327,34 @@ function renderArchList(el,items){
     const d=mk("div","ai-item");d.innerHTML="<div style='font-weight:600;color:var(--bl2)'>"+a.plan+" — "+a.period+"</div><div style='font-size:11px;color:var(--tx3);margin-top:3px'>"+a.date+" · "+a.author+"</div>";
     d.onclick=(function(aa){return function(){
       const mc=document.getElementById("MC");mc.innerHTML="";
-      const card=mk("div","card");card.innerHTML="<h2>"+aa.plan+" — "+aa.period+"</h2><div class='aio' style='margin-top:10px'>"+aa.text+"</div>";
+      const card=mk("div","card");card.innerHTML="<h2>"+aa.name+"</h2>";
+      // Build table: units x indicators
+      if(aa.inds&&aa.data){
+        const inds=aa.inds;
+        const tw=mk("div","tw");const tbl=mk("table");
+        let hdr="<tr><th>Нэгж</th>";inds.forEach(i=>{hdr+="<th style='font-size:11px'>"+i.name+"</th>";});hdr+="</tr>";
+        tbl.innerHTML=hdr;
+        Object.entries(aa.data).forEach(([code,u])=>{
+          const tr=mk("tr");
+          let row="<td style='font-weight:600'>"+u.name+"</td>";
+          inds.forEach(i=>{const v=u.values?u.values[i.id]:"";row+="<td style='text-align:right'>"+(v!==undefined&&v!==null&&v!==""?fV(v,i.type):"—")+"</td>";});
+          tr.innerHTML=row;tbl.appendChild(tr);
+        });
+        tw.appendChild(tbl);card.appendChild(tw);
+        // Excel export
+        const bEx=mk("button","btn bs");bEx.style.cssText="margin-top:10px;width:100%";bEx.textContent="📊 Excel татах";
+        bEx.onclick=()=>{
+          if(typeof XLSX==="undefined")return toast("XLSX ачаалагдаагүй","te");
+          const wb=XLSX.utils.book_new();
+          const rows=[[" ",...inds.map(i=>i.name)]];
+          Object.entries(aa.data).forEach(([code,u])=>{rows.push([u.name,...inds.map(i=>{const v=u.values?u.values[i.id]:"";return v!==undefined&&v!==null&&v!==""?v:"";})]);});
+          XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),aa.name.substring(0,30));
+          XLSX.writeFile(wb,aa.name+".xlsx");
+        };
+        card.appendChild(bEx);
+      } else {
+        card.innerHTML+="<div class='empty'>Мэдээ байхгүй</div>";
+      }
       const br=mk("div","brow");const b=mk("button","btn bx");b.textContent="← Буцах";b.onclick=()=>renderTab("archive");br.appendChild(b);card.appendChild(br);mc.appendChild(card);
     };})(a);
     el.appendChild(d);
