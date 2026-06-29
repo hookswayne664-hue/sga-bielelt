@@ -1038,7 +1038,8 @@ function tSummary(c){
   const fi3=mk("div","fi fr one");fi3.style.marginBottom="10px";fi3.innerHTML="<label>Шүүлт — Төлөвлөгөө / АД</label>";
   const s3=mk("select");s3.id="sPl";
   const o0=mk("option");o0.value="all";o0.textContent="— Бүх үзүүлэлт —";s3.appendChild(o0);
-  S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s3.appendChild(o);});
+  const sFreqPlans=new Set();S.inds.filter(i=>i.freq===sFreq).forEach(i=>(i.plans||[]).forEach(p=>sFreqPlans.add(p)));
+  S.plans.filter(p=>sFreqPlans.has(p)).forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;s3.appendChild(o);});
   s3.onchange=lSum;fi3.appendChild(s3);card.appendChild(fi3);
   const bWord=mk("button","btn bs");bWord.style.cssText="margin-bottom:12px;width:100%";bWord.textContent="📊 Excel татах";bWord.onclick=exportExcel;card.appendChild(bWord);
   const sRes=mk("div");sRes.id="sRes";card.appendChild(sRes);
