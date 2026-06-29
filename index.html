@@ -307,8 +307,7 @@ async function initLogin(){
       if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){
         const merged=v.map(fi=>{const def=DINDS.find(d=>d.id===fi.id);if(def){return{...fi,plans:fi.plans||def.plans,freq:def.freq||fi.freq,subgroup:fi.subgroup||def.subgroup||undefined};}return fi;});
         S.inds=merged;try{localStorage.setItem("sga_inds",JSON.stringify(merged));}catch{}
-        // Write corrected indicators back to Firebase so all clients get the fix
-        try{await window._set(window._r(fbDB,"config/indicators"),merged);}catch{}
+
       }}
     }catch{}
     try{
@@ -1614,6 +1613,7 @@ async function savePlanHints(){
 }
 async function sAllPW(){
   const pwd=document.getElementById("allPW").value.trim();if(!pwd)return toast("Оруулна уу","te");
+  if(!confirm("Бүх нэгжийн нууц үгийг '"+pwd+"' болгох уу? Тус тусдаа тохируулсан нууц үгүүд бүгд хувирна!"))return;
   S.units.filter(u=>!u.isAdmin).forEach(u=>{S.pwds[u.code]=pwd;});
   try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
   // Firebase-д шууд хадгална
