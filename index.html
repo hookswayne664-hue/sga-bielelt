@@ -545,14 +545,33 @@ function tData(c){
           if(sg){const hdr=mk("div");hdr.style.cssText="font-size:11px;font-weight:600;color:var(--tx2);margin:10px 0 6px 0;padding:3px 8px;border-left:3px solid var(--bl);background:rgba(31,111,235,.07);border-radius:0 4px 4px 0";hdr.textContent=sg;box.appendChild(hdr);}
           svGroups[sg].forEach(q=>{
             const f=mk("div","fi");
-            f.innerHTML="<label>"+q.text+"</label>"+(q.type==="text"?"<textarea id='sv_"+q.id+"' maxlength='500'></textarea>":"<input id='sv_"+q.id+"' type='number'>");
+            const lbl=mk("label");lbl.textContent=q.text;f.appendChild(lbl);
+            if(q.type==="text"){
+              const ta=mk("textarea");ta.id="sv_"+q.id;ta.maxLength=500;f.appendChild(ta);
+            }else if(q.type==="file"){
+              const fi=mk("input");fi.type="file";fi.id="sv_"+q.id;fi.accept=".xlsx,.xls,.docx,.doc,.pdf,.jpg,.jpeg,.png,.zip,.csv";fi.style.cssText="width:100%;padding:4px 0";f.appendChild(fi);
+              const hint=mk("div");hint.style.cssText="font-size:11px;color:var(--tx3);margin-top:2px";hint.textContent="Дээд хэмжээ: 5MB";f.appendChild(hint);
+            }else{
+              const inp=mk("input");inp.type="text";inp.id="sv_"+q.id;inp.style.textAlign="right";inp.placeholder="0";inp.oninput=()=>fmtInput(inp);f.appendChild(inp);
+            }
             box.appendChild(f);
           });
         });
         const br=mk("div","brow");
         const bOk=mk("button","btn bp");bOk.textContent="✅ Илгээх";
         bOk.onclick=async()=>{
-          const vals={};S.activeSurvey.questions.forEach(q=>{const el=document.getElementById("sv_"+q.id);if(el)vals[q.id]=el.value;});
+          const vals={};const filePromises=[];
+          S.activeSurvey.questions.forEach(q=>{
+            const el=document.getElementById("sv_"+q.id);if(!el)return;
+            if(q.type==="file"){
+              if(el.files&&el.files[0]){
+                const file=el.files[0];
+                if(file.size>5*1024*1024){toast("⚠️ Файл 5MB-аас их байна: "+file.name,"te");return;}
+                filePromises.push(new Promise(res=>{const rd=new FileReader();rd.onload=()=>res({id:q.id,v:{name:file.name,size:file.size,data:rd.result}});rd.readAsDataURL(file);}));
+              }else{vals[q.id]="";}
+            }else{vals[q.id]=el.value;}
+          });
+          (await Promise.all(filePromises)).forEach(r=>vals[r.id]=r.v);
           const resp={values:vals,date:new Date().toLocaleString("mn-MN"),unitName:S.user.name};
           if(!S.surveyResp)S.surveyResp={};S.surveyResp[S.user.code]=resp;
           if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/responses/"+S.user.code),resp);}catch{}}
@@ -1248,7 +1267,7 @@ function tSurvey(c){
       h+="<th>Огноо</th></tr>";
       done.forEach(u=>{
         const r=resp[u.code];h+="<tr><td><b>"+u.code+"</b></td><td>"+u.name+"</td>";
-        sv.questions.forEach(q=>h+="<td>"+(r.values[q.id]||"")+"</td>");
+        sv.questions.forEach(q=>{const v=r.values[q.id];if(v&&typeof v==="object"&&v.data){h+="<td><a href='"+v.data+"' download='"+v.name+"' style='font-size:11px;color:var(--bl)'>📎 "+v.name+"</a></td>";}else{h+="<td>"+(v||"")+"</td>";}});
         h+="<td style='font-size:11px;color:var(--tx3)'>"+r.date+"</td></tr>";
       });
       h+="</table>";tw.innerHTML=h;sub.appendChild(tw);
@@ -1259,7 +1278,7 @@ function tSurvey(c){
       await loadSheetJS();
       const wb=XLSX.utils.book_new();
       const rows=[["Код","Нэгж",...sv.questions.map(q=>q.text),"Огноо"]];
-      units.forEach(u=>{const r=resp[u.code];rows.push([u.code,u.name,...sv.questions.map(q=>r?r.values[q.id]||"":"")]);});
+      units.forEach(u=>{const r=resp[u.code];rows.push([u.code,u.name,...sv.questions.map(q=>{if(!r)return"";const v=r.values[q.id];return(v&&typeof v==="object"&&v.name)?v.name:v||"";}),r?r.date:""]);});
       const ws=XLSX.utils.aoa_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,"Судалгаа");
       XLSX.writeFile(wb,"Судалгаа_"+sv.title+".xlsx");toast("📊 Excel бэлэн","ts");
     };
@@ -1285,7 +1304,7 @@ function tSurvey(c){
     qCount++;const qi=qCount;
     const qDiv=mk("div","fr");qDiv.style.marginBottom="6px";qDiv.id="svQ_"+qi;
     const qi1=mk("div","fi");qi1.innerHTML="<label>Асуулт "+qi+"</label><input id='svQT_"+qi+"' placeholder='Асуултын текст' value='"+(txt||"").replace(/'/g,"&#39;")+"'>";qDiv.appendChild(qi1);
-    const qi2=mk("div","fi");qi2.innerHTML="<label>Төрөл</label><select id='svQF_"+qi+"'><option value='num'"+(typ==="num"?" selected":"")+">Тоо</option><option value='text'"+(typ==="text"?" selected":"")+">Текст</option></select>";qDiv.appendChild(qi2);
+    const qi2=mk("div","fi");qi2.innerHTML="<label>Төрөл</label><select id='svQF_"+qi+"'><option value='num'"+(typ==="num"?" selected":"")+">Тоо</option><option value='money'"+(typ==="money"?" selected":"")+">Мөнгөн дүн</option><option value='text'"+(typ==="text"?" selected":"")+">Текст</option><option value='file'"+(typ==="file"?" selected":"")+">Файл</option></select>";qDiv.appendChild(qi2);
     const qDel=mk("button","btn bd_");qDel.textContent="✕";qDel.style.marginTop="20px";qDel.onclick=()=>qDiv.remove();qDiv.appendChild(qDel);
     qList.appendChild(qDiv);
   }
