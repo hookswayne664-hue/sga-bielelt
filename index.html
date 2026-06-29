@@ -1325,19 +1325,12 @@ function buildCfg(c){
   const cfgAll=mk("option");cfgAll.value="all";cfgAll.textContent="— Бүх үзүүлэлт —";cfgPlanSel.appendChild(cfgAll);
   S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;cfgPlanSel.appendChild(o);});
   cfgPlanFi.appendChild(cfgPlanSel);cfgPlanFr.appendChild(cfgPlanFi);c1.appendChild(cfgPlanFr);
-  // Plan hint edit row
-  const hintFr=mk("div","fr");hintFr.style.cssText="margin-bottom:10px;display:none";hintFr.id="cfgHintRow";
-  const hintFi=mk("div","fi");hintFi.style.flex="1";hintFi.innerHTML="<label>Анхааруулга (нэгжүүдэд харагдана)</label><input id='cfgHintInp' placeholder='жишээ: Дүнг оны эхнээс нийлүүлэн бичнэ үү'>";hintFr.appendChild(hintFi);
-  const hintBtn=mk("button","btn bs");hintBtn.textContent="💾 Хадгалах";hintBtn.style.marginTop="20px";
-  hintBtn.onclick=async()=>{const pl=cfgPlanSel.value;if(pl==="all")return;const h=document.getElementById("cfgHintInp")?.value.trim();if(h)S.planHints[pl]=h;else delete S.planHints[pl];await savePlanHints();toast("✅ Анхааруулга хадгалагдлаа","ts");};
-  hintFr.appendChild(hintBtn);c1.appendChild(hintFr);
+
   const il=mk("div");il.style.cssText="max-height:400px;overflow-y:auto";
   function rebuildIndList(){
     il.innerHTML="";
     const selPlan=document.getElementById("cfgPlan")?.value||"all";
-    // Show/hide hint row
-    const hr=document.getElementById("cfgHintRow");if(hr)hr.style.display=selPlan==="all"?"none":"flex";
-    if(selPlan!=="all"){const hi=document.getElementById("cfgHintInp");if(hi)hi.value=S.planHints[selPlan]||"";}
+
     const filtered=selPlan==="all"?S.inds.map((ind,i)=>({ind,i})):S.inds.map((ind,i)=>({ind,i})).filter(({ind})=>(ind.plans||[]).some(p=>p===selPlan));
     const filtLen=filtered.length;
     filtered.forEach(({ind,i},fi)=>{
@@ -1359,7 +1352,7 @@ function buildCfg(c){
       const f2=mk("div","mfi");f2.innerHTML="<label>Давтамж</label><select id='ei_f'><option value='week'"+(ind.freq==="week"?" selected":"")+" >7 хоног</option><option value='month'"+(ind.freq==="month"?" selected":"")+">Сар бүр</option><option value='quarter'"+(ind.freq==="quarter"?" selected":"")+">Улирал бүр</option></select>";box.appendChild(f2);
       const f3=mk("div","mfi");f3.innerHTML="<label>Хэлбэр</label><select id='ei_t'><option value='num'"+(ind.type==="num"?" selected":"")+">Тоо</option><option value='money'"+(ind.type==="money"?" selected":"")+">Мөнгөн дүн</option><option value='pct'"+(ind.type==="pct"?" selected":"")+">Хувь</option><option value='text'"+(ind.type==="text"?" selected":"")+">Текст</option></select>";box.appendChild(f3);
       const f3b=mk("div","mfi");f3b.innerHTML="<label>Дэд бүлэг</label><input id='ei_sg' placeholder='жишээ: Гомдол гаргагчаар' value='"+(ind.subgroup||"").replace(/'/g,"&#39;")+"'>";box.appendChild(f3b);
-      const f3c=mk("div","mfi");f3c.innerHTML="<label>Бөглөх заавар</label><input id='ei_hint' placeholder='жишээ: Зөвхөн энэ 7 хоногт шинээр...' value='"+(ind.hint||"").replace(/'/g,"&#39;")+"'>";box.appendChild(f3c);
+
       const f4=mk("div","mfi");f4.innerHTML="<label>Төлөвлөгөөнүүд</label>";
       const sel4=mk("select");sel4.id="ei_p";sel4.style.cssText="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px";
       S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;o.selected=(ind.plans||[]).includes(p);sel4.appendChild(o);});
@@ -1375,7 +1368,6 @@ function buildCfg(c){
         S.inds[idx].type=document.getElementById("ei_t").value;
         S.inds[idx].plans=[document.getElementById("ei_p").value].filter(Boolean);
         const sg=document.getElementById("ei_sg")?.value.trim();S.inds[idx].subgroup=sg||undefined;
-        const ht=document.getElementById("ei_hint")?.value.trim();S.inds[idx].hint=ht||undefined;
         document.body.removeChild(overlay);
         const _sy=window.scrollY;const _il=document.querySelector("#MC .card div[style*='overflow-y']");const _isy=_il?_il.scrollTop:0;const _iidx=idx;
         saveInds();buildCfg(c);
@@ -1442,21 +1434,47 @@ function buildCfg(c){
     badge.style.minWidth="80px";row.appendChild(badge);
     const bRen=mk("button","btn bi");bRen.textContent="✏️";bRen.title="Нэр өөрчлөх";
     bRen.onclick=(function(oldName,idx){return function(){
-      const nn=prompt("Шинэ нэр:",oldName);if(!nn||!nn.trim()||nn.trim()===oldName)return;
-      const newName=nn.trim();
-      S.plans[idx]=newName;
-      S.inds=S.inds.map(i=>({...i,plans:(i.plans||[]).map(p=>p===oldName?newName:p)}));
-      S.activePlans=S.activePlans.map(p=>p===oldName?newName:p);
-      savePlans();saveActivePlans();saveInds();buildCfg(c);toast("✅ '"+oldName+"' → '"+newName+"'","ts");
+      const ov=mk("div","modal-overlay");
+      const bx=mk("div","modal-box");bx.innerHTML="<h3>✏️ Төлөвлөгөө засах</h3>";
+      const pf1=mk("div","mfi");pf1.innerHTML="<label>Нэр</label><input id='pe_n' value='"+oldName.replace(/'/g,"&#39;")+"'>";bx.appendChild(pf1);
+      const pf2=mk("div","mfi");pf2.innerHTML="<label>Анхааруулга (нэгжүүдэд бөглөх хэсгийн дээр харагдана)</label><input id='pe_h' placeholder='жишээ: Дүнг өссөн байдлаар, оны эхнээс нийлүүлэн бичнэ үү' value='"+(S.planHints[oldName]||"").replace(/'/g,"&#39;")+"'>";bx.appendChild(pf2);
+      const pbr=mk("div","brow");
+      const pbOk=mk("button","btn bp");pbOk.textContent="💾 Хадгалах";
+      pbOk.onclick=async()=>{
+        const newName=document.getElementById("pe_n").value.trim();if(!newName)return;
+        const h=document.getElementById("pe_h").value.trim();
+        if(newName!==oldName){
+          S.plans[idx]=newName;
+          S.inds=S.inds.map(i=>({...i,plans:(i.plans||[]).map(p=>p===oldName?newName:p)}));
+          S.activePlans=S.activePlans.map(p=>p===oldName?newName:p);
+          if(S.planHints[oldName]){S.planHints[newName]=S.planHints[oldName];delete S.planHints[oldName];}
+          savePlans();saveActivePlans();saveInds();
+        }
+        if(h)S.planHints[newName||oldName]=h;else delete S.planHints[newName||oldName];
+        await savePlanHints();
+        document.body.removeChild(ov);buildCfg(c);toast("✅ Хадгалагдлаа","ts");
+      };
+      const pbCan=mk("button","btn bx");pbCan.textContent="Болих";pbCan.onclick=()=>document.body.removeChild(ov);
+      pbr.appendChild(pbOk);pbr.appendChild(pbCan);bx.appendChild(pbr);
+      ov.onclick=e=>{if(e.target===ov)document.body.removeChild(ov);};
+      ov.appendChild(bx);document.body.appendChild(ov);
     };})(p,i);
     row.appendChild(bRen);
     const bd=mk("button","btn bd_");bd.textContent="🗑️";
     bd.onclick=(function(idx){return function(){if(confirm("Устгах уу?")){S.plans.splice(idx,1);S.activePlans=S.activePlans.filter(x=>x!==S.plans[idx]);savePlans();saveActivePlans();buildCfg(c);}};})(i);
     row.appendChild(bd);c2.appendChild(row);
   });
-  const sub2=mk("div","sub");sub2.style.marginTop="10px";sub2.innerHTML="<div class='fr one'><div class='fi'><label>Шинэ төлөвлөгөө</label><input id='nPl' placeholder='Нэр'></div></div>";
+  const sub2=mk("div","sub");sub2.style.marginTop="10px";
+  const np_fr1=mk("div","fr one");const np_fi1=mk("div","fi");np_fi1.innerHTML="<label>Шинэ төлөвлөгөөний нэр</label><input id='nPl' placeholder='Нэр'>";np_fr1.appendChild(np_fi1);sub2.appendChild(np_fr1);
+  const np_fr2=mk("div","fr one");const np_fi2=mk("div","fi");np_fi2.innerHTML="<label>Анхааруулга (нэгжүүдэд харагдана)</label><input id='nPlH' placeholder='жишээ: Дүнг өссөн байдлаар, оны эхнээс нийлүүлэн бичнэ үү'>";np_fr2.appendChild(np_fi2);sub2.appendChild(np_fr2);
   const b2=mk("button","btn bs");b2.textContent="➕ Нэмэх";
-  b2.onclick=()=>{const p=document.getElementById("nPl").value.trim();if(!p)return;S.plans.push(p);savePlans();buildCfg(c);};
+  b2.onclick=async()=>{
+    const p=document.getElementById("nPl").value.trim();if(!p)return;
+    const h=document.getElementById("nPlH").value.trim();
+    S.plans.push(p);
+    if(h){S.planHints[p]=h;await savePlanHints();}
+    savePlans();buildCfg(c);
+  };
   sub2.appendChild(b2);c2.appendChild(sub2);c.appendChild(c2);
 
   // Нууц үгийн удирдлага
