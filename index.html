@@ -1084,39 +1084,39 @@ function lSum(){
   if(!selPeriods.length)selPeriods=from?[from]:to?[to]:[];
   let inds=S.inds.filter(i=>i.freq===sFreq);
   if(plan!=="all")inds=inds.filter(i=>i.plans&&i.plans.some(pl=>pl.trim()===plan.trim()||pl.trim().includes(plan.trim())||plan.trim().includes(pl.trim())));
-  // Сонгосон бүх period-ийн мэдээг нэгтгэнэ
+  // Period бүрт нэгж тус бүрийн хамгийн сүүлийн оруулгыг авна (unit+period pair)
   const entries=S.data.filter(d=>selPeriods.includes(d.period)&&d.freq===sFreq);
-  // Нэгж бүрийг нэг удаа тооцно (хамгийн сүүлийн мэдээг авна)
-  const unitMap={};
+  const upMap={};
   entries.forEach(e=>{
-    if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;
+    const key=e.unit+"||"+e.period;
+    if(!upMap[key]||e.date>upMap[key].date)upMap[key]=e;
   });
-  const uniqEntries=Object.values(unitMap);
+  const allEntries=Object.values(upMap);
   const totalU=S.units.filter(u=>!u.isAdmin&&!u.disabled).length;
-  // Тодорхой план сонгосон бол зөвхөн тэр планы үзүүлэлт бөглөсөн нэгжийг тоолно
-  const planFilled=plan==="all"?uniqEntries:uniqEntries.filter(e=>inds.some(ind=>e.values&&e.values[ind.id]!==undefined&&e.values[ind.id]!==null&&e.values[ind.id]!==""));
-  const sub=new Set(planFilled.map(e=>e.unit)).size;
+  // Илгээсэн нэгж = аль нэг period-д оруулсан нэгжүүд (union)
+  const filledEntries=plan==="all"?allEntries:allEntries.filter(e=>inds.some(ind=>e.values&&e.values[ind.id]!==undefined&&e.values[ind.id]!==null&&e.values[ind.id]!==""));
+  const sub=new Set(filledEntries.map(e=>e.unit)).size;
   const periodLabel=selPeriods.length>1?selPeriods[selPeriods.length-1]+" ~ "+selPeriods[0]:selPeriods[0]||"";
   let h="<div style='font-size:12px;color:var(--tx2);margin-bottom:10px'>📅 "+periodLabel+" ("+selPeriods.length+" хугацаа)</div>";
   h+="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгээгүй</div></div></div>";
   if(!inds.length){document.getElementById("sRes").innerHTML=h+"<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
   h+="<div class='tw'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт</th><th>Бөглөлт</th></tr>";
   inds.forEach(ind=>{
-    const vals=uniqEntries.map(e=>e.values[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
+    const vals=allEntries.map(e=>e.values[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
     const nums=vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));
     let total="—";
     if(ind.type==="text"){
       if(vals.length){
-        const preview=uniqEntries.filter(e=>e.values[ind.id]).map(e=>"<span style='font-size:11px;color:var(--tx2)'><b>"+e.unit+":</b> "+(String(e.values[ind.id]).length>40?String(e.values[ind.id]).substring(0,40)+"...":e.values[ind.id])+"</span>").join("<br>");
+        const preview=allEntries.filter(e=>e.values[ind.id]).map(e=>"<span style='font-size:11px;color:var(--tx2)'><b>"+e.unit+":</b> "+(String(e.values[ind.id]).length>40?String(e.values[ind.id]).substring(0,40)+"...":e.values[ind.id])+"</span>").join("<br>");
         total="<details><summary style='cursor:pointer;color:var(--bl2)'>"+vals.length+" хариу</summary><div style='margin-top:6px;line-height:1.8'>"+preview+"</div></details>";
       }
     } else if(ind.type==="pct"&&nums.length){total=(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1)+"%";}
     else if(nums.length){total="<b>"+fN(nums.reduce((a,b)=>a+b,0))+"</b>";}
-    const fc=vals.length,pct=sub?Math.round(fc/sub*100):0;
+    const fc=new Set(allEntries.filter(e=>e.values&&e.values[ind.id]!==undefined&&e.values[ind.id]!==null&&e.values[ind.id]!=="").map(e=>e.unit)).size,pct=sub?Math.round(fc/sub*100):0;
     h+="<tr><td style='font-size:12px;color:var(--tx2)'>"+ind.id+"</td><td>"+ind.name+"</td><td style='text-align:right;font-size:15px'>"+total+"</td><td><span style='font-size:12px;color:"+(fc>0?"var(--gr)":"var(--rd)")+"'>"+fc+"/"+sub+"</span> <div class='pb' style='width:60px;display:inline-block;vertical-align:middle'><div class='pf' style='width:"+pct+"%'></div></div></td></tr>";
   });
   h+="</table></div>";
-  if(!uniqEntries.length)h+="<div class='empty' style='margin-top:12px'>Мэдээ байхгүй</div>";
+  if(!allEntries.length)h+="<div class='empty' style='margin-top:12px'>Мэдээ байхгүй</div>";
   document.getElementById("sRes").innerHTML=h;
 }
 function tAI(c){
