@@ -873,7 +873,9 @@ function tMonitor(c){
   const fiPl=mk("div","fi");fiPl.innerHTML="<label>Төлөвлөгөө</label>";
   const sPl=mk("select");sPl.id="mPlan";
   const allOpt2=mk("option");allOpt2.value="all";allOpt2.textContent="— Бүх төлөвлөгөө —";sPl.appendChild(allOpt2);
-  S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;sPl.appendChild(o);});
+  // Only show plans that have at least one indicator matching current mFreq
+  const freqPlans=new Set();S.inds.filter(i=>i.freq===mFreq).forEach(i=>(i.plans||[]).forEach(p=>freqPlans.add(p)));
+  S.plans.filter(p=>freqPlans.has(p)).forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;sPl.appendChild(o);});
   sPl.onchange=lMon;fiPl.appendChild(sPl);fr1.appendChild(fiPl);
   c1.appendChild(fr1);
   const mRes=mk("div");mRes.id="mRes";c1.appendChild(mRes);c.appendChild(c1);
