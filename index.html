@@ -1326,9 +1326,9 @@ function tSurvey(c){
       XLSX.writeFile(wb,"Бүртгэл_"+sv.title+".xlsx");toast("📋 Бүртгэл Excel бэлэн","ts");
     };
     sub.appendChild(bExcel);
-    // Excel: Мастер нэгтгэл (тоон асуулт нийлбэр)
+    // Excel: Мастер нэгтгэл
     const numQs=sv.questions.filter(q=>q.type==="num"||q.type==="money");
-    if(numQs.length&&done.length){
+    if(done.length){
       const bMaster=mk("button","btn bg");bMaster.style.cssText="margin-top:10px;margin-left:8px;background:var(--gn);color:#fff";bMaster.textContent="📊 Мастер шийт татах";
       bMaster.onclick=async()=>{
         await loadSheetJS();
