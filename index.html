@@ -1433,16 +1433,21 @@ function tSurvey(c){
             Object.entries(sheetMap).forEach(([sn,uds])=>{
               const out=[];
               uds.forEach((ud,idx)=>{
+                const hRows=ud.rows.slice(0,hdrN);
+                const dRows=ud.rows.slice(hdrN).filter(r=>r.some(c=>c!==""));
                 if(idx===0){
-                  // Эхний файлаас бүх мөр (header+data)
-                  out.push(...ud.rows);
-                }else{
-                  // Дараагийн файлуудаас зөвхөн data мөр (header алгасна)
-                  const dataRows=ud.rows.slice(hdrN).filter(r=>r.some(c=>c!==""));
-                  out.push(...dataRows);
+                  // Header нэг удаа — эхний мөрд "Код","Нэгж" нэмнэ
+                  hRows.forEach((row,ri)=>{
+                    out.push(ri===0?["Код","Нэгж",...row]:["","",...row]);
+                  });
                 }
+                // Data мөр бүрт нэгжийн код нэмнэ (эхний мөрт л харуулна)
+                dRows.forEach((row,ri)=>{
+                  out.push(ri===0?[ud.unit,ud.name,...row]:["","",...row]);
+                });
               });
               const ws=XLSX.utils.aoa_to_sheet(out);
+              ws["!cols"]=[{wch:10},{wch:28},...(uds[0]?.rows[0]||[]).map(()=>({wch:14}))];
               XLSX.utils.book_append_sheet(wb,ws,sn.substring(0,31));
             });
             XLSX.writeFile(wb,"Нэгтгэл_"+sv.title+".xlsx");
