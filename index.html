@@ -1457,7 +1457,9 @@ function tSurvey(c){
                   });
                 }
                 // "Нийт" мөрийг хасна — хамгийн доор нэг нийт мөр нэмнэ
-                const cleanRows=dRows.filter(r=>!r.slice(0,6).some(c=>typeof c==="string"&&c.trim()==="Нийт"));
+                const cleanRows=dRows
+                  .filter(r=>r.some(c=>c!==null&&c!==undefined&&String(c).trim()!==""))
+                  .filter(r=>!r.slice(0,6).some(c=>typeof c==="string"&&c.trim()==="Нийт"));
                 cleanRows.forEach((row,ri)=>{
                   out.push(ri===0?[ud.unit,ud.name,...row]:["","",...row]);
                 });
