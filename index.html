@@ -1455,11 +1455,24 @@ function tSurvey(c){
                     out.push(ri===0?["Код","Нэгж",...row]:["","",...row]);
                   });
                 }
-                // Data мөр бүрт нэгжийн код нэмнэ (эхний мөрт л харуулна)
-                dRows.forEach((row,ri)=>{
+                // "Нийт" мөрийг хасна — хамгийн доор нэг нийт мөр нэмнэ
+                const cleanRows=dRows.filter(r=>!r.slice(0,6).some(c=>typeof c==="string"&&c.trim()==="Нийт"));
+                cleanRows.forEach((row,ri)=>{
                   out.push(ri===0?[ud.unit,ud.name,...row]:["","",...row]);
                 });
               });
+              // Нэг нийт мөр хамгийн доор
+              if(out.length>globalHdrN){
+                const dataOnly=out.slice(globalHdrN);
+                const colCount=Math.max(...dataOnly.map(r=>r.length));
+                const totRow=new Array(colCount).fill("");
+                totRow[0]="Нийт";totRow[1]="";
+                for(let ci=2;ci<colCount;ci++){
+                  const nums=dataOnly.map(r=>r[ci]).filter(v=>v!==""&&!isNaN(parseFloat(v)));
+                  if(nums.length)totRow[ci]=nums.reduce((a,b)=>a+parseFloat(b),0);
+                }
+                out.push(totRow);
+              }
               const ws=XLSX.utils.aoa_to_sheet(out);
               ws["!cols"]=[{wch:10},{wch:28},...(uds[0]?.rows[0]||[]).map(()=>({wch:14}))];
               XLSX.utils.book_append_sheet(wb,ws,sn.substring(0,31));
