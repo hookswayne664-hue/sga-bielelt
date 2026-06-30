@@ -1405,13 +1405,23 @@ function tSurvey(c){
         bMerge.onclick=async()=>{
           // Header мөрийн тоог асуух modal
           const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.maxWidth="340px";
-          bx.innerHTML="<h3 style='margin-bottom:10px'>📊 Excel файлуудыг нэгтгэх</h3><p style='font-size:12px;color:var(--tx2);margin-bottom:10px'>"+excelFiles.length+" нэгжийн файл илэрсэн. Файлаа нээгээд <b>дата хэдэн дэх мөрнөөс эхэлдэгийг</b> шалгаарай:</p>";
-          const hdrFi=mk("div","fi");hdrFi.innerHTML="<label>Дата эхлэх мөрийн дугаар <span style='font-size:10px;color:var(--tx3)'>(жишээ: дата 7-р мөрнөөс бол 7)</span></label><input id='hdrRowsN' type='number' value='7' min='1' max='30' style='width:80px;text-align:center'>";bx.appendChild(hdrFi);
+          bx.innerHTML="<h3 style='margin-bottom:10px'>📊 Excel файлуудыг нэгтгэх</h3><p style='font-size:12px;color:var(--tx2);margin-bottom:10px'>"+excelFiles.length+" нэгжийн файл. Дата мөрийг автоматаар таньж нэгтгэнэ.</p>";
           const br2=mk("div","brow");br2.style.marginTop="12px";
           const bOk=mk("button","btn bp");bOk.textContent="✅ Нэгтгэх";
           bOk.onclick=async()=>{
-            const startRow=parseInt(document.getElementById("hdrRowsN")?.value)||7;
-            const hdrN=startRow-1; // 1-indexed → skip count
+            // Автоматаар header мөрийн тоог тодорхойлно:
+            // Д/д баганд 1 гэсэн утга байгаа эхний мөрийг дата эхлэл гэж үзнэ
+            function detectDataStart(aoa){
+              for(let i=0;i<aoa.length;i++){
+                const row=aoa[i];
+                for(let j=0;j<Math.min(6,row.length);j++){
+                  const v=row[j];
+                  if(v===1||v==="1"||v===1.0){return i;}
+                }
+              }
+              return 0;
+            }
+            const hdrN=0; // per-sheet detect below
             document.body.removeChild(ov);
             toast("⏳ Файлуудыг уншиж байна...","ts");
             await loadSheetJS();
@@ -1433,9 +1443,12 @@ function tSurvey(c){
             const wb=XLSX.utils.book_new();
             Object.entries(sheetMap).forEach(([sn,uds])=>{
               const out=[];
+              let globalHdrN=null;
               uds.forEach((ud,idx)=>{
-                const hRows=ud.rows.slice(0,hdrN);
-                const dRows=ud.rows.slice(hdrN).filter(r=>r.some(c=>c!==""));
+                const fileHdrN=detectDataStart(ud.rows);
+                if(globalHdrN===null)globalHdrN=fileHdrN;
+                const hRows=ud.rows.slice(0,globalHdrN);
+                const dRows=ud.rows.slice(globalHdrN).filter(r=>r.some(c=>c!==""));
                 if(idx===0){
                   // Header нэг удаа — эхний мөрд "Код","Нэгж" нэмнэ
                   hRows.forEach((row,ri)=>{
