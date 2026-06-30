@@ -1383,7 +1383,8 @@ function tSurvey(c){
               const dRows=ud.rows.slice(globalHdrN).filter(r=>r.some(c=>c!==""));
               if(idx===0){hRows.forEach((row,ri)=>{out.push(ri===0?["Код","Нэгж",...row]:["","",...row]);});}
               const cleanRows=dRows
-                .filter(r=>r.some(c=>c!==null&&c!==undefined&&String(c).trim()!==""))
+                // Д/д баганд утга байх боловч бусад нь хоосон мөрийг хасна
+                .filter(r=>r.slice(1).some(c=>c!==null&&c!==undefined&&c!==""&&String(c).trim()!==""))
                 .filter(r=>!r.slice(0,6).some(c=>typeof c==="string"&&c.trim()==="Нийт"));
               cleanRows.forEach((row,ri)=>{out.push(ri===0?[ud.unit,ud.name,...row]:["","",...row]);});
             });
@@ -1392,7 +1393,8 @@ function tSurvey(c){
               const colCount=Math.max(...dataOnly.map(r=>r.length));
               const totRow=new Array(colCount).fill("");
               totRow[0]="Нийт";totRow[1]="";
-              for(let ci=2;ci<colCount;ci++){const nums=dataOnly.map(r=>r[ci]).filter(v=>v!==""&&!isNaN(parseFloat(v)));if(nums.length)totRow[ci]=nums.reduce((a,b)=>a+parseFloat(b),0);}
+              // Бүртгэлд SUM биш COUNT гаргана
+              for(let ci=2;ci<colCount;ci++){const nonEmpty=dataOnly.map(r=>r[ci]).filter(v=>v!==null&&v!==undefined&&v!==""&&String(v).trim()!=="");if(nonEmpty.length)totRow[ci]=nonEmpty.length;}
               out.push(totRow);
             }
             const ws=XLSX.utils.aoa_to_sheet(out);
