@@ -1283,7 +1283,8 @@ function tSurvey(c){
       const sc=mk("div","sc "+(s.c||""));sc.innerHTML="<div class='n'>"+s.n+"</div><div class='l'>"+s.l+"</div>";statsDiv.appendChild(sc);
     });
     sub.appendChild(statsDiv);
-    if(miss.length){const md=mk("div");md.style.cssText="margin-top:6px;font-size:12px;color:var(--rd)";md.textContent="❌ "+miss.map(u=>u.code).join(", ");sub.appendChild(md);}
+    if(done.length){const dd=mk("div");dd.style.cssText="margin-top:6px;font-size:12px;color:var(--gn)";dd.textContent="✅ "+done.map(u=>u.code).join(", ");sub.appendChild(dd);}
+    if(miss.length){const md=mk("div");md.style.cssText="margin-top:4px;font-size:12px;color:var(--rd)";md.textContent="❌ "+miss.map(u=>u.code).join(", ");sub.appendChild(md);}
     // Responses table
     if(done.length){
       const tw=mk("div","tw");let h="<table><tr><th>Код</th><th>Нэгж</th>";
