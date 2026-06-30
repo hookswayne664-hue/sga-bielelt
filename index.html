@@ -1405,12 +1405,13 @@ function tSurvey(c){
         bMerge.onclick=async()=>{
           // Header мөрийн тоог асуух modal
           const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.maxWidth="340px";
-          bx.innerHTML="<h3 style='margin-bottom:10px'>📊 Excel файлуудыг нэгтгэх</h3><p style='font-size:12px;color:var(--tx2);margin-bottom:10px'>"+excelFiles.length+" нэгжийн файл илэрсэн. Header мөрийн тоог оруулна уу (бүртгэлийн файл дахь толгой мөрийн тоо):</p>";
-          const hdrFi=mk("div","fi");hdrFi.innerHTML="<label>Header мөр</label><input id='hdrRowsN' type='number' value='3' min='0' max='10' style='width:80px;text-align:center'>";bx.appendChild(hdrFi);
+          bx.innerHTML="<h3 style='margin-bottom:10px'>📊 Excel файлуудыг нэгтгэх</h3><p style='font-size:12px;color:var(--tx2);margin-bottom:10px'>"+excelFiles.length+" нэгжийн файл илэрсэн. Файлаа нээгээд <b>дата хэдэн дэх мөрнөөс эхэлдэгийг</b> шалгаарай:</p>";
+          const hdrFi=mk("div","fi");hdrFi.innerHTML="<label>Дата эхлэх мөрийн дугаар <span style='font-size:10px;color:var(--tx3)'>(жишээ: дата 7-р мөрнөөс бол 7)</span></label><input id='hdrRowsN' type='number' value='7' min='1' max='30' style='width:80px;text-align:center'>";bx.appendChild(hdrFi);
           const br2=mk("div","brow");br2.style.marginTop="12px";
           const bOk=mk("button","btn bp");bOk.textContent="✅ Нэгтгэх";
           bOk.onclick=async()=>{
-            const hdrN=parseInt(document.getElementById("hdrRowsN")?.value)||0;
+            const startRow=parseInt(document.getElementById("hdrRowsN")?.value)||7;
+            const hdrN=startRow-1; // 1-indexed → skip count
             document.body.removeChild(ov);
             toast("⏳ Файлуудыг уншиж байна...","ts");
             await loadSheetJS();
