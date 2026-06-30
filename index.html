@@ -1316,68 +1316,98 @@ function tSurvey(c){
       });
       if(fSec.children.length>1)sub.appendChild(fSec);
     }
-    // Excel: Бүртгэл (нэгж бүрийн хариулт)
-    const bExcel=mk("button","btn bs");bExcel.style.marginTop="10px";bExcel.textContent="📋 Бүртгэл татах";
-    bExcel.onclick=async()=>{
-      await loadSheetJS();
-      const wb=XLSX.utils.book_new();
-      const rows=[["Код","Нэгж",...sv.questions.map(q=>q.text),"Огноо"]];
-      units.forEach(u=>{const r=resp[u.code];rows.push([u.code,u.name,...sv.questions.map(q=>{if(!r)return"";const v=r.values[q.id];return(v&&typeof v==="object"&&v.name)?v.name:v||"";}),r?r.date:""]);});
-      const ws=XLSX.utils.aoa_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,"Бүртгэл");
-      XLSX.writeFile(wb,"Бүртгэл_"+sv.title+".xlsx");toast("📋 Бүртгэл Excel бэлэн","ts");
-    };
-    sub.appendChild(bExcel);
-    // Excel: Мастер нэгтгэл
-    const numQs=sv.questions.filter(q=>q.type==="num"||q.type==="money");
+    // Мастер шийт + ZIP
+    const fileQsZ=sv.questions.filter(q=>q.type==="file");
+    // Excel файлуудын жагсаалт (бүртгэл merge-д хэрэглэнэ)
+    const excelFiles=[];
+    if(fileQsZ.length&&done.length){
+      done.forEach(u=>{const r=resp[u.code];fileQsZ.forEach(q=>{const v=r.values&&r.values[q.id];if(v&&typeof v==="object"&&v.data&&v.name&&/\.(xlsx|xls)$/i.test(v.name)){excelFiles.push({unit:u.code,name:u.name,file:v});}});});
+    }
     if(done.length){
       const bMaster=mk("button","btn bg");bMaster.style.cssText="margin-top:10px;margin-left:8px;background:var(--gn);color:#fff";bMaster.textContent="📊 Мастер шийт татах";
       bMaster.onclick=async()=>{
-        // Нэгтгэл үү Бүртгэл үү modal
         const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.maxWidth="340px";
         bx.innerHTML="<h3 style='margin-bottom:12px'>📊 Мастер шийтийн хэлбэр</h3>";
         const br2=mk("div","brow");br2.style.flexDirection="column";br2.style.gap="8px";
-        const doExcel=async(mode)=>{
+        // Нэгтгэл: тоон асуултын утгыг нийлбэрлэнэ
+        const doSum=async()=>{
           document.body.removeChild(ov);
           await loadSheetJS();
           const wb=XLSX.utils.book_new();
-          if(mode==="sum"){
-            // Нэгтгэл: асуулт = мөр, нэгжүүд = багана, нийт = тооцоо
-            const hdr=["Асуулт","НИЙТ",...done.map(u=>u.code)];
-            const rows=[hdr];
-            sv.questions.forEach(q=>{
-              const vals=done.map(u=>{
-                const r=resp[u.code];if(!r)return"";
-                const v=r.values[q.id];
-                if(v&&typeof v==="object"&&v.name)return v.name;
-                return v||"";
-              });
-              const isNum=q.type==="num"||q.type==="money";
-              let total="";
-              if(isNum){const nums=vals.map(v=>{const n=parseFloat((v||"").toString().replace(/,/g,""));return isNaN(n)?0:n;});total=nums.reduce((a,b)=>a+b,0);}
-              else{total=vals.filter(v=>v!=="").length+"н";}
-              rows.push([q.text,total,...vals]);
-            });
-            const ws=XLSX.utils.aoa_to_sheet(rows);
-            ws["!cols"]=[{wch:50},{wch:14},...done.map(()=>({wch:14}))];
-            XLSX.utils.book_append_sheet(wb,ws,"Нэгтгэл");
-            XLSX.writeFile(wb,"Нэгтгэл_"+sv.title+".xlsx");
-          } else {
-            // Бүртгэл: нэгж = мөр
-            const rows=[["Код","Нэгж",...sv.questions.map(q=>q.text),"Огноо"]];
-            units.forEach(u=>{const r=resp[u.code];rows.push([u.code,u.name,...sv.questions.map(q=>{if(!r)return"";const v=r.values[q.id];return(v&&typeof v==="object"&&v.name)?v.name:v||"";}),r?r.date:""]);});
-            const ws=XLSX.utils.aoa_to_sheet(rows);
-            ws["!cols"]=[{wch:10},{wch:30},...sv.questions.map(()=>({wch:16})),{wch:18}];
-            XLSX.utils.book_append_sheet(wb,ws,"Бүртгэл");
-            XLSX.writeFile(wb,"Бүртгэл_"+sv.title+".xlsx");
-          }
+          const hdr=["Асуулт","НИЙТ",...done.map(u=>u.code)];
+          const rows=[hdr];
+          sv.questions.forEach(q=>{
+            const vals=done.map(u=>{const r=resp[u.code];if(!r)return"";const v=r.values[q.id];if(v&&typeof v==="object"&&v.name)return v.name;return v||"";});
+            const isNum=q.type==="num"||q.type==="money";
+            let total="";
+            if(isNum){const nums=vals.map(v=>{const n=parseFloat((v||"").toString().replace(/,/g,""));return isNaN(n)?0:n;});total=nums.reduce((a,b)=>a+b,0);}
+            else{total=vals.filter(v=>v!=="").length+"н";}
+            rows.push([q.text,total,...vals]);
+          });
+          const ws=XLSX.utils.aoa_to_sheet(rows);
+          ws["!cols"]=[{wch:50},{wch:14},...done.map(()=>({wch:14}))];
+          XLSX.utils.book_append_sheet(wb,ws,"Нэгтгэл");
+          XLSX.writeFile(wb,"Нэгтгэл_"+sv.title+".xlsx");
           toast("📊 Excel бэлэн","ts");
+        };
+        // Бүртгэл: нэгжийн Excel файлуудыг нэгтгэнэ (per-sheet, header нэг удаа)
+        const doMerge=async()=>{
+          document.body.removeChild(ov);
+          if(!excelFiles.length){toast("⚠️ Excel файл байхгүй","te");return;}
+          toast("⏳ Файлуудыг уншиж байна...","ts");
+          await loadSheetJS();
+          function detectDataStart(aoa){
+            for(let i=0;i<aoa.length;i++){const row=aoa[i];for(let j=0;j<Math.min(6,row.length);j++){const v=row[j];if(v===1||v==="1"||v===1.0){return i;}}}return 0;
+          }
+          const sheetMap={};let cnt=0;
+          for(const ef of excelFiles){
+            try{
+              const b64=ef.file.data.split(",")[1];
+              const wb2=XLSX.read(b64,{type:"base64"});
+              wb2.SheetNames.forEach(sn=>{
+                if(!sheetMap[sn])sheetMap[sn]=[];
+                const aoa=XLSX.utils.sheet_to_json(wb2.Sheets[sn],{header:1,defval:""});
+                sheetMap[sn].push({unit:ef.unit,name:ef.name,rows:aoa});
+              });
+              cnt++;
+            }catch(e){console.warn(ef.unit,e);}
+          }
+          if(!cnt){toast("⚠️ Уншигдах файл олдсонгүй","te");return;}
+          const wb=XLSX.utils.book_new();
+          Object.entries(sheetMap).forEach(([sn,uds])=>{
+            const out=[];let globalHdrN=null;
+            uds.forEach((ud,idx)=>{
+              const fileHdrN=detectDataStart(ud.rows);
+              if(globalHdrN===null)globalHdrN=fileHdrN;
+              const hRows=ud.rows.slice(0,globalHdrN);
+              const dRows=ud.rows.slice(globalHdrN).filter(r=>r.some(c=>c!==""));
+              if(idx===0){hRows.forEach((row,ri)=>{out.push(ri===0?["Код","Нэгж",...row]:["","",...row]);});}
+              const cleanRows=dRows
+                .filter(r=>r.some(c=>c!==null&&c!==undefined&&String(c).trim()!==""))
+                .filter(r=>!r.slice(0,6).some(c=>typeof c==="string"&&c.trim()==="Нийт"));
+              cleanRows.forEach((row,ri)=>{out.push(ri===0?[ud.unit,ud.name,...row]:["","",...row]);});
+            });
+            if(out.length>globalHdrN){
+              const dataOnly=out.slice(globalHdrN);
+              const colCount=Math.max(...dataOnly.map(r=>r.length));
+              const totRow=new Array(colCount).fill("");
+              totRow[0]="Нийт";totRow[1]="";
+              for(let ci=2;ci<colCount;ci++){const nums=dataOnly.map(r=>r[ci]).filter(v=>v!==""&&!isNaN(parseFloat(v)));if(nums.length)totRow[ci]=nums.reduce((a,b)=>a+parseFloat(b),0);}
+              out.push(totRow);
+            }
+            const ws=XLSX.utils.aoa_to_sheet(out);
+            ws["!cols"]=[{wch:10},{wch:28},...(uds[0]?.rows[0]||[]).map(()=>({wch:14}))];
+            XLSX.utils.book_append_sheet(wb,ws,sn.substring(0,31));
+          });
+          XLSX.writeFile(wb,"Бүртгэл_"+sv.title+".xlsx");
+          toast("📊 Бэлэн — "+cnt+" нэгжийн файл нэгтгэгдлээ","ts");
         };
         const b1=mk("button","btn bp");b1.style.cssText="width:100%;padding:10px;font-size:13px";
         b1.innerHTML="📊 Нэгтгэл <small style='display:block;font-weight:400;opacity:.8'>Тоон утгыг нийлбэрлэж нийт дүн харуулна</small>";
-        b1.onclick=()=>doExcel("sum");
+        b1.onclick=doSum;
         const b2=mk("button","btn bs");b2.style.cssText="width:100%;padding:10px;font-size:13px";
-        b2.innerHTML="📋 Бүртгэл <small style='display:block;font-weight:400;opacity:.8'>Нэгж бүр тусдаа мөрөнд — хэн юу бөглөснийг харуулна</small>";
-        b2.onclick=()=>doExcel("list");
+        b2.innerHTML="📋 Бүртгэл <small style='display:block;font-weight:400;opacity:.8'>Нэгжийн Excel файлуудыг нэгтгэж жагсаалт гаргана</small>";
+        b2.onclick=doMerge;
         const bCan=mk("button","btn bx");bCan.style.cssText="width:100%";bCan.textContent="Болих";bCan.onclick=()=>document.body.removeChild(ov);
         br2.appendChild(b1);br2.appendChild(b2);br2.appendChild(bCan);bx.appendChild(br2);
         ov.onclick=e=>{if(e.target===ov)document.body.removeChild(ov);};
@@ -1386,7 +1416,6 @@ function tSurvey(c){
       sub.appendChild(bMaster);
     }
     // ZIP download button
-    const fileQsZ=sv.questions.filter(q=>q.type==="file");
     if(fileQsZ.length&&done.length){
       const bZip=mk("button","btn bp");bZip.style.cssText="margin-top:10px;margin-left:8px";bZip.textContent="📦 ZIP татах";
       bZip.onclick=async()=>{
@@ -1398,98 +1427,6 @@ function tSurvey(c){
         toast("📦 ZIP бэлэн ("+cnt+" файл)","ts");
       };
       sub.appendChild(bZip);
-      // Файл нэгтгэх (Excel файлуудын data мөрүүдийг нэгтгэнэ)
-      const excelFiles=[];
-      done.forEach(u=>{const r=resp[u.code];fileQsZ.forEach(q=>{const v=r.values&&r.values[q.id];if(v&&typeof v==="object"&&v.data&&v.name&&/\.(xlsx|xls)$/i.test(v.name)){excelFiles.push({unit:u.code,name:u.name,file:v});}});});
-      if(excelFiles.length){
-        const bMerge=mk("button","btn bm");bMerge.style.cssText="margin-top:10px;margin-left:8px;background:#7c3aed;color:#fff;border:none;border-radius:5px;padding:6px 12px;cursor:pointer;font-size:13px";bMerge.textContent="📊 Excel нэгтгэх";
-        bMerge.onclick=async()=>{
-          // Header мөрийн тоог асуух modal
-          const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.maxWidth="340px";
-          bx.innerHTML="<h3 style='margin-bottom:10px'>📊 Excel файлуудыг нэгтгэх</h3><p style='font-size:12px;color:var(--tx2);margin-bottom:10px'>"+excelFiles.length+" нэгжийн файл. Дата мөрийг автоматаар таньж нэгтгэнэ.</p>";
-          const br2=mk("div","brow");br2.style.marginTop="12px";
-          const bOk=mk("button","btn bp");bOk.textContent="✅ Нэгтгэх";
-          bOk.onclick=async()=>{
-            // Автоматаар header мөрийн тоог тодорхойлно:
-            // Д/д баганд 1 гэсэн утга байгаа эхний мөрийг дата эхлэл гэж үзнэ
-            function detectDataStart(aoa){
-              for(let i=0;i<aoa.length;i++){
-                const row=aoa[i];
-                for(let j=0;j<Math.min(6,row.length);j++){
-                  const v=row[j];
-                  if(v===1||v==="1"||v===1.0){return i;}
-                }
-              }
-              return 0;
-            }
-            const hdrN=0; // per-sheet detect below
-            document.body.removeChild(ov);
-            toast("⏳ Файлуудыг уншиж байна...","ts");
-            await loadSheetJS();
-            // sheetName → [{unit,name,rows}]
-            const sheetMap={};let cnt=0;
-            for(const ef of excelFiles){
-              try{
-                const b64=ef.file.data.split(",")[1];
-                const wb2=XLSX.read(b64,{type:"base64"});
-                wb2.SheetNames.forEach(sn=>{
-                  if(!sheetMap[sn])sheetMap[sn]=[];
-                  const aoa=XLSX.utils.sheet_to_json(wb2.Sheets[sn],{header:1,defval:""});
-                  sheetMap[sn].push({unit:ef.unit,name:ef.name,rows:aoa});
-                });
-                cnt++;
-              }catch(e){console.warn(ef.unit,e);}
-            }
-            if(!cnt){toast("⚠️ Уншигдах файл олдсонгүй","te");return;}
-            const wb=XLSX.utils.book_new();
-            Object.entries(sheetMap).forEach(([sn,uds])=>{
-              const out=[];
-              let globalHdrN=null;
-              uds.forEach((ud,idx)=>{
-                const fileHdrN=detectDataStart(ud.rows);
-                if(globalHdrN===null)globalHdrN=fileHdrN;
-                const hRows=ud.rows.slice(0,globalHdrN);
-                const dRows=ud.rows.slice(globalHdrN).filter(r=>r.some(c=>c!==""));
-                if(idx===0){
-                  // Header нэг удаа — эхний мөрд "Код","Нэгж" нэмнэ
-                  hRows.forEach((row,ri)=>{
-                    out.push(ri===0?["Код","Нэгж",...row]:["","",...row]);
-                  });
-                }
-                // "Нийт" мөрийг хасна — хамгийн доор нэг нийт мөр нэмнэ
-                const cleanRows=dRows
-                  .filter(r=>r.some(c=>c!==null&&c!==undefined&&String(c).trim()!==""))
-                  .filter(r=>!r.slice(0,6).some(c=>typeof c==="string"&&c.trim()==="Нийт"));
-                cleanRows.forEach((row,ri)=>{
-                  out.push(ri===0?[ud.unit,ud.name,...row]:["","",...row]);
-                });
-              });
-              // Нэг нийт мөр хамгийн доор
-              if(out.length>globalHdrN){
-                const dataOnly=out.slice(globalHdrN);
-                const colCount=Math.max(...dataOnly.map(r=>r.length));
-                const totRow=new Array(colCount).fill("");
-                totRow[0]="Нийт";totRow[1]="";
-                for(let ci=2;ci<colCount;ci++){
-                  const nums=dataOnly.map(r=>r[ci]).filter(v=>v!==""&&!isNaN(parseFloat(v)));
-                  if(nums.length)totRow[ci]=nums.reduce((a,b)=>a+parseFloat(b),0);
-                }
-                out.push(totRow);
-              }
-              const ws=XLSX.utils.aoa_to_sheet(out);
-              ws["!cols"]=[{wch:10},{wch:28},...(uds[0]?.rows[0]||[]).map(()=>({wch:14}))];
-              XLSX.utils.book_append_sheet(wb,ws,sn.substring(0,31));
-            });
-            XLSX.writeFile(wb,"Нэгтгэл_"+sv.title+".xlsx");
-            toast("📊 Бэлэн — "+cnt+" нэгжийн файл нэгтгэгдлээ","ts");
-          };
-          const bCan=mk("button","btn bx");bCan.textContent="Болих";bCan.onclick=()=>document.body.removeChild(ov);
-          br2.appendChild(bOk);br2.appendChild(bCan);bx.appendChild(br2);
-          ov.onclick=e=>{if(e.target===ov)document.body.removeChild(ov);};
-          ov.appendChild(bx);document.body.appendChild(ov);
-        };
-        sub.appendChild(bMerge);
-      }
     }
     // Close survey button (archive-тай)
     const bClose=mk("button","btn bx");bClose.style.cssText="margin-top:10px;margin-left:8px";bClose.textContent="🔴 Судалгаа хаах";
