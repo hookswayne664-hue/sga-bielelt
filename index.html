@@ -536,6 +536,16 @@ function tData(c){
       dlTmpl.style.cssText="display:inline-block;margin-top:8px;margin-right:8px;font-size:12px;text-decoration:none";
       dlTmpl.textContent="📥 Загвар татах: "+tf.name;svBanner.appendChild(dlTmpl);
     }
+    if(svDone){
+      const bDel=mk("button","btn bd_");bDel.style.marginTop="8px";bDel.textContent="🗑️ Хариулт устгах";
+      bDel.onclick=async()=>{
+        if(!confirm("Судалгааны хариултаа устгах уу?"))return;
+        if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/responses/"+S.user.code),null);}catch{}}
+        if(S.surveyResp)delete S.surveyResp[S.user.code];
+        toast("🗑️ Хариулт устгагдлаа","ts");renderTab("data");
+      };
+      svBanner.appendChild(bDel);
+    }
     if(!svDone){
       const bFill=mk("button","btn bw");bFill.style.marginTop="8px";bFill.textContent="📝 Бөглөх";
       bFill.onclick=()=>{
@@ -966,8 +976,17 @@ function lMon(){
   const done=active.filter(u=>hasSent(u)),miss=active.filter(u=>!hasSent(u));
   const el=document.getElementById("mRes");if(!el)return;
   const statsDiv=mk("div","stats");
-  [{n:active.length,l:"Нийт нэгж",c:""},{n:done.length,l:"✅ Илгээсэн",c:"g"},{n:miss.length,l:"❌ Илгээгээгүй",c:"r"}].forEach(s=>{
-    const sc=mk("div","sc "+(s.c||""));sc.innerHTML="<div class='n'>"+s.n+"</div><div class='l'>"+s.l+"</div>";statsDiv.appendChild(sc);
+  [{n:active.length,l:"Нийт нэгж",c:"",click:null},{n:done.length,l:"✅ Илгээсэн",c:"g",click:null},{n:miss.length,l:"❌ Илгээгүй",c:"r",click:()=>{
+    if(!miss.length)return;
+    const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.maxWidth="400px";
+    bx.innerHTML="<h3 style='margin-bottom:12px;color:var(--rd)'>❌ Илгээгүй нэгжүүд ("+miss.length+")</h3>";
+    miss.forEach(u=>{const d=mk("div");d.style.cssText="padding:6px 0;border-bottom:1px solid var(--br);font-size:13px";d.innerHTML="<b>"+u.code+"</b> — "+u.name;bx.appendChild(d);});
+    const bCan=mk("button","btn bx");bCan.style.cssText="width:100%;margin-top:12px";bCan.textContent="Хаах";bCan.onclick=()=>document.body.removeChild(ov);
+    bx.appendChild(bCan);ov.onclick=e=>{if(e.target===ov)document.body.removeChild(ov);};ov.appendChild(bx);document.body.appendChild(ov);
+  }}].forEach(s=>{
+    const sc=mk("div","sc "+(s.c||""));sc.innerHTML="<div class='n'>"+s.n+"</div><div class='l'>"+s.l+"</div>";
+    if(s.click){sc.style.cursor="pointer";sc.title="Дарж харах";sc.onclick=s.click;}
+    statsDiv.appendChild(sc);
   });
   el.innerHTML="";el.appendChild(statsDiv);
   const tw=mk("div","tw"),tbl=mk("table");
