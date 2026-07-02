@@ -638,18 +638,20 @@ function tData(c){
   });
   }
   const br=mk("div","brow");
-  const b1=mk("button","btn bp");b1.textContent="✅ Мэдээ илгээх";b1.onclick=subData;br.appendChild(b1);
+  const activeLk=S.lockedPeriods.find(lp=>lp.active&&lp.freq===dFreq);
+  const b1=mk("button","btn bp");
+  if(activeLk&&!S.user.isAdmin){b1.textContent="🔒 "+activeLk.period+" хаалттай";b1.disabled=true;b1.style.opacity="0.5";b1.style.cursor="not-allowed";}
+  else{b1.textContent="✅ Мэдээ илгээх";b1.onclick=subData;}
+  br.appendChild(b1);
   const b2=mk("button","btn bi");b2.textContent="🖨️ Хэвлэх";b2.onclick=prtCur;br.appendChild(b2);
   card.appendChild(br);c.appendChild(card);
 }
 
 async function subData(){
-  // Хаалттай period шалгана
+  // Хаалттай period шалгана — lock идэвхтэй бол admin биш нэгж огт илгэж болохгүй
   const activeLocked=S.lockedPeriods.find(lp=>lp.active&&lp.freq===dFreq);
-  if(activeLocked&&dPer!==activeLocked.period&&!S.user.isAdmin){
-    toast("🔒 "+activeLocked.period+" хаалттай — тэр period-д илгээнэ үү","te");
-    dPer=activeLocked.period;
-    renderTab("data");
+  if(activeLocked&&!S.user.isAdmin){
+    toast("🔒 "+activeLocked.period+" хаалттай — мэдээ илгээх боломжгүй","te");
     return;
   }
   const inds=S.inds.filter(i=>i.freq===dFreq),vals={};
