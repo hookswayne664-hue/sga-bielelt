@@ -215,7 +215,7 @@ const DINDS=[
 ];
 const DPLANS=["АД №01","АД №02","ХЗДХС 01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030","Өргөдөл, гомдлын судалгаа","Өргөдөл, гомдлын нэгжийн судалгаа"];
 
-let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[],activeSurvey:null,surveyResp:{},planHints:{},planFreqs:{}};
+let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[],activeSurveys:{},surveyResps:{},planHints:{},planFreqs:{}};
 let aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";
 let chatMsgs=[],chatLastId=0,chatTimer=null;
 
@@ -327,10 +327,43 @@ async function initLogin(){
       if(sl&&sl.exists&&sl.exists()){S.lockedPeriods=sl.val()||[];try{localStorage.setItem("sga_locked",JSON.stringify(S.lockedPeriods));}catch{}}
       const sa=await window._get(window._r(fbDB,"archives"));
       if(sa&&sa.exists&&sa.exists()){S.archives=sa.val()||[];try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}}
+      // Шинэ: survey/active/{id} — олон судалгаа
+      const sact=await window._get(window._r(fbDB,"survey/active"));
+      if(sact&&sact.exists&&sact.exists()&&sact.val()){
+        S.activeSurveys=sact.val()||{};
+        for(const sid of Object.keys(S.activeSurveys)){
+          const sr=await window._get(window._r(fbDB,"survey/responses/"+sid));
+          if(sr&&sr.exists&&sr.exists())S.surveyResps[sid]=sr.val()||{};
+        }
+      }
+      // Backward compat: хуучин survey/current → survey/active руу шилжүүлнэ
       const sv=await window._get(window._r(fbDB,"survey/current"));
-      if(sv&&sv.exists&&sv.exists()&&sv.val()){S.activeSurvey=sv.val();const sr=await window._get(window._r(fbDB,"survey/responses"));if(sr&&sr.exists&&sr.exists())S.surveyResp=sr.val()||{};}
+      if(sv&&sv.exists&&sv.exists()&&sv.val()){
+        const oldSv=sv.val();
+        if(!S.activeSurveys[oldSv.id]){
+          S.activeSurveys[oldSv.id]=oldSv;
+          const sr=await window._get(window._r(fbDB,"survey/responses"));
+          if(sr&&sr.exists&&sr.exists()&&sr.val()){
+            const rv=sr.val();
+            const fk=Object.keys(rv)[0]||"";
+            S.surveyResps[oldSv.id]=fk.startsWith("sv_")?(rv[oldSv.id]||{}):rv;
+          }
+          try{
+            await window._set(window._r(fbDB,"survey/active/"+oldSv.id),oldSv);
+            if(Object.keys(S.surveyResps[oldSv.id]||{}).length)await window._set(window._r(fbDB,"survey/responses/"+oldSv.id),S.surveyResps[oldSv.id]);
+            await window._set(window._r(fbDB,"survey/current"),null);
+          }catch{}
+        }
+      }
       // Real-time: нэгж admin хааход шууд мэдэгдэнэ
-      if(window._onVal){window._onVal(window._r(fbDB,"survey/current"),snap=>{const nv=snap.exists()&&snap.val()?snap.val():null;const was=!!S.activeSurvey;if(JSON.stringify(nv)===JSON.stringify(S.activeSurvey))return;S.activeSurvey=nv;if(nv){window._get(window._r(fbDB,"survey/responses")).then(sr=>{S.surveyResp=(sr&&sr.exists&&sr.exists())?sr.val()||{}:{};if(S.tab==="data")renderTab("data");});}else{S.surveyResp={};if(was&&S.tab==="data")renderTab("data");}});}
+      if(window._onVal){window._onVal(window._r(fbDB,"survey/active"),snap=>{
+        const nv=snap.exists()&&snap.val()?snap.val():{};
+        S.activeSurveys=nv;
+        const ids=Object.keys(nv);
+        if(!ids.length){S.surveyResps={};if(S.tab==="data")renderTab("data");return;}
+        Promise.all(ids.map(sid=>window._get(window._r(fbDB,"survey/responses/"+sid)).then(sr=>{S.surveyResps[sid]=(sr&&sr.exists&&sr.exists())?sr.val()||{}:{};})))
+          .then(()=>{if(S.tab==="data")renderTab("data");});
+      });}
     }catch{}
     try{
       const sa=await window._get(window._r(fbDB,"activePlans"));
@@ -525,13 +558,15 @@ function tData(c){
   sel.onchange=()=>{dPer=sel.value;renderTab("data");};fi1.appendChild(sel);fr.appendChild(fi1);
   const fi2=mk("div","fi");fi2.innerHTML="<label>Нэгж</label><input value='"+S.user.name+"' disabled>";fr.appendChild(fi2);
   card.appendChild(fr);
-  // Яаралтай судалгааны мэдэгдэл (төлөвлөгөөнөөс хамааралгүй)
-  if(S.activeSurvey&&!S.user.isAdmin){
-    const svDone=S.surveyResp&&S.surveyResp[S.user.code];
+  // Яаралтай судалгааны мэдэгдэл — олон судалгаа зэрэг харуулна
+  Object.values(S.activeSurveys||{}).forEach(sv=>{
+    if(S.user.isAdmin)return;
+    const svResp=S.surveyResps[sv.id]||{};
+    const svDone=svResp[S.user.code];
     const svBanner=mk("div","card");svBanner.style.cssText="border:2px solid var(--or);margin-bottom:12px";
-    svBanner.innerHTML="<div style='display:flex;align-items:center;gap:12px;flex-wrap:wrap'><span style='font-size:14px;font-weight:700;color:var(--or)'>📋 Яаралтай судалгаа!</span><span style='font-size:13px;color:var(--tx)'>"+S.activeSurvey.title+"</span>"+(svDone?"<span class='badge bok'>✅ Бөглөсөн</span>":"")+"</div>";
-    if(S.activeSurvey.templateFile){
-      const tf=S.activeSurvey.templateFile;
+    svBanner.innerHTML="<div style='display:flex;align-items:center;gap:12px;flex-wrap:wrap'><span style='font-size:14px;font-weight:700;color:var(--or)'>📋 Яаралтай судалгаа!</span><span style='font-size:13px;color:var(--tx)'>"+sv.title+"</span>"+(svDone?"<span class='badge bok'>✅ Бөглөсөн</span>":"")+"</div>";
+    if(sv.templateFile){
+      const tf=sv.templateFile;
       const dlTmpl=mk("a");dlTmpl.href=tf.data;dlTmpl.download=tf.name;dlTmpl.className="btn bs";
       dlTmpl.style.cssText="display:inline-block;margin-top:8px;margin-right:8px;font-size:12px;text-decoration:none";
       dlTmpl.textContent="📥 Загвар татах: "+tf.name;svBanner.appendChild(dlTmpl);
@@ -540,32 +575,27 @@ function tData(c){
       const bDel=mk("button","btn bd_");bDel.style.marginTop="8px";bDel.textContent="🗑️ Хариулт устгах";
       bDel.onclick=async()=>{
         if(!confirm("Судалгааны хариултаа устгах уу?"))return;
-        if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/responses/"+S.user.code),null);}catch{}}
-        if(S.surveyResp)delete S.surveyResp[S.user.code];
+        if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/responses/"+sv.id+"/"+S.user.code),null);}catch{}}
+        if(S.surveyResps[sv.id])delete S.surveyResps[sv.id][S.user.code];
         toast("🗑️ Хариулт устгагдлаа","ts");renderTab("data");
       };
       svBanner.appendChild(bDel);
     }
     if(!svDone){
       const bFill=mk("button","btn bw");bFill.style.marginTop="8px";bFill.textContent="📝 Бөглөх";
-      bFill.onclick=()=>{
+      bFill.onclick=(function(sv){return function(){
         const overlay=mk("div","modal-overlay");const box=mk("div","modal-box");
-        box.innerHTML="<h3>📋 "+S.activeSurvey.title+"</h3>";
+        box.innerHTML="<h3>📋 "+sv.title+"</h3>";
         const svGroups={};const svOrder=[];
-        S.activeSurvey.questions.forEach(q=>{const sg=q.subgroup||"";if(!svGroups[sg]){svGroups[sg]=[];svOrder.push(sg);}svGroups[sg].push(q);});
+        sv.questions.forEach(q=>{const sg=q.subgroup||"";if(!svGroups[sg]){svGroups[sg]=[];svOrder.push(sg);}svGroups[sg].push(q);});
         svOrder.forEach(sg=>{
           if(sg){const hdr=mk("div");hdr.style.cssText="font-size:11px;font-weight:600;color:var(--tx2);margin:10px 0 6px 0;padding:3px 8px;border-left:3px solid var(--bl);background:rgba(31,111,235,.07);border-radius:0 4px 4px 0";hdr.textContent=sg;box.appendChild(hdr);}
           svGroups[sg].forEach(q=>{
             const f=mk("div","fi");
             const lbl=mk("label");lbl.textContent=q.text;f.appendChild(lbl);
-            if(q.type==="text"){
-              const ta=mk("textarea");ta.id="sv_"+q.id;ta.maxLength=500;f.appendChild(ta);
-            }else if(q.type==="file"){
-              const fi=mk("input");fi.type="file";fi.id="sv_"+q.id;fi.accept=".xlsx,.xls,.docx,.doc,.pdf,.jpg,.jpeg,.png,.zip,.csv";fi.style.cssText="width:100%;padding:4px 0";f.appendChild(fi);
-              const hint=mk("div");hint.style.cssText="font-size:11px;color:var(--tx3);margin-top:2px";hint.textContent="Дээд хэмжээ: 5MB";f.appendChild(hint);
-            }else{
-              const inp=mk("input");inp.type="text";inp.id="sv_"+q.id;inp.style.textAlign="right";inp.placeholder="0";inp.oninput=()=>fmtInput(inp);f.appendChild(inp);
-            }
+            if(q.type==="text"){const ta=mk("textarea");ta.id="sv_"+sv.id+"_"+q.id;ta.maxLength=500;f.appendChild(ta);}
+            else if(q.type==="file"){const fi=mk("input");fi.type="file";fi.id="sv_"+sv.id+"_"+q.id;fi.accept=".xlsx,.xls,.docx,.doc,.pdf,.jpg,.jpeg,.png,.zip,.csv";fi.style.cssText="width:100%;padding:4px 0";f.appendChild(fi);const hint=mk("div");hint.style.cssText="font-size:11px;color:var(--tx3);margin-top:2px";hint.textContent="Дээд хэмжээ: 5MB";f.appendChild(hint);}
+            else{const inp=mk("input");inp.type="text";inp.id="sv_"+sv.id+"_"+q.id;inp.style.textAlign="right";inp.placeholder="0";inp.oninput=()=>fmtInput(inp);f.appendChild(inp);}
             box.appendChild(f);
           });
         });
@@ -573,8 +603,8 @@ function tData(c){
         const bOk=mk("button","btn bp");bOk.textContent="✅ Илгээх";
         bOk.onclick=async()=>{
           const vals={};const filePromises=[];
-          S.activeSurvey.questions.forEach(q=>{
-            const el=document.getElementById("sv_"+q.id);if(!el)return;
+          sv.questions.forEach(q=>{
+            const el=document.getElementById("sv_"+sv.id+"_"+q.id);if(!el)return;
             if(q.type==="file"){
               if(el.files&&el.files[0]){
                 const file=el.files[0];
@@ -585,20 +615,21 @@ function tData(c){
           });
           (await Promise.all(filePromises)).forEach(r=>vals[r.id]=r.v);
           const resp={values:vals,date:new Date().toLocaleString("mn-MN"),unitName:S.user.name};
-          if(!S.surveyResp)S.surveyResp={};S.surveyResp[S.user.code]=resp;
-          if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/responses/"+S.user.code),resp);}catch{}}
+          if(!S.surveyResps[sv.id])S.surveyResps[sv.id]={};
+          S.surveyResps[sv.id][S.user.code]=resp;
+          if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/responses/"+sv.id+"/"+S.user.code),resp);}catch{}}
           document.body.removeChild(overlay);toast("✅ Судалгаа илгээгдлээ","ts");renderTab("data");
         };
         const bCan=mk("button","btn bx");bCan.textContent="Болих";bCan.onclick=()=>document.body.removeChild(overlay);
         br.appendChild(bOk);br.appendChild(bCan);box.appendChild(br);
         overlay.onclick=e=>{if(e.target===overlay)document.body.removeChild(overlay);};
         overlay.appendChild(box);document.body.appendChild(overlay);
-      };
+      };})(sv);
       svBanner.appendChild(bFill);
     }
     // Бөглөсөн бол файлуудыг харуулна
     if(svDone){
-      const fileQs=S.activeSurvey.questions.filter(q=>q.type==="file");
+      const fileQs=sv.questions.filter(q=>q.type==="file");
       if(fileQs.length){
         const fDiv=mk("div");fDiv.style.marginTop="8px";
         fileQs.forEach(q=>{
@@ -613,7 +644,7 @@ function tData(c){
       }
     }
     card.appendChild(svBanner);
-  }
+  }); // end activeSurveys.forEach
   // Зөвхөн идэвхтэй төлөвлөгөөний үзүүлэлтүүдийг харуулна
   const filteredInds=S.activePlans.length>0?inds.filter(i=>(i.plans||[]).some(p=>S.activePlans.includes(p))):[];
   if(!filteredInds.length){
@@ -990,7 +1021,7 @@ function lMon(){
   });
   el.innerHTML="";el.appendChild(statsDiv);
   const tw=mk("div","tw"),tbl=mk("table");
-  const hasSv=!!S.activeSurvey;
+  const hasSv=Object.keys(S.activeSurveys||{}).length>0;
   const hdr=mk("tr");["Код","Нэгж","Статус","Огноо",...(hasSv?["📋 Судалгаа"]:[""])].filter(Boolean).forEach(t=>{const th=mk("th");th.textContent=t;hdr.appendChild(th);});tbl.appendChild(hdr);
   active.forEach(u=>{
     const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);
@@ -1003,7 +1034,7 @@ function lMon(){
     td2.appendChild(sp);tr.appendChild(td2);
     const td3=mk("td");const badge=mk("span","badge "+(sent?"bok":"bfail"));badge.textContent=sent?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);tr.appendChild(td3);
     const td4=mk("td");td4.style.cssText="font-size:12px;color:var(--tx3)";td4.textContent=e?e.date:"";tr.appendChild(td4);
-    if(hasSv){const td5=mk("td");const svR=S.surveyResp&&S.surveyResp[u.code];const svB=mk("span","badge "+(svR?"bok":"bfail"));svB.textContent=svR?"✅":"❌";td5.appendChild(svB);tr.appendChild(td5);}
+    if(hasSv){const td5=mk("td");const svR=Object.values(S.surveyResps||{}).some(r=>r[u.code]);const svB=mk("span","badge "+(svR?"bok":"bfail"));svB.textContent=svR?"✅":"❌";td5.appendChild(svB);tr.appendChild(td5);}
     tbl.appendChild(tr);
   });
   tw.appendChild(tbl);el.appendChild(tw);
@@ -1291,12 +1322,10 @@ async function loadFileList(){
 // ===== SURVEY =====
 function tSurvey(c){
   const card=mk("div","card");card.innerHTML="<h2>📋 Яаралтай судалгаа</h2>";
-  const sv=S.activeSurvey;
-  if(sv){
-    // Current active survey status
+  Object.values(S.activeSurveys||{}).forEach(sv=>{
     const sub=mk("div","sub");sub.innerHTML="<h3 style='color:var(--or)'>🟡 Идэвхтэй: "+sv.title+"</h3>";
     const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
-    const resp=S.surveyResp||{};
+    const resp=S.surveyResps[sv.id]||{};
     const done=units.filter(u=>resp[u.code]);
     const miss=units.filter(u=>!resp[u.code]);
     const statsDiv=mk("div","stats");
@@ -1456,10 +1485,11 @@ function tSurvey(c){
     bClose.onclick=async()=>{
       if(!confirm("Судалгааг хаах уу? Нэгжүүд цаашид харахгүй болно."))return;
       if(fbDB&&window._set){try{
-        await window._set(window._r(fbDB,"survey/archive/"+sv.id),{survey:sv,responses:S.surveyResp,closedAt:new Date().toLocaleString("mn-MN")});
-        await window._set(window._r(fbDB,"survey/current"),null);
+        await window._set(window._r(fbDB,"survey/archive/"+sv.id),{survey:sv,responses:resp,closedAt:new Date().toLocaleString("mn-MN")});
+        await window._set(window._r(fbDB,"survey/active/"+sv.id),null);
+        await window._set(window._r(fbDB,"survey/responses/"+sv.id),null);
       }catch(e){toast("⚠️ "+e.message,"te");return;}}
-      S.activeSurvey=null;S.surveyResp={};
+      delete S.activeSurveys[sv.id];delete S.surveyResps[sv.id];
       toast("✅ Судалгаа хаагдлаа (archive-д хадгалагдлаа)","ts");renderTab("survey");
     };
     sub.appendChild(bClose);
@@ -1467,13 +1497,13 @@ function tSurvey(c){
     const bDel=mk("button","btn bd_");bDel.style.cssText="margin-top:10px;margin-left:8px";bDel.textContent="🗑️ Устгах";
     bDel.onclick=async()=>{
       if(!confirm("Судалгааг бүрмөсөн устгах уу? Хариултууд ч устна."))return;
-      if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/current"),null);await window._set(window._r(fbDB,"survey/responses"),null);}catch{}}
-      S.activeSurvey=null;S.surveyResp={};
+      if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/active/"+sv.id),null);await window._set(window._r(fbDB,"survey/responses/"+sv.id),null);}catch{}}
+      delete S.activeSurveys[sv.id];delete S.surveyResps[sv.id];
       toast("🗑️ Судалгаа устгагдлаа","ts");renderTab("survey");
     };
     sub.appendChild(bDel);
     card.appendChild(sub);
-  }
+  }); // end activeSurveys.forEach
   // New survey form
   const sub2=mk("div","sub");sub2.innerHTML="<h3>➕ Шинэ судалгаа үүсгэх</h3>";
   const titleDiv=mk("div","fi");titleDiv.innerHTML="<label>Судалгааны гарчиг</label><input id='svTitle' placeholder='жишээ: 2026.06.30 яаралтай мэдээлэл'>";sub2.appendChild(titleDiv);
@@ -1518,8 +1548,8 @@ function tSurvey(c){
     }
     const survey={id:"sv_"+Date.now(),title,questions,createdAt:new Date().toLocaleString("mn-MN"),createdBy:S.user?.name||"admin"};
     if(templateFile)survey.templateFile=templateFile;
-    S.activeSurvey=survey;S.surveyResp={};
-    if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/current"),survey);await window._set(window._r(fbDB,"survey/responses"),null);toast("🚀 Судалгаа эхэллээ!","ts");}catch(e){toast("⚠️ "+e.message,"te");return;}}
+    S.activeSurveys[survey.id]=survey;if(!S.surveyResps[survey.id])S.surveyResps[survey.id]={};
+    if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/active/"+survey.id),survey);toast("🚀 Судалгаа эхэллээ!","ts");}catch(e){toast("⚠️ "+e.message,"te");return;}}
     renderTab("survey");
   };
   sub2.appendChild(bCreate);
