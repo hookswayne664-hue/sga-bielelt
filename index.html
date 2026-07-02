@@ -1130,16 +1130,6 @@ function tSummary(c){
   setTimeout(lSum,50);
 }
 
-function _showSumMiss(){
-  const miss=window._sumMiss||[];
-  if(!miss.length)return;
-  const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.maxWidth="400px";
-  bx.innerHTML="<h3 style='margin-bottom:12px;color:var(--rd)'>❌ Илгээгүй нэгжүүд ("+miss.length+")</h3>";
-  miss.forEach(u=>{const d=mk("div");d.style.cssText="padding:6px 0;border-bottom:1px solid var(--br);font-size:13px";d.innerHTML="<b>"+u.code+"</b> — "+u.name;bx.appendChild(d);});
-  const bCan=mk("button","btn bx");bCan.style.cssText="width:100%;margin-top:12px";bCan.textContent="Хаах";bCan.onclick=()=>document.body.removeChild(ov);
-  bx.appendChild(bCan);ov.onclick=e=>{if(e.target===ov)document.body.removeChild(ov);};ov.appendChild(bx);document.body.appendChild(ov);
-}
-window._showSumMiss=_showSumMiss;
 function lSum(){
   const from=document.getElementById("sFrom")?.value;
   const to=document.getElementById("sTo")?.value;
@@ -1166,16 +1156,12 @@ function lSum(){
     if(!upMap[key]||e.date>upMap[key].date)upMap[key]=e;
   });
   const allEntries=Object.values(upMap);
-  const activeUnits=S.units.filter(u=>!u.isAdmin&&!u.disabled);
-  const totalU=activeUnits.length;
+  const totalU=S.units.filter(u=>!u.isAdmin&&!u.disabled).length;
   // Илгээсэн = period-д ямар нэг мэдээ илгээсэн нэгжүүд (план харгалзахгүй)
-  const subSet=new Set(allEntries.map(e=>e.unit));
-  const sub=subSet.size;
-  const missUnits=activeUnits.filter(u=>!subSet.has(u.code));
-  window._sumMiss=missUnits;
+  const sub=new Set(allEntries.map(e=>e.unit)).size;
   const periodLabel=selPeriods.length>1?selPeriods[selPeriods.length-1]+" ~ "+selPeriods[0]:selPeriods[0]||"";
   let h="<div style='font-size:12px;color:var(--tx2);margin-bottom:10px'>📅 "+periodLabel+" ("+selPeriods.length+" хугацаа)</div>";
-  h+="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r' style='cursor:pointer' onclick='window._showSumMiss()'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгүй ↗</div></div></div>";
+  h+="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгээгүй</div></div></div>";
   if(!inds.length){document.getElementById("sRes").innerHTML=h+"<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
   h+="<div class='tw'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт</th><th>Бөглөлт</th></tr>";
   inds.forEach(ind=>{
