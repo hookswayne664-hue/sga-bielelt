@@ -1548,8 +1548,19 @@ function tSurvey(c){
     }
     const survey={id:"sv_"+Date.now(),title,questions,createdAt:new Date().toLocaleString("mn-MN"),createdBy:S.user?.name||"admin"};
     if(templateFile)survey.templateFile=templateFile;
-    S.activeSurveys[survey.id]=survey;if(!S.surveyResps[survey.id])S.surveyResps[survey.id]={};
-    if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/active/"+survey.id),survey);toast("🚀 Судалгаа эхэллээ!","ts");}catch(e){toast("⚠️ "+e.message,"te");return;}}
+    if(fbDB&&window._set){
+      try{
+        await window._set(window._r(fbDB,"survey/active/"+survey.id),survey);
+        // Fresh read — ensures S.activeSurveys has ALL surveys, not just the new one
+        const fa=await window._get(window._r(fbDB,"survey/active"));
+        S.activeSurveys=(fa&&fa.exists()&&fa.val())?fa.val():{};
+        if(!S.activeSurveys[survey.id])S.activeSurveys[survey.id]=survey;
+        toast("🚀 Судалгаа эхэллээ! ("+Object.keys(S.activeSurveys).length+" идэвхтэй)","ts");
+      }catch(e){toast("⚠️ "+e.message,"te");return;}
+    }else{
+      S.activeSurveys[survey.id]=survey;
+    }
+    if(!S.surveyResps[survey.id])S.surveyResps[survey.id]={};
     renderTab("survey");
   };
   sub2.appendChild(bCreate);
