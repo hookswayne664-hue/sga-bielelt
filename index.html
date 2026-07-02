@@ -1175,7 +1175,7 @@ function lSum(){
   window._sumMiss=missUnits;
   const periodLabel=selPeriods.length>1?selPeriods[selPeriods.length-1]+" ~ "+selPeriods[0]:selPeriods[0]||"";
   let h="<div style='font-size:12px;color:var(--tx2);margin-bottom:10px'>📅 "+periodLabel+" ("+selPeriods.length+" хугацаа)</div>";
-  h+="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r' style='cursor:pointer;title:"Дарж харах"' onclick='window._showSumMiss()'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгүй ↗</div></div></div>";
+  h+="<div class='stats'><div class='sc'><div class='n'>"+totalU+"</div><div class='l'>Нийт нэгж</div></div><div class='sc g'><div class='n'>"+sub+"</div><div class='l'>✅ Илгээсэн</div></div><div class='sc r' style='cursor:pointer' onclick='window._showSumMiss()'><div class='n'>"+(totalU-sub)+"</div><div class='l'>❌ Илгээгүй ↗</div></div></div>";
   if(!inds.length){document.getElementById("sRes").innerHTML=h+"<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
   h+="<div class='tw'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт</th><th>Бөглөлт</th></tr>";
   inds.forEach(ind=>{
