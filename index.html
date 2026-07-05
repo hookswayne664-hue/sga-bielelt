@@ -618,6 +618,12 @@ function tData(c){
           if(!S.surveyResps[sv.id])S.surveyResps[sv.id]={};
           S.surveyResps[sv.id][S.user.code]=resp;
           if(fbDB&&window._set){try{await window._set(window._r(fbDB,"survey/responses/"+sv.id+"/"+S.user.code),resp);}catch{}}
+          // GAS backup — file data-г хасаж зөвхөн text/number утгуудыг Sheets-д хадгална
+          try{
+            const safeVals={};
+            sv.questions.forEach(q=>{const v=resp.values[q.id];if(q.type!=="file"&&v!==undefined)safeVals[q.id]={label:q.text||q.id,value:v};});
+            api("saveSurveyResponse",{surveyId:sv.id,surveyTitle:sv.title||sv.id,unitCode:S.user.code,unitName:S.user.name,date:resp.date,values:safeVals});
+          }catch{}
           document.body.removeChild(overlay);toast("✅ Судалгаа илгээгдлээ","ts");renderTab("data");
         };
         const bCan=mk("button","btn bx");bCan.textContent="Болих";bCan.onclick=()=>document.body.removeChild(overlay);
