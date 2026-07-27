@@ -1216,12 +1216,12 @@ function lSum(){
   if(!inds.length){document.getElementById("sRes").innerHTML=h+"<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
   h+="<div class='tw'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт</th><th>Бөглөлт</th></tr>";
   inds.forEach(ind=>{
-    const vals=allEntries.map(e=>e.values[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
+    const vals=allEntries.map(e=>(e.values||{})[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
     const nums=vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));
     let total="—";
     if(ind.type==="text"){
       if(vals.length){
-        const preview=allEntries.filter(e=>e.values[ind.id]).map(e=>"<span style='font-size:11px;color:var(--tx2)'><b>"+e.unit+":</b> "+(String(e.values[ind.id]).length>40?String(e.values[ind.id]).substring(0,40)+"...":e.values[ind.id])+"</span>").join("<br>");
+        const preview=allEntries.filter(e=>e.values&&e.values[ind.id]).map(e=>"<span style='font-size:11px;color:var(--tx2)'><b>"+e.unit+":</b> "+(String(e.values[ind.id]).length>40?String(e.values[ind.id]).substring(0,40)+"...":e.values[ind.id])+"</span>").join("<br>");
         total="<details><summary style='cursor:pointer;color:var(--bl2)'>"+vals.length+" хариу</summary><div style='margin-top:6px;line-height:1.8'>"+preview+"</div></details>";
       }
     } else if(ind.type==="pct"&&nums.length){total=(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1)+"%";}
