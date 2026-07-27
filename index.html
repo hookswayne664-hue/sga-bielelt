@@ -988,7 +988,7 @@ function tMonitor(c){
   const allOpt2=mk("option");allOpt2.value="all";allOpt2.textContent="— Бүх төлөвлөгөө —";sPl.appendChild(allOpt2);
   // Only show plans that have at least one indicator matching current mFreq
   S.plans.filter(p=>!S.planFreqs[p]||S.planFreqs[p]===mFreq).forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;sPl.appendChild(o);});
-  sPl.onchange=lMon;fiPl.appendChild(sPl);fr1.appendChild(fiPl);
+  sPl.onchange=()=>{const selPl=sPl.value;if(selPl!=="all"){const pI=S.inds.filter(i=>(i.plans||[]).some(p=>p===selPl));if(pI.length>0&&pI[0].freq&&pI[0].freq!==mFreq){mFreq=pI[0].freq;renderTab("monitor");return;}}lMon();};fiPl.appendChild(sPl);fr1.appendChild(fiPl);
   c1.appendChild(fr1);
   const mRes=mk("div");mRes.id="mRes";c1.appendChild(mRes);c.appendChild(c1);
   setTimeout(()=>{lMon();},50);
@@ -1002,10 +1002,11 @@ function lMon(){
   if(grp==="niislel")active=active.filter(u=>NIIS.includes(u.code));
   else if(grp==="bank")active=active.filter(u=>u.name.includes("Банк")||u.name.toLowerCase().includes("bank"));
   else if(grp==="aimag")active=active.filter(u=>!NIIS.includes(u.code)&&!u.name.includes("Банк")&&!u.name.toLowerCase().includes("bank"));
-  // Plan-specific check: unit must have at least 1 plan indicator filled
-  const planInds=plan==="all"?[]:S.inds.filter(i=>i.freq===mFreq&&(i.plans||[]).some(p=>p===plan));
+  // Plan-specific check: use plan's actual freq (may differ from mFreq, e.g. "Эрс сайжруулах" is month)
+  const planInds=plan==="all"?[]:S.inds.filter(i=>(i.plans||[]).some(p=>p===plan));
+  const planActualFreq=plan!=="all"&&planInds.length>0?planInds[0].freq:mFreq;
   const hasSent=(u)=>{
-    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);
+    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===planActualFreq);
     if(!e)return false;
     if(plan==="all")return true;
     return planInds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
@@ -1030,7 +1031,7 @@ function lMon(){
   const hasSv=Object.keys(S.activeSurveys||{}).length>0;
   const hdr=mk("tr");["Код","Нэгж","Статус","Огноо",...(hasSv?["📋 Судалгаа"]:[""])].filter(Boolean).forEach(t=>{const th=mk("th");th.textContent=t;hdr.appendChild(th);});tbl.appendChild(hdr);
   active.forEach(u=>{
-    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===mFreq);
+    const e=S.data.find(d=>d.unit===u.code&&d.period===per&&d.freq===planActualFreq);
     const sent=hasSent(u);
     const tr=mk("tr");
     const td1=mk("td");td1.innerHTML="<b>"+u.code+"</b>";tr.appendChild(td1);
@@ -1061,13 +1062,23 @@ function showUnitDetail(ucode,uname){
       const inds=S.inds.filter(i=>i.freq===entry.freq);
       const tbl=mk("table");tbl.style.width="100%";
       tbl.innerHTML="<tr><th style='text-align:left;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Үзүүлэлт</th><th style='text-align:right;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Утга</th></tr>";
-      let hasVal=false;
+      let hasVal=false;const shownIds=new Set();
       inds.forEach(ind=>{
         const val=entry.values[ind.id];
         if(!val&&val!==0)return;
-        hasVal=true;
+        hasVal=true;shownIds.add(ind.id);
         const tr=mk("tr");
         tr.innerHTML="<td style='padding:5px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+ind.name+"</td><td style='padding:5px 8px;font-size:13px;text-align:right;border-bottom:1px solid var(--bd);color:var(--gr)'>"+fV(val,ind.type)+"</td>";
+        tbl.appendChild(tr);
+      });
+      // Also show values whose indicator id is not in inds (orphaned or cross-freq)
+      Object.entries(entry.values||{}).forEach(([k,v])=>{
+        if(shownIds.has(k)||(!v&&v!==0))return;
+        const xInd=S.inds.find(i=>i.id===k);
+        if(!xInd)return;
+        hasVal=true;shownIds.add(k);
+        const tr=mk("tr");
+        tr.innerHTML="<td style='padding:5px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+xInd.name+"</td><td style='padding:5px 8px;font-size:13px;text-align:right;border-bottom:1px solid var(--bd);color:var(--gr)'>"+fV(v,xInd.type)+"</td>";
         tbl.appendChild(tr);
       });
       if(!hasVal)sub.innerHTML+="<div style='font-size:12px;color:var(--tx3);padding:8px'>Утга байхгүй</div>";
