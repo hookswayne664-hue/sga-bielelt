@@ -661,7 +661,7 @@ function tData(c){
   const groups={};filteredInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
   function mkIndInput(i,entry,ig){
     const fi=mk("div","fi");const lbl=mk("label");lbl.textContent=i.name;fi.appendChild(lbl);
-    const val=entry.values[i.id]||"";
+    const val=(entry.values||{})[i.id]||"";
     if(i.type==="text"){const ta=mk("textarea");ta.id="v_"+i.id;ta.value=val;ta.maxLength=1000;fi.appendChild(ta);}
     else{const inp=mk("input");inp.type="text";inp.id="v_"+i.id;inp.style.textAlign="right";inp.placeholder="0";inp.value=val?fN(val):"";inp.oninput=()=>fmtInput(inp);fi.appendChild(inp);}
     ig.appendChild(fi);
@@ -723,7 +723,7 @@ async function subData(){
 function prtCur(){
   const inds=S.inds.filter(i=>i.freq===dFreq);
   const e=S.data.find(d=>d.unit===S.user.code&&d.period===dPer&&d.freq===dFreq)||{values:{}};
-  showPrintModal(S.user.name,dPer,inds.map(i=>[i.name,fV(e.values[i.id],i.type)]));
+  showPrintModal(S.user.name,dPer,inds.map(i=>[i.name,fV((e.values||{})[i.id],i.type)]));
 }
 
 function tMyData(c){
@@ -1063,7 +1063,7 @@ function showUnitDetail(ucode,uname){
       tbl.innerHTML="<tr><th style='text-align:left;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Үзүүлэлт</th><th style='text-align:right;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Утга</th></tr>";
       let hasVal=false;
       inds.forEach(ind=>{
-        const val=entry.values[ind.id];
+        const val=(entry.values||{})[ind.id];
         if(!val&&val!==0)return;
         hasVal=true;
         const tr=mk("tr");
@@ -1202,12 +1202,12 @@ function lSum(){
   if(!inds.length){document.getElementById("sRes").innerHTML=h+"<div class='empty'>Үзүүлэлт байхгүй</div>";return;}
   h+="<div class='tw'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт</th><th>Бөглөлт</th></tr>";
   inds.forEach(ind=>{
-    const vals=allEntries.map(e=>e.values[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
+    const vals=allEntries.map(e=>(e.values||{})[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
     const nums=vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));
     let total="—";
     if(ind.type==="text"){
       if(vals.length){
-        const preview=allEntries.filter(e=>e.values[ind.id]).map(e=>"<span style='font-size:11px;color:var(--tx2)'><b>"+e.unit+":</b> "+(String(e.values[ind.id]).length>40?String(e.values[ind.id]).substring(0,40)+"...":e.values[ind.id])+"</span>").join("<br>");
+        const preview=allEntries.filter(e=>e.values&&e.values[ind.id]).map(e=>"<span style='font-size:11px;color:var(--tx2)'><b>"+e.unit+":</b> "+(String(e.values[ind.id]).length>40?String(e.values[ind.id]).substring(0,40)+"...":e.values[ind.id])+"</span>").join("<br>");
         total="<details><summary style='cursor:pointer;color:var(--bl2)'>"+vals.length+" хариу</summary><div style='margin-top:6px;line-height:1.8'>"+preview+"</div></details>";
       }
     } else if(ind.type==="pct"&&nums.length){total=(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1)+"%";}
@@ -1241,7 +1241,7 @@ async function gAI(){
   const agg={};
   S.units.filter(u=>!u.isAdmin).forEach(u=>{
     const e=S.data.find(d=>d.unit===u.code&&d.period===per);
-    if(e)ri.forEach(i=>{if(e.values[i.id]){if(!agg[i.id])agg[i.id]={name:i.name,type:i.type,vals:[]};agg[i.id].vals.push(e.values[i.id]);}});
+    if(e)ri.forEach(i=>{if((e.values||{})[i.id]){if(!agg[i.id])agg[i.id]={name:i.name,type:i.type,vals:[]};agg[i.id].vals.push(e.values[i.id]);}});
   });
   const lines=Object.values(agg).map(g=>{const nums=g.vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));if(g.type==="text")return g.name+": "+g.vals.join("; ");if(nums.length)return g.name+": нийт "+nums.reduce((a,b)=>a+b,0).toLocaleString("en-US");return g.name+": "+g.vals.join(", ");}).join("\n");
   const prompt="Шүүхийн шийдвэр гүйцэтгэх байгууллагын \""+plan+"\" биелэлтийг монгол хэлээр бичнэ үү.\n\nТайлант хугацаа: "+per+"\n\nЦугласан тоон мэдээ:\n"+(lines||"(мэдээ байхгүй)")+"\n\n"+(extra?"Өмнөх загвар:\n"+extra+"\n\n":"")+"\nЧУХАЛ: Markdown (#, ##, **, ---) тэмдэгт огт ашиглахгүй. Цэвэр монгол текстээр, дугаарласан хэсгүүдтэй, албан ёсны хэлбэрт бичнэ үү.";
