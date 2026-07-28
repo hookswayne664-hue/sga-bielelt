@@ -1098,7 +1098,7 @@ function lSum(){
     if(plan==="all")return true;
     if(!inds.length)return false;
     return ents.some(e=>{
-      if(e.plans&&e.plans.length)return e.plans.includes(plan);
+      if(e.plans!==undefined)return (e.plans||[]).includes(plan);
       return inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
     });
   };
@@ -1146,7 +1146,14 @@ function lSum(){
     const sp=mk("span");sp.textContent=u.name;sp.style.cssText="cursor:pointer;color:var(--bl2)";sp.title="Дэлгэрэнгүй";
     sp.onclick=(function(cc,nn){return function(){showUnitDetail(cc,nn);};})(u.code,u.name);
     td2.appendChild(sp);tr.appendChild(td2);
-    const td3=mk("td");const badge=mk("span","badge "+(sent?"bok":"bfail"));badge.textContent=sent?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);tr.appendChild(td3);
+    const td3=mk("td");const badge=mk("span","badge "+(sent?"bok":"bfail"));badge.textContent=sent?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);
+    if(sent&&plan!=="all"){
+      const bUndo=mk("button","btn bx");bUndo.textContent="✕";bUndo.title="Илгээгээгүй болгох (буруу тэмдэглэгдсэн бол)";
+      bUndo.style.cssText="margin-left:6px;padding:2px 8px;font-size:11px";
+      bUndo.onclick=(function(ucode,uname){return function(){revokePlanForUnit(ucode,uname,plan,unitEntriesInRange[ucode]||[]);};})(u.code,u.name);
+      td3.appendChild(bUndo);
+    }
+    tr.appendChild(td3);
     const td4=mk("td");td4.style.cssText="font-size:12px;color:var(--tx3)";td4.textContent=e?e.date:"";tr.appendChild(td4);
     if(hasSv){const td5=mk("td");const svR=Object.values(S.surveyResps||{}).some(r=>r[u.code]);const svB=mk("span","badge "+(svR?"bok":"bfail"));svB.textContent=svR?"✅":"❌";td5.appendChild(svB);tr.appendChild(td5);}
     tbl.appendChild(tr);
@@ -1175,6 +1182,38 @@ function lSum(){
   const indWrap=mk("div");indWrap.innerHTML=h;rightCol.appendChild(indWrap);
   cols.appendChild(rightCol);
   el.appendChild(cols);
+}
+
+// Админ гараар "Илгээсэн" гэж буруу тэмдэглэгдсэн нэгжийг тухайн төлөвлөгөөнд "Илгээгээгүй" болгож засна.
+// Зөвхөн entry.plans тэмдэглэгээг л засна — оруулсан тоо, утга огт хөндөгдөхгүй.
+// Тухайн нэгж дараа нь энэ төлөвлөгөөгөө ЖИНХЭНЭ илгээвэл, subData() автоматаар дахин зөв тэмдэглэнэ.
+async function revokePlanForUnit(ucode,uname,plan,entries){
+  if(!entries.length)return;
+  if(!confirm(uname+" ("+ucode+") нэгжийг '"+plan+"' төлөвлөгөөнд \"Илгээгээгүй\" болгож тэмдэглэх үү?\n\nАнхаар: энэ нь зөвхөн тэмдэглэгээг засна, оруулсан тоо/утгыг устгахгүй. Хэрэв тухайн нэгж дараа энэ төлөвлөгөөгөө жинхэнэ илгээвэл автоматаар дахин зөв болно."))return;
+  for(const entry of entries){
+    let plansHere;
+    if(entry.plans!==undefined){
+      plansHere=entry.plans.filter(p=>p!==plan);
+    } else {
+      // Хуучин entry — эхлээд бусад бүх боломжит төлөвлөгөөг тооцоод, зөвхөн энэ нэгийг хасна
+      const inds=S.inds.filter(i=>i.freq===entry.freq);
+      const set=new Set();
+      S.plans.forEach(pl=>{
+        if(pl===plan)return;
+        const relevant=inds.filter(i=>(i.plans||[]).includes(pl));
+        if(relevant.length&&relevant.some(i=>entry.values&&entry.values[i.id]!==undefined&&entry.values[i.id]!==null&&entry.values[i.id]!==""))set.add(pl);
+      });
+      plansHere=Array.from(set);
+    }
+    entry.plans=plansHere;
+    if(fbDB&&window._set){
+      try{await window._set(window._r(fbDB,"data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_")),entry);}catch(e){console.error("[SGA revoke] Firebase FAIL:",e);}
+    }
+    try{api("saveData",{data:JSON.stringify(entry)});}catch{}
+  }
+  try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
+  toast("✅ "+uname+" — '"+plan+"' Илгээгээгүй болгож тэмдэглэлээ","ts");
+  lSum();
 }
 
 function showUnitDetail(ucode,uname){
