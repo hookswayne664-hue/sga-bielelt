@@ -1167,13 +1167,23 @@ function showUnitDetail(ucode,uname){
       const inds=S.inds.filter(i=>i.freq===entry.freq);
       const tbl=mk("table");tbl.style.width="100%";
       tbl.innerHTML="<tr><th style='text-align:left;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Үзүүлэлт</th><th style='text-align:right;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Утга</th></tr>";
-      let hasVal=false;
+      let hasVal=false;const shownIds=new Set();
       inds.forEach(ind=>{
         const val=(entry.values||{})[ind.id];
         if(!val&&val!==0)return;
-        hasVal=true;
+        hasVal=true;shownIds.add(ind.id);
         const tr=mk("tr");
         tr.innerHTML="<td style='padding:5px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+ind.name+"</td><td style='padding:5px 8px;font-size:13px;text-align:right;border-bottom:1px solid var(--bd);color:var(--gr)'>"+fV(val,ind.type)+"</td>";
+        tbl.appendChild(tr);
+      });
+      // Also show values whose indicator id is not in inds (orphaned or cross-freq)
+      Object.entries(entry.values||{}).forEach(([k,v])=>{
+        if(shownIds.has(k)||(!v&&v!==0))return;
+        const xInd=S.inds.find(i=>i.id===k);
+        if(!xInd)return;
+        hasVal=true;shownIds.add(k);
+        const tr=mk("tr");
+        tr.innerHTML="<td style='padding:5px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+xInd.name+"</td><td style='padding:5px 8px;font-size:13px;text-align:right;border-bottom:1px solid var(--bd);color:var(--gr)'>"+fV(v,xInd.type)+"</td>";
         tbl.appendChild(tr);
       });
       if(!hasVal)sub.innerHTML+="<div style='font-size:12px;color:var(--tx3);padding:8px'>Утга байхгүй</div>";
