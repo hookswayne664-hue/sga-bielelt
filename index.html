@@ -527,6 +527,7 @@ function unlockPeriod(plan){
   if(!activeLocked)return;
   if(!confirm(activeLocked.plan+" — "+activeLocked.period+" хугацааг нээх үү? Дараа хугацаа эхэлнэ."))return;
   activeLocked.active=false;
+  activeLocked.unlockedAt=new Date().toLocaleString("mn-MN");
   try{localStorage.setItem("sga_locked",JSON.stringify(S.lockedPeriods));}catch{}
   if(fbDB&&window._set){try{window._set(window._r(fbDB,"locked"),S.lockedPeriods);}catch{}}
   toast("🔓 "+activeLocked.plan+" нээгдлээ — дараа хугацаа эхэллээ","ts");
@@ -992,11 +993,20 @@ function tSummary(c){
       const P2=getPer();
       const ps=f==="week"?P2.w:f==="month"?P2.mn:P2.q;
       const today=ps[0];
-      // Энэ төлөвлөгөө хамгийн сүүлд хэзээ нээгдсэнийг (өмнөх хаалтын дараа) тооцоолж харуулна
-      const pastLocks=S.lockedPeriods.filter(lp=>lp.plan===plan&&!lp.active).sort((a,b)=>a.lockedAt>b.lockedAt?1:-1);
+      // Энэ төлөвлөгөө хамгийн сүүлд хэзээ нээгдсэнийг тодорхойлно:
+      // 1) хамгийн сүүлд НЭЭГДСЭН (unlock хийсэн) огноо байвал тэрийг,
+      // 2) байхгүй бол энэ төлөвлөгөөгөөр хамгийн эрт ирсэн мэдээний огноог,
+      // 3) аль нь ч байхгүй бол "тодорхойгүй (анхны удаа)" гэж харуулна.
+      const pastLocks=S.lockedPeriods.filter(lp=>lp.plan===plan&&!lp.active).sort((a,b)=>(a.unlockedAt||a.lockedAt)>(b.unlockedAt||b.lockedAt)?1:-1);
       const lastClosed=pastLocks.length?pastLocks[pastLocks.length-1]:null;
-      info.innerHTML="📅 Хаах өдөр: <b style='color:var(--tx)'>"+today+" (өнөөдөр)</b> — өдрөөр сонгох шаардлагагүй, автоматаар өнөөдрийг авна."+
-        (lastClosed?"<br>🔓 Өмнөх хаалт: "+lastClosed.period+" ("+lastClosed.lockedAt+")":"");
+      let openedLabel;
+      if(lastClosed&&lastClosed.unlockedAt)openedLabel=lastClosed.unlockedAt+" (өмнөх хаалт нээгдсэнээс хойш)";
+      else{
+        const myEntries=S.data.filter(d=>d.freq===f&&(d.plans?d.plans.includes(plan):(S.inds.filter(i=>i.freq===f&&(i.plans||[]).some(p=>p&&p.trim()===plan.trim())).some(i=>d.values&&d.values[i.id]!==undefined&&d.values[i.id]!==null&&d.values[i.id]!=="")))).sort((a,b)=>a.date>b.date?1:-1);
+        openedLabel=myEntries.length?myEntries[0].date+" (эхний мэдээ ирсэн огноо)":"Тодорхойгүй (анхны удаа)";
+      }
+      info.innerHTML="📅 Нээгдсэн: <b style='color:var(--tx)'>"+openedLabel+"</b><br>🔒 Хаах өдөр: <b style='color:var(--tx)'>"+today+" (өнөөдөр)</b> — өдрөөр сонгох шаардлагагүй, автоматаар өнөөдрийг авна."+
+        (lastClosed?"<br><span style='color:var(--tx3)'>Өмнөх хаалт: "+lastClosed.period+" ("+lastClosed.lockedAt+")</span>":"");
     }
     plSel.onchange=fillLockInfo;fillLockInfo();
   },50);
