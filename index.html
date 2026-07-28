@@ -713,21 +713,29 @@ async function subData(){
   const inds=S.inds.filter(i=>i.freq===dFreq);
   const filteredInds=S.activePlans.length>0?inds.filter(i=>(i.plans||[]).some(p=>S.activePlans.includes(p))):[];
   const groups={};filteredInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
-  // Хэсэг (төлөвлөгөө) бүрийг өөрийн хаалттай/нээлттэй period-т нь ангилж, period тус бүрээр тусад нь хадгална
-  const byPeriod={};
+  // Хэсэг (төлөвлөгөө) бүрийг өөрийн хаалттай/нээлттэй period-т нь ангилж, period тус бүрээр тусад нь хадгална.
+  // Аль ТӨЛӨВЛӨГӨӨ энэ period-т орсныг бас тэмдэглэнэ (entry.plans) — "хуваалцсан үзүүлэлт"-ээс болж
+  // буруу "илгээсэн" гэж тоологдохоос сэргийлж, Нэгдсэн дүн дээр яг аль төлөвлөгөөгөөр илгээснийг нь баримтаар шалгах боломжтой болно.
+  const byPeriod={},byPeriodPlans={};
   Object.entries(groups).forEach(([pl,pInds])=>{
     const grpLock=getPlanLock(pl);
     if(grpLock&&!S.user.isAdmin)return; // хаалттай хэсгийг алгасна — өөрчлөхгүй
     const period=grpLock?grpLock.period:dPer;
     if(!byPeriod[period])byPeriod[period]={};
+    if(!byPeriodPlans[period])byPeriodPlans[period]=new Set();
+    byPeriodPlans[period].add(pl);
     pInds.forEach(i=>{const el=document.getElementById("v_"+i.id);if(el)byPeriod[period][i.id]=parseVal(el.value);});
   });
   const periods=Object.keys(byPeriod);
   if(!periods.length){toast("🔒 Бүх хэсэг хаалттай — мэдээ илгээх боломжгүй","te");return;}
   let fbOkAll=true;
   for(const period of periods){
-    const entry={unit:S.user.code,unitName:S.user.name,period,freq:dFreq,values:byPeriod[period],date:new Date().toLocaleString("mn-MN")};
-    const idx=S.data.findIndex(d=>d.unit===entry.unit&&d.period===entry.period&&d.freq===entry.freq);
+    const idx=S.data.findIndex(d=>d.unit===S.user.code&&d.period===period&&d.freq===dFreq);
+    const prev=idx>=0?S.data[idx]:null;
+    // Өмнөх утгуудтай нэгтгэнэ (зөвхөн одоо бөглөж буй хэсгийг дарж бичнэ, бусад төлөвлөгөөний өмнөх утгыг устгахгүй)
+    const mergedValues=Object.assign({},prev&&prev.values||{},byPeriod[period]);
+    const mergedPlans=Array.from(new Set([...(prev&&prev.plans||[]),...byPeriodPlans[period]]));
+    const entry={unit:S.user.code,unitName:S.user.name,period,freq:dFreq,values:mergedValues,plans:mergedPlans,date:new Date().toLocaleString("mn-MN")};
     if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
     if(fbDB&&window._set){
       try{await window._set(window._r(fbDB,"data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_")),entry);}
@@ -1080,14 +1088,19 @@ function lSum(){
     latestByUnit[u.code]=ents.reduce((best,e)=>(!best||e.date>best.date)?e:best,null);
   });
   // "Бөглөсөн" гэдгийг тодорхойлно: тодорхой төлөвлөгөө сонгосон бол ТУХАЙН төлөвлөгөөний
-  // ядаж 1 үзүүлэлтийг мужийн АЛЬ Ч period-т бөглөсөн байхыг шаардана (зөвхөн сүүлийн entry биш,
-  // мужид орсон бүх entry-г шалгана).
+  // мужид орсон АЛЬ Ч period-т илгээгдсэн байхыг шаардана. Илгээх үед бичигдсэн entry.plans
+  // талбарыг ПРИОРИТЕТООР ашиглана (яг аль төлөвлөгөөгөөр илгээснийг баримтаар мэднэ — хуваалцсан
+  // үзүүлэлтээс болж буруу "илгээсэн" гэж тоологдохоос сэргийлнэ). entry.plans байхгүй хуучин
+  // мэдээнд л (энэ талбар нэмэгдэхээс өмнөх) үзүүлэлтийн утгаар нөхөж тооцно.
   const hasSent=(u)=>{
     const ents=unitEntriesInRange[u.code]||[];
     if(!ents.length)return false;
     if(plan==="all")return true;
     if(!inds.length)return false;
-    return ents.some(e=>inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!==""));
+    return ents.some(e=>{
+      if(e.plans&&e.plans.length)return e.plans.includes(plan);
+      return inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
+    });
   };
   const done=active.filter(u=>hasSent(u)),miss=active.filter(u=>!hasSent(u));
   const totalU=active.length,sub=done.length;
