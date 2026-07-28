@@ -1069,22 +1069,25 @@ function lSum(){
   if(grp==="niislel")active=active.filter(u=>NIIS.includes(u.code));
   else if(grp==="bank")active=active.filter(u=>u.name.includes("Банк")||u.name.toLowerCase().includes("bank"));
   else if(grp==="aimag")active=active.filter(u=>!NIIS.includes(u.code)&&!u.name.includes("Банк")&&!u.name.toLowerCase().includes("bank"));
-  // Нэгж бүрийн сонгосон мужид хамгийн сүүлд илгээсэн entry-г олно
-  const latestByUnit={};
+  // Нэгж бүрийн сонгосон мужид байгаа БҮХ entry-г (period тус бүрээр) болон хамгийн сүүлийнхийг олно.
+  // "Хамгийн сүүлийнх"-ийг зөвхөн огноо харуулахад ашиглана — "бөглөсөн эсэх"-ийг ШАЛГАХДАА
+  // мужийн БҮХ entry-г үзнэ, учир нь нэгж эрт (жишээ нь 07.24) нэг төлөвлөгөөгөө бөглөөд,
+  // дараа өөр өдөр (07.27) өөр зүйл илгээвэл, зөвхөн сүүлийнхийг шалгах нь эхний бөглөлтийг далдалдаг байсан.
+  const unitEntriesInRange={},latestByUnit={};
   active.forEach(u=>{
-    let latest=null;
-    selPeriods.forEach(p=>{const e=upMap[u.code+"||"+p];if(e&&(!latest||e.date>latest.date))latest=e;});
-    latestByUnit[u.code]=latest;
+    const ents=selPeriods.map(p=>upMap[u.code+"||"+p]).filter(Boolean);
+    unitEntriesInRange[u.code]=ents;
+    latestByUnit[u.code]=ents.reduce((best,e)=>(!best||e.date>best.date)?e:best,null);
   });
   // "Бөглөсөн" гэдгийг тодорхойлно: тодорхой төлөвлөгөө сонгосон бол ТУХАЙН төлөвлөгөөний
-  // ядаж 1 үзүүлэлтийг бөглөсөн байхыг шаардана (нэгжүүд ихэвчлэн ЗАРИМ үзүүлэлтийг л бөглөдөг тул
-  // "бүгдийг заавал" гэвэл хэт хатуу байж тоог хиймлээр багасгадаг байсныг засав)
+  // ядаж 1 үзүүлэлтийг мужийн АЛЬ Ч period-т бөглөсөн байхыг шаардана (зөвхөн сүүлийн entry биш,
+  // мужид орсон бүх entry-г шалгана).
   const hasSent=(u)=>{
-    const e=latestByUnit[u.code];
-    if(!e)return false;
+    const ents=unitEntriesInRange[u.code]||[];
+    if(!ents.length)return false;
     if(plan==="all")return true;
     if(!inds.length)return false;
-    return inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
+    return ents.some(e=>inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!==""));
   };
   const done=active.filter(u=>hasSent(u)),miss=active.filter(u=>!hasSent(u));
   const totalU=active.length,sub=done.length;
