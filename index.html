@@ -1728,6 +1728,46 @@ function tArchive(c){
   const archEl=mk("div");
   inp.oninput=()=>renderArchList(archEl,S.archives.filter(a=>(a.plan+a.period+a.date).toLowerCase().includes(inp.value.toLowerCase())));
   fi.appendChild(inp);card.appendChild(fi);card.appendChild(archEl);c.appendChild(card);renderArchList(archEl,S.archives);
+  // ===== ЖИЛИЙН БҮРТГЭЛ — төлөвлөгөө бүрийг нэгж тус бүр архивласан хугацаа тутамд илгээсэн эсэхийг +/− тэмдгээр харуулна =====
+  const trackCard=mk("div","card");trackCard.innerHTML="<h2>📊 Жилийн бүртгэл — Илгээсэн эсэх</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Архивласан хугацаа тус бүрт аль нэгж илгээсэн (+) эсвэл илгээгээгүй (−) байгааг харуулна. Зөвхөн 🔒 хаагдсан (архивласан) хугацаанууд орно.</p>";
+  const plansWithArchives=[...new Set(S.archives.filter(a=>a.plan&&a.plan!=="__all__").map(a=>a.plan))];
+  const tfi=mk("div","fi");tfi.innerHTML="<label>Төлөвлөгөө</label>";
+  const planSel=mk("select");planSel.id="trackPlan";
+  plansWithArchives.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;planSel.appendChild(o);});
+  tfi.appendChild(planSel);trackCard.appendChild(tfi);
+  const trackRes=mk("div");trackRes.id="trackRes";trackRes.style.marginTop="12px";trackCard.appendChild(trackRes);
+  planSel.onchange=()=>renderTrackMatrix(planSel.value);
+  c.appendChild(trackCard);
+  if(plansWithArchives.length)renderTrackMatrix(planSel.value);
+  else trackRes.innerHTML="<div class='empty'>Архивласан мэдээ алга — Нэгдсэн дүн дээр 🔒 хаахад автоматаар нэмэгдэнэ</div>";
+}
+function renderTrackMatrix(plan){
+  const el=document.getElementById("trackRes");if(!el)return;
+  if(!plan){el.innerHTML="<div class='empty'>Архивласан мэдээ алга</div>";return;}
+  const archs=S.archives.filter(a=>a.plan===plan).sort((a,b)=>a.date>b.date?1:-1);
+  if(!archs.length){el.innerHTML="<div class='empty'>Энэ төлөвлөгөөнд архивласан мэдээ алга</div>";return;}
+  const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+  const hasFor=(a,ucode)=>{const ud=a.data&&a.data[ucode];return !!(ud&&ud.values&&Object.values(ud.values).some(v=>v!==undefined&&v!==null&&v!==""));};
+  let h="<div class='tw'><table><tr><th style='text-align:left;position:sticky;left:0;background:var(--bg2)'>Нэгж</th>"+archs.map(a=>"<th style='font-size:10px;white-space:nowrap'>"+a.period+"</th>").join("")+"<th style='font-size:11px'>Нийт</th></tr>";
+  units.forEach(u=>{
+    let cnt=0;
+    let row="<tr><td style='font-weight:600;position:sticky;left:0;background:var(--bg2)'>"+u.code+"</td>";
+    archs.forEach(a=>{
+      const has=hasFor(a,u.code);if(has)cnt++;
+      row+="<td style='text-align:center;color:"+(has?"var(--gr)":"var(--rd)")+";font-weight:700'>"+(has?"+":"−")+"</td>";
+    });
+    row+="<td style='text-align:center;font-size:12px;color:var(--tx2)'>"+cnt+"/"+archs.length+"</td></tr>";
+    h+=row;
+  });
+  // Мөр — period тус бүрд хэдэн нэгж илгээснийг харуулна
+  h+="<tr><td style='font-weight:600;position:sticky;left:0;background:var(--bg2)'>Нийт</td>";
+  archs.forEach(a=>{
+    const n=units.filter(u=>hasFor(a,u.code)).length;
+    h+="<td style='text-align:center;font-size:11px;color:var(--tx2)'>"+n+"/"+units.length+"</td>";
+  });
+  h+="<td></td></tr>";
+  h+="</table></div>";
+  el.innerHTML=h;
 }
 function renderArchList(el,items){
   el.innerHTML="";if(!items.length){el.innerHTML="<div class='empty'>Архив хоосон байна</div>";return;}
