@@ -1170,7 +1170,7 @@ function lSum(){
     const td1=mk("td");td1.innerHTML="<b>"+u.code+"</b>";tr.appendChild(td1);
     const td2=mk("td");
     const sp=mk("span");sp.textContent=u.name;sp.style.cssText="cursor:pointer;color:var(--bl2)";sp.title="Дэлгэрэнгүй";
-    sp.onclick=(function(cc,nn){return function(){showUnitDetail(cc,nn);};})(u.code,u.name);
+    sp.onclick=(function(cc,nn){return function(){showUnitDetail(cc,nn,plan);};})(u.code,u.name);
     td2.appendChild(sp);tr.appendChild(td2);
     const td3=mk("td");const badge=mk("span","badge "+(sent?"bok":"bfail"));badge.textContent=sent?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);
     if(sent&&plan!=="all"){
@@ -1242,47 +1242,73 @@ async function revokePlanForUnit(ucode,uname,plan,entries){
   lSum();
 }
 
-function showUnitDetail(ucode,uname){
-  const allEntries=S.data.filter(d=>d.unit===ucode).sort((a,b)=>a.period>b.period?-1:1);
+function entryMatchesPlan(e,filterPlan){
+  if(e.plans!==undefined)return e.plans.includes(filterPlan);
+  const inds=S.inds.filter(i=>i.freq===e.freq&&(i.plans||[]).some(p=>p&&p.trim()===filterPlan.trim()));
+  return inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
+}
+
+function showUnitDetail(ucode,uname,filterPlan){
+  const allRaw=S.data.filter(d=>d.unit===ucode).sort((a,b)=>a.period>b.period?-1:1);
+  const isFiltered=filterPlan&&filterPlan!=="all";
+  let showFull=false;
   const overlay=mk("div","modal-overlay");
   const box=mk("div","modal-box");box.style.width="700px";
-  box.innerHTML="<h3>📋 "+ucode+" — "+uname+"</h3>";
-  if(!allEntries.length){box.innerHTML+="<div class='empty'>Мэдээ байхгүй</div>";}
-  else{
-    const fmap={"week":"7 Хоног","month":"Сар бүр","quarter":"Улирал бүр"};
-    allEntries.forEach(entry=>{
-      const sub=mk("div","sub");sub.style.marginBottom="12px";
-      sub.innerHTML="<h3>"+(fmap[entry.freq]||entry.freq)+" — "+entry.period+"</h3>";
-      const inds=S.inds.filter(i=>i.freq===entry.freq);
-      const tbl=mk("table");tbl.style.width="100%";
-      tbl.innerHTML="<tr><th style='text-align:left;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Үзүүлэлт</th><th style='text-align:right;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Утга</th></tr>";
-      let hasVal=false;const shownIds=new Set();
-      inds.forEach(ind=>{
-        const val=(entry.values||{})[ind.id];
-        if(!val&&val!==0)return;
-        hasVal=true;shownIds.add(ind.id);
-        const tr=mk("tr");
-        tr.innerHTML="<td style='padding:5px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+ind.name+"</td><td style='padding:5px 8px;font-size:13px;text-align:right;border-bottom:1px solid var(--bd);color:var(--gr)'>"+fV(val,ind.type)+"</td>";
-        tbl.appendChild(tr);
+  function render(){
+    box.innerHTML="";
+    const hdr=mk("h3");hdr.textContent="📋 "+ucode+" — "+uname+(isFiltered&&!showFull?" — "+filterPlan:"");box.appendChild(hdr);
+    const allEntries=(isFiltered&&!showFull)?allRaw.filter(e=>entryMatchesPlan(e,filterPlan)):allRaw;
+    if(isFiltered){
+      const toggle=mk("div");toggle.style.cssText="font-size:12px;margin-bottom:10px";
+      const tglLink=mk("span");tglLink.style.cssText="color:var(--bl2);cursor:pointer";
+      tglLink.textContent=showFull?"◀ Зөвхөн '"+filterPlan+"'-г харах":"👁 Бүх түүхийг харах ("+allRaw.length+")";
+      tglLink.onclick=()=>{showFull=!showFull;render();};
+      toggle.appendChild(tglLink);box.appendChild(toggle);
+    }
+    if(!allEntries.length){
+      const emp=mk("div","empty");emp.textContent=isFiltered?"❌ '"+filterPlan+"' төлөвлөгөөгөөр мэдээ илгээгээгүй байна":"Мэдээ байхгүй";box.appendChild(emp);
+    } else {
+      const fmap={"week":"7 Хоног","month":"Сар бүр","quarter":"Улирал бүр"};
+      allEntries.forEach(entry=>{
+        const sub=mk("div","sub");sub.style.marginBottom="12px";
+        sub.innerHTML="<h3>"+(fmap[entry.freq]||entry.freq)+" — "+entry.period+"</h3>";
+        // Filter хийсэн үед зөвхөн тухайн төлөвлөгөөний үзүүлэлтийг л харуулна, бусдыг холихгүй
+        const inds=(isFiltered&&!showFull)
+          ?S.inds.filter(i=>i.freq===entry.freq&&(i.plans||[]).some(p=>p&&p.trim()===filterPlan.trim()))
+          :S.inds.filter(i=>i.freq===entry.freq);
+        const tbl=mk("table");tbl.style.width="100%";
+        tbl.innerHTML="<tr><th style='text-align:left;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Үзүүлэлт</th><th style='text-align:right;padding:5px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid var(--bd)'>Утга</th></tr>";
+        let hasVal=false;const shownIds=new Set();
+        inds.forEach(ind=>{
+          const val=(entry.values||{})[ind.id];
+          if(!val&&val!==0)return;
+          hasVal=true;shownIds.add(ind.id);
+          const tr=mk("tr");
+          tr.innerHTML="<td style='padding:5px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+ind.name+"</td><td style='padding:5px 8px;font-size:13px;text-align:right;border-bottom:1px solid var(--bd);color:var(--gr)'>"+fV(val,ind.type)+"</td>";
+          tbl.appendChild(tr);
+        });
+        if(!isFiltered||showFull){
+          // Also show values whose indicator id is not in inds (orphaned or cross-freq)
+          Object.entries(entry.values||{}).forEach(([k,v])=>{
+            if(shownIds.has(k)||(!v&&v!==0))return;
+            const xInd=S.inds.find(i=>i.id===k);
+            if(!xInd)return;
+            hasVal=true;shownIds.add(k);
+            const tr=mk("tr");
+            tr.innerHTML="<td style='padding:5px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+xInd.name+"</td><td style='padding:5px 8px;font-size:13px;text-align:right;border-bottom:1px solid var(--bd);color:var(--gr)'>"+fV(v,xInd.type)+"</td>";
+            tbl.appendChild(tr);
+          });
+        }
+        if(!hasVal)sub.innerHTML+="<div style='font-size:12px;color:var(--tx3);padding:8px'>Утга байхгүй</div>";
+        else sub.appendChild(tbl);
+        box.appendChild(sub);
       });
-      // Also show values whose indicator id is not in inds (orphaned or cross-freq)
-      Object.entries(entry.values||{}).forEach(([k,v])=>{
-        if(shownIds.has(k)||(!v&&v!==0))return;
-        const xInd=S.inds.find(i=>i.id===k);
-        if(!xInd)return;
-        hasVal=true;shownIds.add(k);
-        const tr=mk("tr");
-        tr.innerHTML="<td style='padding:5px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+xInd.name+"</td><td style='padding:5px 8px;font-size:13px;text-align:right;border-bottom:1px solid var(--bd);color:var(--gr)'>"+fV(v,xInd.type)+"</td>";
-        tbl.appendChild(tr);
-      });
-      if(!hasVal)sub.innerHTML+="<div style='font-size:12px;color:var(--tx3);padding:8px'>Утга байхгүй</div>";
-      else sub.appendChild(tbl);
-      box.appendChild(sub);
-    });
+    }
+    const bClose=mk("button","btn bx");bClose.style.marginTop="12px";bClose.textContent="✕ Хаах";
+    bClose.onclick=()=>document.body.removeChild(overlay);
+    box.appendChild(bClose);
   }
-  const bClose=mk("button","btn bx");bClose.style.marginTop="12px";bClose.textContent="✕ Хаах";
-  bClose.onclick=()=>document.body.removeChild(overlay);
-  box.appendChild(bClose);
+  render();
   overlay.onclick=e=>{if(e.target===overlay)document.body.removeChild(overlay);};
   overlay.appendChild(box);document.body.appendChild(overlay);
 }
