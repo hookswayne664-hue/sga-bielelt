@@ -504,8 +504,10 @@ async function doArchiveSnapshot(freq,period,plan,name){
 function lockPeriod(){
   const plan=document.getElementById("lockPlan")?.value;
   const freq=document.getElementById("lockFreq")?.value;
-  const period=document.getElementById("lockPer")?.value;
-  if(!plan||!freq||!period)return;
+  if(!plan||!freq)return;
+  const P=getPer();
+  const ps=freq==="week"?P.w:freq==="month"?P.mn:P.q;
+  const period=ps[0]; // үргэлж өнөөдрийг ашиглана — өдрөөр сонгуулах шаардлагагүй
   const freqLabel=freq==="week"?"7 Хоног":freq==="month"?"Сар бүр":"Улирал бүр";
   if(!confirm(plan+" — "+freqLabel+" — "+period+"\nЭнэ төлөвлөгөөний хугацааг хаах уу? Одоогийн мэдээ автоматаар архивлагдана. Зөвхөн '"+plan+"' төлөвлөгөөнд харьяалагдах үзүүлэлтүүд энэ period-д түгжигдэнэ, бусад төлөвлөгөөнд нөлөөлөхгүй."))return;
   // Зөвхөн энэ ТӨЛӨВЛӨГӨӨНИЙ хуучин хаалтыг хасаж шинийг нэмнэ — бусад төлөвлөгөөний хаалтад хүрэхгүй
@@ -974,24 +976,29 @@ function tSummary(c){
   const lfr=mk("div","fr");
   const lfi0=mk("div","fi");lfi0.innerHTML="<label>Төлөвлөгөө</label><select id='lockPlan'></select>";lfr.appendChild(lfi0);
   const lfi1=mk("div","fi");lfi1.innerHTML="<label>Давтамж</label><select id='lockFreq' disabled><option value='week'>7 Хоног</option><option value='month'>Сар бүр</option><option value='quarter'>Улирал бүр</option></select>";lfr.appendChild(lfi1);
-  const lfi2=mk("div","fi");lfi2.innerHTML="<label>Хаах период</label><select id='lockPer'></select>";lfr.appendChild(lfi2);
   lockCard.appendChild(lfr);
-  const lbtn=mk("button","btn bw");lbtn.style.marginTop="8px";lbtn.textContent="🔒 Сонгосон төлөвлөгөөг хаах";lbtn.onclick=lockPeriod;lockCard.appendChild(lbtn);
+  const lockInfo=mk("div");lockInfo.id="lockInfo";lockInfo.style.cssText="font-size:12px;color:var(--tx2);margin:6px 0 4px 0;padding:8px 10px;background:var(--bg3);border-radius:6px";lockCard.appendChild(lockInfo);
+  const lbtn=mk("button","btn bw");lbtn.style.marginTop="8px";lbtn.textContent="🔒 Сонгосон төлөвлөгөөг өнөөдрөөр хаах";lbtn.onclick=lockPeriod;lockCard.appendChild(lbtn);
   setTimeout(()=>{
-    const plSel=document.getElementById("lockPlan"),fsel=document.getElementById("lockFreq"),psel=document.getElementById("lockPer");
-    if(!plSel||!fsel||!psel)return;
+    const plSel=document.getElementById("lockPlan"),fsel=document.getElementById("lockFreq"),info=document.getElementById("lockInfo");
+    if(!plSel||!fsel||!info)return;
     const lockable=S.plans.filter(p=>!getPlanLock(p));
-    if(!lockable.length){plSel.innerHTML="<option value=''>— Бүх төлөвлөгөө хаагдсан —</option>";return;}
+    if(!lockable.length){plSel.innerHTML="<option value=''>— Бүх төлөвлөгөө хаагдсан —</option>";info.textContent="";return;}
     lockable.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;plSel.appendChild(o);});
-    function fillLockPer(){
+    function fillLockInfo(){
       const plan=plSel.value;
       const f=S.planFreqs[plan]||"week";
       fsel.value=f;
       const P2=getPer();
       const ps=f==="week"?P2.w:f==="month"?P2.mn:P2.q;
-      psel.innerHTML="";ps.forEach(p=>{const o=mk("option");o.textContent=p;psel.appendChild(o);});
+      const today=ps[0];
+      // Энэ төлөвлөгөө хамгийн сүүлд хэзээ нээгдсэнийг (өмнөх хаалтын дараа) тооцоолж харуулна
+      const pastLocks=S.lockedPeriods.filter(lp=>lp.plan===plan&&!lp.active).sort((a,b)=>a.lockedAt>b.lockedAt?1:-1);
+      const lastClosed=pastLocks.length?pastLocks[pastLocks.length-1]:null;
+      info.innerHTML="📅 Хаах өдөр: <b style='color:var(--tx)'>"+today+" (өнөөдөр)</b> — өдрөөр сонгох шаардлагагүй, автоматаар өнөөдрийг авна."+
+        (lastClosed?"<br>🔓 Өмнөх хаалт: "+lastClosed.period+" ("+lastClosed.lockedAt+")":"");
     }
-    plSel.onchange=fillLockPer;fillLockPer();
+    plSel.onchange=fillLockInfo;fillLockInfo();
   },50);
   c.appendChild(lockCard);
   // ===== АРХИВЛАХ КАРТ =====
