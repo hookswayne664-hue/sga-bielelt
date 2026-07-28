@@ -1226,7 +1226,7 @@ async function revokePlanForUnit(ucode,uname,plan,entries){
       const set=new Set();
       S.plans.forEach(pl=>{
         if(pl===plan)return;
-        const relevant=inds.filter(i=>(i.plans||[]).includes(pl));
+        const relevant=inds.filter(i=>(i.plans||[]).some(p=>p&&p.trim()===pl.trim()));
         if(relevant.length&&relevant.some(i=>entry.values&&entry.values[i.id]!==undefined&&entry.values[i.id]!==null&&entry.values[i.id]!==""))set.add(pl);
       });
       plansHere=Array.from(set);
@@ -1983,7 +1983,7 @@ function buildCfg(c){
       const inds=S.inds.filter(i=>i.freq===entry.freq);
       const plansHere=new Set();
       S.plans.forEach(pl=>{
-        const relevant=inds.filter(i=>(i.plans||[]).includes(pl));
+        const relevant=inds.filter(i=>(i.plans||[]).some(p=>p&&p.trim()===pl.trim()));
         if(relevant.length&&relevant.some(i=>entry.values&&entry.values[i.id]!==undefined&&entry.values[i.id]!==null&&entry.values[i.id]!==""))plansHere.add(pl);
       });
       if(!plansHere.size){skipped++;continue;}
