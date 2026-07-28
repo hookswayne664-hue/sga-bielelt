@@ -1890,6 +1890,40 @@ function buildCfg(c){
   bSave.onclick=()=>{const k=inp5.value.trim();if(!k)return toast("API түлхүүр үг оруулна уу","te");localStorage.setItem("sga_ai_key",k);toast("✅ Хадгалагдлаа","ts");};
   c5.appendChild(bSave);c.appendChild(c5);
 
+  // Хуучин мэдээнд "аль төлөвлөгөөгөөр илгээснийг" нь (plans талбар) нөхөх — НЭГ УДАА ажиллуулах багаж
+  const c7=mk("div","card");c7.innerHTML="<h2>🔧 Хуучин мэдээний төлөвлөгөө холбоосыг нөхөх</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Шинэ мэдээ илгээх бүрд систем яг аль төлөвлөгөөгөөр илгээснийг нь тэмдэглэдэг боллоо. Гэхдээ ӨМНӨ илгээгдсэн хуучин мэдээнд энэ тэмдэглэгээ байхгүй тул, зарим тохиолдолд (хуваалцсан үзүүлэлттэй үед) Нэгдсэн дүн дээр буруу харагдаж болзошгүй. Энэ товч хуучин мэдээ бүрийг шалгаж, бөглөгдсөн утгаас нь аль төлөвлөгөөнд харьяалагдахыг тооцоолж бичнэ — тоо, утга огт өөрчлөгдөхгүй, зөвхөн тэмдэглэгээ л нэмэгдэнэ.</p>";
+  const migStats=mk("div");migStats.style.cssText="background:var(--bg3);border-radius:6px;padding:12px;margin-bottom:14px;font-size:13px";
+  const needMigCount=S.data.filter(d=>!d.plans||!d.plans.length).length;
+  migStats.innerHTML="Тэмдэглэгээгүй хуучин мэдээ: <b style='color:"+(needMigCount?"var(--or)":"var(--gr)")+"'>"+needMigCount+"</b> / "+S.data.length;
+  c7.appendChild(migStats);
+  const bMig=mk("button","btn bw");bMig.textContent="🔧 Хуучин мэдээг шалгаж нөхөх";
+  bMig.onclick=async()=>{
+    const todo=S.data.filter(d=>!d.plans||!d.plans.length);
+    if(!todo.length){toast("Нөхөх шаардлагатай мэдээ алга","ts");return;}
+    if(!confirm(todo.length+" хуучин мэдээнд төлөвлөгөөний тэмдэглэгээ нөхөх үү? Тоо, утга өөрчлөгдөхгүй, зөвхөн тэмдэглэгээ нэмэгдэнэ."))return;
+    bMig.disabled=true;bMig.textContent="⏳ Ажиллаж байна...";
+    let fixed=0,skipped=0;
+    for(const entry of todo){
+      const inds=S.inds.filter(i=>i.freq===entry.freq);
+      const plansHere=new Set();
+      S.plans.forEach(pl=>{
+        const relevant=inds.filter(i=>(i.plans||[]).includes(pl));
+        if(relevant.length&&relevant.some(i=>entry.values&&entry.values[i.id]!==undefined&&entry.values[i.id]!==null&&entry.values[i.id]!==""))plansHere.add(pl);
+      });
+      if(!plansHere.size){skipped++;continue;}
+      entry.plans=Array.from(plansHere);
+      if(fbDB&&window._set){
+        try{await window._set(window._r(fbDB,"data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_")),entry);}catch(e){console.error("[SGA migration] Firebase FAIL:",e);}
+      }
+      try{api("saveData",{data:JSON.stringify(entry)});}catch{}
+      fixed++;
+    }
+    try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
+    bMig.disabled=false;bMig.textContent="🔧 Хуучин мэдээг шалгаж нөхөх";
+    toast("✅ "+fixed+" мэдээ нөхөгдлөө"+(skipped?" ("+skipped+" алгассан — ямар ч төлөвлөгөөнд тохирсонгүй)":""),"ts");
+    buildCfg(c);
+  };
+  c7.appendChild(bMig);c.appendChild(c7);
   // Мэдээ цэвэрлэх
   const c6=mk("div","card");c6.innerHTML="<h2>🗑️ Тест мэдээ цэвэрлэх</h2>";
   const stats=mk("div");stats.style.cssText="background:var(--bg3);border-radius:6px;padding:12px;margin-bottom:14px;font-size:13px";
