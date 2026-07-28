@@ -1302,7 +1302,14 @@ async function exportExcel(){
   if(planF!=="all")inds=inds.filter(i=>i.plans&&i.plans.some(pl=>pl&&pl.trim()===planF.trim()));
   const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
   const entries=S.data.filter(d=>sel.includes(d.period)&&d.freq===freq);
-  const unitMap={};entries.forEach(e=>{if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;});
+  // Сонгосон муж дахь нэгж бүрийн БҮХ entry-г нэгтгэнэ (зөвхөн хамгийн сүүлийнхийг биш) —
+  // эс тэгвэл эрт (07.24 гэх мэт) period-д илгээсэн утга, дараа өөр period-д дахин илгээхэд алга болдог байсан.
+  const unitMap={};
+  entries.slice().sort((a,b)=>a.date>b.date?1:-1).forEach(e=>{
+    if(!unitMap[e.unit])unitMap[e.unit]={values:{},date:e.date};
+    Object.assign(unitMap[e.unit].values,e.values||{});
+    if(e.date>unitMap[e.unit].date)unitMap[e.unit].date=e.date;
+  });
   const perLabel=sel.length>1?sel[sel.length-1]+" ~ "+sel[0]:sel[0];
   const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":"Улирал бүр";
   const planGroups={};const planOrder=[];
