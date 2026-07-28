@@ -542,9 +542,31 @@ function renderTab(id){
   else if(id==="config")tConfig(c);
 }
 
+// Нэгж "Мэдээ оруулах" руу ороход аль period-г анхны утгаар харуулахыг тодорхойлно.
+// Хэрэв тэдний сүүлд илгээсэн мэдээ ХААГДААГҮЙ бол (lock-оор өөр period рүү шилжээгүй бол),
+// автоматаар тэр хугацаанд нь аваачна — ингэснээр "засаад дахин илгээх" үйлдэл шинэ өдрийн
+// period үүсгэлгүй, яг хуучин бичлэгээ л засдаг болно. Шинэ (өмнө нь илгээгээгүй) тохиолдолд өнөөдрийг харуулна.
+function smartDefaultPeriod(freq){
+  const P=getPer();
+  const ps=freq==="week"?P.w:freq==="month"?P.mn:P.q;
+  if(!S.user||S.user.isAdmin)return ps[0];
+  const myEntries=S.data.filter(d=>d.unit===S.user.code&&d.freq===freq&&ps.includes(d.period));
+  // Тухайн entry-ийн төлөвлөгөө(д) идэвхтэй хаалттай, ӨӨР period рүү шилжсэн эсэхийг шалгаж,
+  // хаагдаагүй (одоо ч засварлаж болох) entry-г л сонгоно.
+  const editable=myEntries.filter(e=>{
+    const ePlans=e.plans&&e.plans.length?e.plans:S.plans;
+    return ePlans.some(pl=>{const lk=getPlanLock(pl);return !lk||lk.period===e.period;});
+  });
+  if(editable.length){
+    const latest=editable.reduce((best,e)=>(!best||e.date>best.date)?e:best,null);
+    if(latest)return latest.period;
+  }
+  return ps[0];
+}
+
 // ===== DATA ENTRY =====
 function tData(c){
-  const P=getPer();if(!dPer)dPer=P.w[0];
+  const P=getPer();if(!dPer)dPer=smartDefaultPeriod(dFreq);
   const ps=dFreq==="week"?P.w:dFreq==="month"?P.mn:P.q;
   const inds=S.inds.filter(i=>i.freq===dFreq);
   const card=mk("div","card");
@@ -552,12 +574,13 @@ function tData(c){
   const pt=mk("div","ptabs");
   [["week","7 Хоног"],["month","Сар бүр"],["quarter","Улирал бүр"]].forEach(([f,l])=>{
     const d=mk("div","pt"+(dFreq===f?" on":""));d.textContent=l;
-    d.onclick=()=>{dFreq=f;const P2=getPer();dPer=f==="week"?P2.w[0]:f==="month"?P2.mn[0]:P2.q[0];renderTab("data");};
+    d.onclick=()=>{dFreq=f;dPer=smartDefaultPeriod(f);renderTab("data");};
     pt.appendChild(d);
   });
   card.appendChild(pt);
   const fr=mk("div","fr");
-  const fi1=mk("div","fi");fi1.innerHTML="<label>Тайлант хугацаа <span style='font-weight:400;color:var(--tx3)'>(хаагдаагүй төлөвлөгөөнд)</span></label>";
+  const hasExisting=!S.user.isAdmin&&S.data.some(d=>d.unit===S.user.code&&d.period===dPer&&d.freq===dFreq);
+  const fi1=mk("div","fi");fi1.innerHTML="<label>Тайлант хугацаа <span style='font-weight:400;color:var(--tx3)'>(хаагдаагүй төлөвлөгөөнд)</span></label>"+(hasExisting?"<div style='font-size:11px;color:var(--bl2);margin-top:2px'>✏️ Энэ бол таны өмнө илгээсэн мэдээ — засаад дахин илгээвэл шинэчлэгдэнэ</div>":"");
   const sel=mk("select");ps.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;if(p===dPer)o.selected=true;sel.appendChild(o);});
   sel.onchange=()=>{dPer=sel.value;renderTab("data");};fi1.appendChild(sel);fr.appendChild(fi1);
   const fi2=mk("div","fi");fi2.innerHTML="<label>Нэгж</label><input value='"+S.user.name+"' disabled>";fr.appendChild(fi2);
