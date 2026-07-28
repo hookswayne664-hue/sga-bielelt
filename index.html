@@ -1091,6 +1091,10 @@ function lSum(){
   const periodLabel=selPeriods.length>1?selPeriods[selPeriods.length-1]+" ~ "+selPeriods[0]:selPeriods[0]||"";
   el.innerHTML="";
   const pLbl=mk("div");pLbl.style.cssText="font-size:12px;color:var(--tx2);margin-bottom:10px";pLbl.textContent="📅 "+periodLabel+" ("+selPeriods.length+" хугацаа)";el.appendChild(pLbl);
+  // ===== ХОЁР БАГАНАТАЙ БҮТЭЦ: ЗҮҮН — Хяналт (нэгж бүрээр), БАРУУН — Үзүүлэлтийн нэгтгэл =====
+  const cols=mk("div");cols.style.cssText="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap";
+  const leftCol=mk("div");leftCol.style.cssText="flex:1 1 380px;min-width:320px";
+  const rightCol=mk("div");rightCol.style.cssText="flex:1 1 420px;min-width:320px";
   // ===== СТАТИСТИК (дарж нэрсээр нь харах) =====
   const statsDiv=mk("div","stats");
   [{n:totalU,l:"Нийт нэгж",c:"",click:null},{n:done.length,l:"✅ Илгээсэн",c:"g",click:()=>{
@@ -1112,9 +1116,9 @@ function lSum(){
     if(s.click){sc.style.cursor="pointer";sc.title="Дарж нэрсээр нь харах";sc.onclick=s.click;}
     statsDiv.appendChild(sc);
   });
-  el.appendChild(statsDiv);
-  // ===== НЭГЖ БҮРЭЭР ИЛГЭЭСЭН/ИЛГЭЭГЭЭГҮЙ ХҮСНЭГТ (нэрсээр, шууд харагдана) =====
-  const tw=mk("div","tw"),tbl=mk("table");
+  leftCol.appendChild(statsDiv);
+  // ===== НЭГЖ БҮРЭЭР ИЛГЭЭСЭН/ИЛГЭЭГЭЭГҮЙ ХҮСНЭГТ (нэрсээр, өөрийн гүйлгэлттэй) =====
+  const tw=mk("div","tw");tw.style.cssText="max-height:520px;overflow-y:auto";const tbl=mk("table");
   const hasSv=Object.keys(S.activeSurveys||{}).length>0;
   const hdr=mk("tr");["Код","Нэгж","Статус","Сүүлд илгээсэн",...(hasSv?["📋 Судалгаа"]:[])].forEach(t=>{const th=mk("th");th.textContent=t;hdr.appendChild(th);});tbl.appendChild(hdr);
   active.forEach(u=>{
@@ -1131,10 +1135,11 @@ function lSum(){
     if(hasSv){const td5=mk("td");const svR=Object.values(S.surveyResps||{}).some(r=>r[u.code]);const svB=mk("span","badge "+(svR?"bok":"bfail"));svB.textContent=svR?"✅":"❌";td5.appendChild(svB);tr.appendChild(td5);}
     tbl.appendChild(tr);
   });
-  tw.appendChild(tbl);el.appendChild(tw);
-  // ===== ҮЗҮҮЛЭЛТ ТУС БҮРИЙН НЭГТГЭЛ =====
-  if(!inds.length){const emp=mk("div","empty");emp.textContent="Үзүүлэлт байхгүй";el.appendChild(emp);return;}
-  let h="<div class='tw'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт</th><th>Бөглөлт</th></tr>";
+  tw.appendChild(tbl);leftCol.appendChild(tw);
+  cols.appendChild(leftCol);
+  // ===== ҮЗҮҮЛЭЛТ ТУС БҮРИЙН НЭГТГЭЛ (баруун тал, өөрийн гүйлгэлттэй) =====
+  if(!inds.length){const emp=mk("div","empty");emp.textContent="Үзүүлэлт байхгүй";rightCol.appendChild(emp);cols.appendChild(rightCol);el.appendChild(cols);return;}
+  let h="<div class='tw' style='max-height:520px;overflow-y:auto'><table><tr><th>ID</th><th>Үзүүлэлт</th><th style='text-align:right'>Нийт</th><th>Бөглөлт</th></tr>";
   inds.forEach(ind=>{
     const vals=allEntries.map(e=>(e.values||{})[ind.id]).filter(v=>v!==undefined&&v!==null&&v!=="");
     const nums=vals.map(v=>parseFloat((v+"").replace(/,/g,""))).filter(n=>!isNaN(n));
@@ -1151,7 +1156,9 @@ function lSum(){
   });
   h+="</table></div>";
   if(!allEntries.length)h+="<div class='empty' style='margin-top:12px'>Мэдээ байхгүй</div>";
-  const indWrap=mk("div");indWrap.innerHTML=h;el.appendChild(indWrap);
+  const indWrap=mk("div");indWrap.innerHTML=h;rightCol.appendChild(indWrap);
+  cols.appendChild(rightCol);
+  el.appendChild(cols);
 }
 
 function showUnitDetail(ucode,uname){
