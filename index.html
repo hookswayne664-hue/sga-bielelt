@@ -1307,7 +1307,11 @@ async function exportExcel(){
   const unitMap={};
   entries.slice().sort((a,b)=>a.date>b.date?1:-1).forEach(e=>{
     if(!unitMap[e.unit])unitMap[e.unit]={values:{},date:e.date};
-    Object.assign(unitMap[e.unit].values,e.values||{});
+    // Зөвхөн БОДИТ (хоосон биш) утгыг л нэгтгэнэ — эс тэгвэл дараа ирсэн хоосон/дутуу entry
+    // өмнөх бодит утгыг дарж бичиж устгачихдаг байсан.
+    Object.entries(e.values||{}).forEach(([k,v])=>{
+      if(v!==undefined&&v!==null&&v!=="")unitMap[e.unit].values[k]=v;
+    });
     if(e.date>unitMap[e.unit].date)unitMap[e.unit].date=e.date;
   });
   const perLabel=sel.length>1?sel[sel.length-1]+" ~ "+sel[0]:sel[0];
