@@ -485,20 +485,38 @@ function getIndLock(ind){
   return null;
 }
 
+// Тухайн period+plan-ийн snapshot-ийг архивт хадгална. Гараар "Архивлах" товчоор, мөн
+// "Хугацаа хаах" (🔒) хийхэд автоматаар дуудагдана.
+async function doArchiveSnapshot(freq,period,plan,name){
+  const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":"Улирал бүр";
+  const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+  const entries=S.data.filter(d=>d.period===period&&d.freq===freq);
+  const unitMap={};entries.forEach(e=>{if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;});
+  const planInds=plan==="__all__"?S.inds.filter(i=>i.freq===freq):S.inds.filter(i=>i.freq===freq&&(i.plans||[]).some(p=>p&&p.trim()===plan.trim()));
+  const indSnap=planInds.map(i=>({id:i.id,name:i.name,plans:i.plans,subgroup:i.subgroup,type:i.type}));
+  const dataSnap={};units.forEach(u=>{const e=unitMap[u.code];if(e)dataSnap[u.code]={name:u.name,values:e.values||{}};});
+  const entry={type:"data",name,freq,freqLabel,plan,period,date:new Date().toLocaleString("mn-MN"),author:S.user?.name||"admin",inds:indSnap,data:dataSnap};
+  S.archives.push(entry);
+  try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"archives"),S.archives);}catch(e){console.warn("[SGA] Archive Firebase FAIL:",e);}}
+}
+
 function lockPeriod(){
   const plan=document.getElementById("lockPlan")?.value;
   const freq=document.getElementById("lockFreq")?.value;
   const period=document.getElementById("lockPer")?.value;
   if(!plan||!freq||!period)return;
   const freqLabel=freq==="week"?"7 Хоног":freq==="month"?"Сар бүр":"Улирал бүр";
-  if(!confirm(plan+" — "+freqLabel+" — "+period+"\nЭнэ төлөвлөгөөний хугацааг хаах уу? Зөвхөн '"+plan+"' төлөвлөгөөнд харьяалагдах үзүүлэлтүүд энэ period-д түгжигдэнэ, бусад төлөвлөгөөнд нөлөөлөхгүй."))return;
+  if(!confirm(plan+" — "+freqLabel+" — "+period+"\nЭнэ төлөвлөгөөний хугацааг хаах уу? Одоогийн мэдээ автоматаар архивлагдана. Зөвхөн '"+plan+"' төлөвлөгөөнд харьяалагдах үзүүлэлтүүд энэ period-д түгжигдэнэ, бусад төлөвлөгөөнд нөлөөлөхгүй."))return;
   // Зөвхөн энэ ТӨЛӨВЛӨГӨӨНИЙ хуучин хаалтыг хасаж шинийг нэмнэ — бусад төлөвлөгөөний хаалтад хүрэхгүй
   S.lockedPeriods=S.lockedPeriods.filter(lp=>!lp.active||lp.plan!==plan);
   S.lockedPeriods.push({plan,freq,freq_label:freqLabel,period,active:true,lockedAt:new Date().toLocaleString("mn-MN")});
   try{localStorage.setItem("sga_locked",JSON.stringify(S.lockedPeriods));}catch{}
   // Firebase-д хадгална
   if(fbDB&&window._set){try{window._set(window._r(fbDB,"locked"),S.lockedPeriods);}catch{}}
-  toast("🔒 "+plan+" — "+period+" хаагдлаа","ts");
+  // Хаахтай зэрэгцээд автоматаар архивлана
+  doArchiveSnapshot(freq,period,plan,period+" — "+plan).catch(e=>console.warn("[SGA] Auto-archive FAIL:",e));
+  toast("🔒 "+plan+" — "+period+" хаагдаж, архивлагдлаа","ts");
   renderTab("summary");
 }
 
@@ -993,17 +1011,7 @@ function tSummary(c){
     const plan=document.getElementById("aPlan").value;
     const name=(document.getElementById("aName").value.trim())||(period+" — "+plan);
     if(!period||!plan){toast("Период болон төлөвлөгөө сонгоно уу","te");return;}
-    const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":"Улирал бүр";
-    const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
-    const entries=S.data.filter(d=>d.period===period&&d.freq===freq);
-    const unitMap={};entries.forEach(e=>{if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;});
-    const planInds=plan==="__all__"?S.inds.filter(i=>i.freq===freq):S.inds.filter(i=>i.freq===freq&&(i.plans||[]).some(p=>p===plan));
-    const indSnap=planInds.map(i=>({id:i.id,name:i.name,plans:i.plans,subgroup:i.subgroup,type:i.type}));
-    const dataSnap={};units.forEach(u=>{const e=unitMap[u.code];if(e)dataSnap[u.code]={name:u.name,values:e.values||{}};});
-    const entry={type:"data",name,freq,freqLabel,plan,period,date:new Date().toLocaleString("mn-MN"),author:S.user?.name||"admin",inds:indSnap,data:dataSnap};
-    S.archives.push(entry);
-    try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}
-    if(fbDB&&window._set){try{await window._set(window._r(fbDB,"archives"),S.archives);}catch(e){console.warn("[SGA] Archive Firebase FAIL:",e);}}
+    await doArchiveSnapshot(freq,period,plan,name);
     toast("📁 '"+name+"' архивлагдлаа","ts");
   };
   archCard.appendChild(abtn);
@@ -1723,41 +1731,60 @@ function tArchive(c){
 }
 function renderArchList(el,items){
   el.innerHTML="";if(!items.length){el.innerHTML="<div class='empty'>Архив хоосон байна</div>";return;}
+  // Төлөвлөгөөгөөр багцлана — нэг төлөвлөгөө дотор олон огноо байвал жагсаалт хэт урт болохоос сэргийлнэ
+  const groups={};const order=[];
   items.slice().reverse().forEach(a=>{
-    const d=mk("div","ai-item");d.innerHTML="<div style='font-weight:600;color:var(--bl2)'>"+a.plan+" — "+a.period+"</div><div style='font-size:11px;color:var(--tx3);margin-top:3px'>"+a.date+" · "+a.author+"</div>";
-    d.onclick=(function(aa){return function(){
-      const mc=document.getElementById("MC");mc.innerHTML="";
-      const card=mk("div","card");card.innerHTML="<h2>"+aa.name+"</h2>";
-      // Build table: units x indicators
-      if(aa.inds&&aa.data){
-        const inds=aa.inds;
-        const tw=mk("div","tw");const tbl=mk("table");
-        let hdr="<tr><th>Нэгж</th>";inds.forEach(i=>{hdr+="<th style='font-size:11px'>"+i.name+"</th>";});hdr+="</tr>";
-        tbl.innerHTML=hdr;
-        Object.entries(aa.data).forEach(([code,u])=>{
-          const tr=mk("tr");
-          let row="<td style='font-weight:600'>"+u.name+"</td>";
-          inds.forEach(i=>{const v=u.values?u.values[i.id]:"";row+="<td style='text-align:right'>"+(v!==undefined&&v!==null&&v!==""?fV(v,i.type):"—")+"</td>";});
-          tr.innerHTML=row;tbl.appendChild(tr);
-        });
-        tw.appendChild(tbl);card.appendChild(tw);
-        // Excel export
-        const bEx=mk("button","btn bs");bEx.style.cssText="margin-top:10px;width:100%";bEx.textContent="📊 Excel татах";
-        bEx.onclick=()=>{
-          if(typeof XLSX==="undefined")return toast("XLSX ачаалагдаагүй","te");
-          const wb=XLSX.utils.book_new();
-          const rows=[[" ",...inds.map(i=>i.name)]];
-          Object.entries(aa.data).forEach(([code,u])=>{rows.push([u.name,...inds.map(i=>{const v=u.values?u.values[i.id]:"";return v!==undefined&&v!==null&&v!==""?v:"";})]);});
-          XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),aa.name.substring(0,30));
-          XLSX.writeFile(wb,aa.name+".xlsx");
-        };
-        card.appendChild(bEx);
-      } else {
-        card.innerHTML+="<div class='empty'>Мэдээ байхгүй</div>";
-      }
-      const br=mk("div","brow");const b=mk("button","btn bx");b.textContent="← Буцах";b.onclick=()=>renderTab("archive");br.appendChild(b);card.appendChild(br);mc.appendChild(card);
-    };})(a);
-    el.appendChild(d);
+    const key=a.plan||"Бусад";
+    if(!groups[key]){groups[key]=[];order.push(key);}
+    groups[key].push(a);
+  });
+  function openArchive(aa){
+    const mc=document.getElementById("MC");mc.innerHTML="";
+    const card=mk("div","card");card.innerHTML="<h2>"+aa.name+"</h2>";
+    // Build table: units x indicators
+    if(aa.inds&&aa.data){
+      const inds=aa.inds;
+      const tw=mk("div","tw");const tbl=mk("table");
+      let hdr="<tr><th>Нэгж</th>";inds.forEach(i=>{hdr+="<th style='font-size:11px'>"+i.name+"</th>";});hdr+="</tr>";
+      tbl.innerHTML=hdr;
+      Object.entries(aa.data).forEach(([code,u])=>{
+        const tr=mk("tr");
+        let row="<td style='font-weight:600'>"+u.name+"</td>";
+        inds.forEach(i=>{const v=u.values?u.values[i.id]:"";row+="<td style='text-align:right'>"+(v!==undefined&&v!==null&&v!==""?fV(v,i.type):"—")+"</td>";});
+        tr.innerHTML=row;tbl.appendChild(tr);
+      });
+      tw.appendChild(tbl);card.appendChild(tw);
+      // Excel export
+      const bEx=mk("button","btn bs");bEx.style.cssText="margin-top:10px;width:100%";bEx.textContent="📊 Excel татах";
+      bEx.onclick=()=>{
+        if(typeof XLSX==="undefined")return toast("XLSX ачаалагдаагүй","te");
+        const wb=XLSX.utils.book_new();
+        const rows=[[" ",...inds.map(i=>i.name)]];
+        Object.entries(aa.data).forEach(([code,u])=>{rows.push([u.name,...inds.map(i=>{const v=u.values?u.values[i.id]:"";return v!==undefined&&v!==null&&v!==""?v:"";})]);});
+        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),aa.name.substring(0,30));
+        XLSX.writeFile(wb,aa.name+".xlsx");
+      };
+      card.appendChild(bEx);
+    } else {
+      card.innerHTML+="<div class='empty'>Мэдээ байхгүй</div>";
+    }
+    const br=mk("div","brow");const b=mk("button","btn bx");b.textContent="← Буцах";b.onclick=()=>renderTab("archive");br.appendChild(b);card.appendChild(br);mc.appendChild(card);
+  }
+  order.forEach(plan=>{
+    const list=groups[plan];
+    const det=document.createElement("details");det.style.cssText="margin-bottom:10px";
+    const sum=document.createElement("summary");
+    sum.style.cssText="cursor:pointer;font-weight:600;color:var(--bl2);padding:10px 12px;background:var(--bg3);border-radius:6px;list-style:none";
+    sum.innerHTML="📁 "+plan+" <span style='font-weight:400;color:var(--tx3);font-size:12px'>("+list.length+")</span>";
+    det.appendChild(sum);
+    const inner=mk("div");inner.style.cssText="padding:8px 4px 0 4px";
+    list.forEach(a=>{
+      const d=mk("div","ai-item");d.innerHTML="<div style='font-weight:600;color:var(--bl2)'>"+a.period+"</div><div style='font-size:11px;color:var(--tx3);margin-top:3px'>"+a.date+" · "+a.author+"</div>";
+      d.onclick=(function(aa){return function(){openArchive(aa);};})(a);
+      inner.appendChild(d);
+    });
+    det.appendChild(inner);
+    el.appendChild(det);
   });
 }
 
