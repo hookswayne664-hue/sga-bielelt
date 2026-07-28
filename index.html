@@ -1076,14 +1076,15 @@ function lSum(){
     selPeriods.forEach(p=>{const e=upMap[u.code+"||"+p];if(e&&(!latest||e.date>latest.date))latest=e;});
     latestByUnit[u.code]=latest;
   });
-  // "Бөглөсөн" гэдгийг тодорхойлно: тодорхой төлөвлөгөө сонгосон бол ТУХАЙН төлөвлөгөөний БҮХ үзүүлэлтийг бөглөсөн байхыг шаардана
-  // (өмнө нь ганц үзүүлэлт бөглөөд ч "бөглөсөн" гэж ногоон харагдаж байсан алдааг засав)
+  // "Бөглөсөн" гэдгийг тодорхойлно: тодорхой төлөвлөгөө сонгосон бол ТУХАЙН төлөвлөгөөний
+  // ядаж 1 үзүүлэлтийг бөглөсөн байхыг шаардана (нэгжүүд ихэвчлэн ЗАРИМ үзүүлэлтийг л бөглөдөг тул
+  // "бүгдийг заавал" гэвэл хэт хатуу байж тоог хиймлээр багасгадаг байсныг засав)
   const hasSent=(u)=>{
     const e=latestByUnit[u.code];
     if(!e)return false;
     if(plan==="all")return true;
     if(!inds.length)return false;
-    return inds.every(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
+    return inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
   };
   const done=active.filter(u=>hasSent(u)),miss=active.filter(u=>!hasSent(u));
   const totalU=active.length,sub=done.length;
