@@ -487,14 +487,31 @@ function getIndLock(ind){
 
 // Тухайн period+plan-ийн snapshot-ийг архивт хадгална. Гараар "Архивлах" товчоор, мөн
 // "Хугацаа хаах" (🔒) хийхэд автоматаар дуудагдана.
-async function doArchiveSnapshot(freq,period,plan,name){
+async function doArchiveSnapshot(freq,period,plan,name,aggregateAll){
   const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":"Улирал бүр";
   const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
-  const entries=S.data.filter(d=>d.period===period&&d.freq===freq);
-  const unitMap={};entries.forEach(e=>{if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;});
   const planInds=plan==="__all__"?S.inds.filter(i=>i.freq===freq):S.inds.filter(i=>i.freq===freq&&(i.plans||[]).some(p=>p&&p.trim()===plan.trim()));
   const indSnap=planInds.map(i=>({id:i.id,name:i.name,plans:i.plans,subgroup:i.subgroup,type:i.type}));
-  const dataSnap={};units.forEach(u=>{const e=unitMap[u.code];if(e)dataSnap[u.code]={name:u.name,values:e.values||{}};});
+  const dataSnap={};
+  if(aggregateAll){
+    // Хугацаа хаах үед ашиглана: зөвхөн хаах өдрийн биш, нээлттэй байсан БҮХ өдрийн бодит утгыг нэгтгэнэ —
+    // эс тэгвэл өмнөх өдрүүдэд орсон жинхэнэ мэдээ архивт орохгүй, хоосон гарч байсан.
+    const P=getPer();const ps=freq==="week"?P.w:freq==="month"?P.mn:P.q;
+    const entries=S.data.filter(d=>ps.includes(d.period)&&d.freq===freq);
+    const merged={};
+    entries.slice().sort((a,b)=>a.date>b.date?1:-1).forEach(e=>{
+      if(!merged[e.unit])merged[e.unit]={};
+      Object.entries(e.values||{}).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=="")merged[e.unit][k]=v;});
+    });
+    units.forEach(u=>{
+      const vals=merged[u.code];
+      if(vals&&planInds.some(i=>vals[i.id]!==undefined&&vals[i.id]!==null&&vals[i.id]!==""))dataSnap[u.code]={name:u.name,values:vals};
+    });
+  } else {
+    const entries=S.data.filter(d=>d.period===period&&d.freq===freq);
+    const unitMap={};entries.forEach(e=>{if(!unitMap[e.unit]||e.date>unitMap[e.unit].date)unitMap[e.unit]=e;});
+    units.forEach(u=>{const e=unitMap[u.code];if(e)dataSnap[u.code]={name:u.name,values:e.values||{}};});
+  }
   const entry={type:"data",name,freq,freqLabel,plan,period,date:new Date().toLocaleString("mn-MN"),author:S.user?.name||"admin",inds:indSnap,data:dataSnap};
   S.archives.push(entry);
   try{localStorage.setItem("sga_archives",JSON.stringify(S.archives));}catch{}
@@ -517,7 +534,7 @@ function lockPeriod(){
   // Firebase-д хадгална
   if(fbDB&&window._set){try{window._set(window._r(fbDB,"locked"),S.lockedPeriods);}catch{}}
   // Хаахтай зэрэгцээд автоматаар архивлана
-  doArchiveSnapshot(freq,period,plan,period+" — "+plan).catch(e=>console.warn("[SGA] Auto-archive FAIL:",e));
+  doArchiveSnapshot(freq,period,plan,period+" — "+plan,true).catch(e=>console.warn("[SGA] Auto-archive FAIL:",e));
   toast("🔒 "+plan+" — "+period+" хаагдаж, архивлагдлаа","ts");
   renderTab("summary");
 }
@@ -964,7 +981,12 @@ function tSummary(c){
   let lockHtml="<h2>🔒 Хугацаа хаах</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Төлөвлөгөө тус бүрийг тусад нь хаана — нэг төлөвлөгөөг хаахад бусад төлөвлөгөөнд огт нөлөөлөхгүй.</p>";
   lockCard.innerHTML=lockHtml;
   if(locks.length){
-    const lockList=mk("div");lockList.style.cssText="display:flex;flex-direction:column;gap:8px;margin-bottom:14px";
+    const det=document.createElement("details");det.style.cssText="margin-bottom:14px";
+    const sum=document.createElement("summary");
+    sum.style.cssText="cursor:pointer;font-size:12px;color:var(--tx2);padding:6px 2px;list-style:none";
+    sum.innerHTML="🔒 Хаалттай төлөвлөгөө ("+locks.length+") <span style='color:var(--tx3)'>— дэлгэрэнгүй</span>";
+    det.appendChild(sum);
+    const lockList=mk("div");lockList.style.cssText="display:flex;flex-direction:column;gap:8px;margin-top:8px";
     locks.forEach(lp=>{
       const row=mk("div");row.style.cssText="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px;background:rgba(255,140,0,.08);border-left:3px solid var(--or);border-radius:0 4px 4px 0";
       const lbl=mk("span");lbl.style.cssText="color:var(--or);font-size:13px;font-weight:700";lbl.textContent="🔒 "+lp.plan+" — "+lp.freq_label+" — "+lp.period;
@@ -972,7 +994,8 @@ function tSummary(c){
       ub.onclick=(function(pl){return function(){unlockPeriod(pl);};})(lp.plan);
       row.appendChild(lbl);row.appendChild(ub);lockList.appendChild(row);
     });
-    lockCard.appendChild(lockList);
+    det.appendChild(lockList);
+    lockCard.appendChild(det);
   }
   const lfr=mk("div","fr");
   const lfi0=mk("div","fi");lfi0.innerHTML="<label>Төлөвлөгөө</label><select id='lockPlan'></select>";lfr.appendChild(lfi0);
