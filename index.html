@@ -289,6 +289,7 @@ async function initLogin(){
   try{const lp=localStorage.getItem("sga_p");if(lp)Object.assign(S.pwds,JSON.parse(lp));}catch{}
   try{const li=localStorage.getItem("sga_inds");if(li){const p=JSON.parse(li);if(p&&p.length)S.inds=p;}}catch{}
   try{const ll=localStorage.getItem("sga_locked");if(ll)S.lockedPeriods=JSON.parse(ll);}catch{}
+  try{const lar=localStorage.getItem("sga_archives");if(lar)S.archives=JSON.parse(lar)||[];}catch{}
   try{const la=localStorage.getItem("sga_aplans");if(la)S.activePlans=JSON.parse(la);}catch{}
   try{const lpl=localStorage.getItem("sga_plans");if(lpl){const p=JSON.parse(lpl);if(p&&p.length)S.plans=p;}}catch{}
   try{const lph=localStorage.getItem("sga_planHints");if(lph)S.planHints=JSON.parse(lph)||{};}catch{}
@@ -975,28 +976,10 @@ function uBadge(n){const b=document.getElementById("tbadge");if(!b)return;b.text
 // ===== SUMMARY (Хяналт нэгтгэгдсэн) =====
 function tSummary(c){
   const P=getPer(),sps=sFreq==="week"?P.w:sFreq==="month"?P.mn:P.q;
-  // ===== ХУГАЦАА ХААХ/НЭЭХ (төлөвлөгөө тус бүрээр) =====
+  // ===== ХУГАЦАА ХААХ (төлөвлөгөө тус бүрээр) — хаагдсан жагсаалт "Архив" таб руу шилжив =====
   const lockCard=mk("div","card");
-  const locks=S.lockedPeriods.filter(lp=>lp.active);
-  let lockHtml="<h2>🔒 Хугацаа хаах</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Төлөвлөгөө тус бүрийг тусад нь хаана — нэг төлөвлөгөөг хаахад бусад төлөвлөгөөнд огт нөлөөлөхгүй.</p>";
+  let lockHtml="<h2>🔒 Хугацаа хаах</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Төлөвлөгөө тус бүрийг тусад нь хаана — нэг төлөвлөгөөг хаахад бусад төлөвлөгөөнд огт нөлөөлөхгүй. Хаагдсан төлөвлөгөөнүүдийг \u201c📁 Архив\u201d табаас харах, нээх боломжтой.</p>";
   lockCard.innerHTML=lockHtml;
-  if(locks.length){
-    const det=document.createElement("details");det.style.cssText="margin-bottom:14px";
-    const sum=document.createElement("summary");
-    sum.style.cssText="cursor:pointer;font-size:12px;color:var(--tx2);padding:6px 2px;list-style:none";
-    sum.innerHTML="🔒 Хаалттай төлөвлөгөө ("+locks.length+") <span style='color:var(--tx3)'>— дэлгэрэнгүй</span>";
-    det.appendChild(sum);
-    const lockList=mk("div");lockList.style.cssText="display:flex;flex-direction:column;gap:8px;margin-top:8px";
-    locks.forEach(lp=>{
-      const row=mk("div");row.style.cssText="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px;background:rgba(255,140,0,.08);border-left:3px solid var(--or);border-radius:0 4px 4px 0";
-      const lbl=mk("span");lbl.style.cssText="color:var(--or);font-size:13px;font-weight:700";lbl.textContent="🔒 "+lp.plan+" — "+lp.freq_label+" — "+lp.period;
-      const ub=mk("button","btn bs");ub.style.marginLeft="auto";ub.textContent="🔓 Нээх";
-      ub.onclick=(function(pl){return function(){unlockPeriod(pl);};})(lp.plan);
-      row.appendChild(lbl);row.appendChild(ub);lockList.appendChild(row);
-    });
-    det.appendChild(lockList);
-    lockCard.appendChild(det);
-  }
   const lfr=mk("div","fr");
   const lfi0=mk("div","fi");lfi0.innerHTML="<label>Төлөвлөгөө</label><select id='lockPlan'></select>";lfr.appendChild(lfi0);
   const lfi1=mk("div","fi");lfi1.innerHTML="<label>Давтамж</label><select id='lockFreq' disabled><option value='week'>7 Хоног</option><option value='month'>Сар бүр</option><option value='quarter'>Улирал бүр</option></select>";lfr.appendChild(lfi1);
@@ -1762,6 +1745,21 @@ function tSurvey(c){
 
 // ===== ARCHIVE =====
 function tArchive(c){
+  // ===== ОДООГИЙН ХААЛТТАЙ ТӨЛӨВЛӨГӨӨНҮҮД (Нэгдсэн дүн-ээс шилжсэн) =====
+  const locks=S.lockedPeriods.filter(lp=>lp.active);
+  if(locks.length){
+    const lockCard=mk("div","card");
+    lockCard.innerHTML="<h2>🔒 Одоо хаалттай төлөвлөгөөнүүд</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Дахин нээж, шинэ мэдээ авахыг зөвшөөрөх бол доорх \u201cНээх\u201d товч дарна уу.</p>";
+    const lockList=mk("div");lockList.style.cssText="display:flex;flex-direction:column;gap:8px";
+    locks.forEach(lp=>{
+      const row=mk("div");row.style.cssText="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px;background:rgba(255,140,0,.08);border-left:3px solid var(--or);border-radius:0 4px 4px 0";
+      const lbl=mk("span");lbl.style.cssText="color:var(--or);font-size:13px;font-weight:700";lbl.textContent="🔒 "+lp.plan+" — "+lp.freq_label+" — "+lp.period;
+      const ub=mk("button","btn bs");ub.style.marginLeft="auto";ub.textContent="🔓 Нээх";
+      ub.onclick=(function(pl){return function(){unlockPeriod(pl);};})(lp.plan);
+      row.appendChild(lbl);row.appendChild(ub);lockList.appendChild(row);
+    });
+    lockCard.appendChild(lockList);c.appendChild(lockCard);
+  }
   const card=mk("div","card");card.innerHTML="<h2>📁 Архив</h2>";
   const fi=mk("div","fi fr one");fi.style.marginBottom="12px";fi.innerHTML="<label>Хайх</label>";
   const inp=mk("input");inp.placeholder="Хугацаа, төлөвлөгөө...";
