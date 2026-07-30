@@ -593,11 +593,20 @@ function smartDefaultPeriod(freq){
   const RECENT_N=freq==="week"?4:1; // week: сүүлийн ~4 хоног, month/quarter: зөвхөн идэвхтэй үе
   const recentPs=new Set(ps.slice(0,RECENT_N));
   const myEntries=S.data.filter(d=>d.unit===S.user.code&&d.freq===freq&&recentPs.has(d.period));
-  // Тухайн entry-ийн төлөвлөгөө(д) идэвхтэй хаалттай, ӨӨР period рүү шилжсэн эсэхийг шалгаж,
-  // хаагдаагүй (одоо ч засварлаж болох) entry-г л сонгоно.
+  const toTs=(s)=>{const t=Date.parse(s);return isNaN(t)?0:t;};
+  // Тухайн entry-ийн төлөвлөгөө(д) идэвхтэй хаалттай эсэх, мөн хамгийн сүүлд НЭЭГДСЭН (unlock хийсэн)
+  // үеэс өмнөх (өөрөөр хэлбэл өмнөх мөчлөгийн) entry эсэхийг шалгаж, зөвхөн ЖИНХЭНЭ хаагдаагүй,
+  // ОДООГИЙН мөчлөгт багтах entry-г л "засварлаж байна" гэж үзнэ.
   const editable=myEntries.filter(e=>{
     const ePlans=e.plans&&e.plans.length?e.plans:S.plans;
-    return ePlans.some(pl=>{const lk=getPlanLock(pl);return !lk||lk.period===e.period;});
+    return ePlans.some(pl=>{
+      const lk=getPlanLock(pl);
+      if(lk)return lk.period===e.period; // идэвхтэй хаалттай бол зөвхөн яг тэр period нь тохирвол
+      const pastUnlocks=S.lockedPeriods.filter(x=>x.plan===pl&&!x.active&&x.unlockedAt);
+      if(!pastUnlocks.length)return true; // хэзээ ч тэмдэглэгдэж нээгдээгүй бол хуучноороо зөвшөөрнө
+      const lastUnlockTs=Math.max(...pastUnlocks.map(x=>toTs(x.unlockedAt)));
+      return toTs(e.date)>=lastUnlockTs; // энэ entry сүүлийн НЭЭЛТЭЭС хойш ирсэн байх ёстой
+    });
   });
   if(editable.length){
     const latest=editable.reduce((best,e)=>(!best||e.date>best.date)?e:best,null);
