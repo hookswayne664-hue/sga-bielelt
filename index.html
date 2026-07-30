@@ -1155,8 +1155,10 @@ function lSum(){
     if(plan==="all")return true;
     if(!inds.length)return false;
     return ents.some(e=>{
+      const hasRealVal=inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
+      if(!hasRealVal)return false; // хоосон (бүх утга нь хоосон) entry, hariu тэмдэглэгээ байгаа ч гэсэн "илгээсэн" гэж тооцохгүй
       if(e.plans!==undefined)return (e.plans||[]).includes(plan);
-      return inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
+      return true;
     });
   };
   const done=active.filter(u=>hasSent(u)),miss=active.filter(u=>!hasSent(u));
@@ -1274,9 +1276,11 @@ async function revokePlanForUnit(ucode,uname,plan,entries){
 }
 
 function entryMatchesPlan(e,filterPlan){
-  if(e.plans!==undefined)return e.plans.includes(filterPlan);
   const inds=S.inds.filter(i=>i.freq===e.freq&&(i.plans||[]).some(p=>p&&p.trim()===filterPlan.trim()));
-  return inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
+  const hasRealVal=inds.some(i=>e.values&&e.values[i.id]!==undefined&&e.values[i.id]!==null&&e.values[i.id]!=="");
+  if(!hasRealVal)return false;
+  if(e.plans!==undefined)return e.plans.includes(filterPlan);
+  return true;
 }
 
 function showUnitDetail(ucode,uname,filterPlan){
