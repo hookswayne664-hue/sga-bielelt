@@ -228,7 +228,7 @@ function mk(t,c){const e=document.createElement(t);if(c)e.className=c;return e;}
 function toast(m,c){const t=document.getElementById("tst");t.textContent=m;t.className="toast show "+(c||"");clearTimeout(t._t);t._t=setTimeout(()=>{t.className="toast";},3000);}
 function getPer(){
   const n=new Date(),y=n.getFullYear(),m=n.getMonth()+1;
-  const w=[],mn=[],q=[];
+  const w=[],mn=[],q=[],yr=[];
   // 7 хоног тутам биш өдөр тутам сүүлийн 56 хоногийг нэмнэ — бүх period харагдана
   const seen=new Set();
   for(let i=0;i<56;i++){
@@ -238,7 +238,8 @@ function getPer(){
   }
   for(let i=0;i<6;i++){let mm=m-i,yy=y;if(mm<=0){mm+=12;yy--;}mn.push(yy+" оны "+mm+"-р сар");}
   for(let i=0;i<4;i++){let qq=Math.ceil(m/3)-i,yy=y;if(qq<=0){qq+=4;yy--;}q.push(yy+" оны "+qq+"-р улирал");}
-  return{w,mn,q};
+  for(let i=0;i<5;i++){yr.push((y-i)+" оны жилийн эцэс");}
+  return{w,mn,q,yr};
 }
 
 // ===== API =====
@@ -492,7 +493,7 @@ function getIndLock(ind){
 // Тухайн period+plan-ийн snapshot-ийг архивт хадгална. Гараар "Архивлах" товчоор, мөн
 // "Хугацаа хаах" (🔒) хийхэд автоматаар дуудагдана.
 async function doArchiveSnapshot(freq,period,plan,name,aggregateAll){
-  const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":"Улирал бүр";
+  const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":freq==="quarter"?"Улирал бүр":"Жил бүр";
   const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
   const planInds=plan==="__all__"?S.inds.filter(i=>i.freq===freq):S.inds.filter(i=>i.freq===freq&&(i.plans||[]).some(p=>p&&p.trim()===plan.trim()));
   const indSnap=planInds.map(i=>({id:i.id,name:i.name,plans:i.plans,subgroup:i.subgroup,type:i.type}));
@@ -500,7 +501,7 @@ async function doArchiveSnapshot(freq,period,plan,name,aggregateAll){
   if(aggregateAll){
     // Хугацаа хаах үед ашиглана: зөвхөн хаах өдрийн биш, нээлттэй байсан БҮХ өдрийн бодит утгыг нэгтгэнэ —
     // эс тэгвэл өмнөх өдрүүдэд орсон жинхэнэ мэдээ архивт орохгүй, хоосон гарч байсан.
-    const P=getPer();const ps=freq==="week"?P.w:freq==="month"?P.mn:P.q;
+    const P=getPer();const ps=freq==="week"?P.w:freq==="month"?P.mn:freq==="quarter"?P.q:P.yr;
     const entries=S.data.filter(d=>ps.includes(d.period)&&d.freq===freq);
     const merged={};
     entries.slice().sort((a,b)=>a.date>b.date?1:-1).forEach(e=>{
@@ -527,9 +528,9 @@ function lockPeriod(){
   const freq=document.getElementById("lockFreq")?.value;
   if(!plan||!freq)return;
   const P=getPer();
-  const ps=freq==="week"?P.w:freq==="month"?P.mn:P.q;
+  const ps=freq==="week"?P.w:freq==="month"?P.mn:freq==="quarter"?P.q:P.yr;
   const period=ps[0]; // үргэлж өнөөдрийг ашиглана — өдрөөр сонгуулах шаардлагагүй
-  const freqLabel=freq==="week"?"7 Хоног":freq==="month"?"Сар бүр":"Улирал бүр";
+  const freqLabel=freq==="week"?"7 Хоног":freq==="month"?"Сар бүр":freq==="quarter"?"Улирал бүр":"Жил бүр";
   if(!confirm(plan+" — "+freqLabel+" — "+period+"\nЭнэ төлөвлөгөөний хугацааг хаах уу? Одоогийн мэдээ автоматаар архивлагдана. Зөвхөн '"+plan+"' төлөвлөгөөнд харьяалагдах үзүүлэлтүүд энэ period-д түгжигдэнэ, бусад төлөвлөгөөнд нөлөөлөхгүй."))return;
   // Зөвхөн энэ ТӨЛӨВЛӨГӨӨНИЙ хуучин хаалтыг хасаж шинийг нэмнэ — бусад төлөвлөгөөний хаалтад хүрэхгүй
   S.lockedPeriods=S.lockedPeriods.filter(lp=>!lp.active||lp.plan!==plan);
@@ -591,7 +592,7 @@ function renderTab(id){
 // "засварлаж байна" гэж дахин нээхгүй — тэр үед л шинэ (өнөөдрийн) хугацаа руу шилжинэ.
 function smartDefaultPeriod(freq){
   const P=getPer();
-  const ps=freq==="week"?P.w:freq==="month"?P.mn:P.q;
+  const ps=freq==="week"?P.w:freq==="month"?P.mn:freq==="quarter"?P.q:P.yr;
   if(!S.user||S.user.isAdmin)return ps[0];
   const RECENT_N=freq==="week"?4:1; // week: сүүлийн ~4 хоног, month/quarter: зөвхөн идэвхтэй үе
   const recentPs=new Set(ps.slice(0,RECENT_N));
@@ -623,12 +624,12 @@ function smartDefaultPeriod(freq){
 // ===== DATA ENTRY =====
 function tData(c){
   const P=getPer();if(!dPer)dPer=smartDefaultPeriod(dFreq);
-  const ps=dFreq==="week"?P.w:dFreq==="month"?P.mn:P.q;
+  const ps=dFreq==="week"?P.w:dFreq==="month"?P.mn:dFreq==="quarter"?P.q:P.yr;
   const inds=S.inds.filter(i=>i.freq===dFreq);
   const card=mk("div","card");
   card.innerHTML="<h2>📋 Мэдээ оруулах</h2>";
   const pt=mk("div","ptabs");
-  [["week","7 Хоног"],["month","Сар бүр"],["quarter","Улирал бүр"]].forEach(([f,l])=>{
+  [["week","7 Хоног"],["month","Сар бүр"],["quarter","Улирал бүр"],["year","Жил бүр"]].forEach(([f,l])=>{
     const d=mk("div","pt"+(dFreq===f?" on":""));d.textContent=l;
     d.onclick=()=>{dFreq=f;dPer=smartDefaultPeriod(f);renderTab("data");};
     pt.appendChild(d);
@@ -856,7 +857,7 @@ function tMyData(c){
       tbl.innerHTML="<tr><th>Хугацаа</th><th>Давтамж</th><th>Огноо</th><th></th></tr>";
       planGroups[plan].forEach(({e,i})=>{
         const tr=mk("tr");
-        tr.innerHTML="<td>"+e.period+"</td><td>"+(e.freq==="week"?"7 хоног":e.freq==="month"?"Сар":"Улирал")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e.date||"")+"</td><td></td>";
+        tr.innerHTML="<td>"+e.period+"</td><td>"+(e.freq==="week"?"7 хоног":e.freq==="month"?"Сар":e.freq==="quarter"?"Улирал":"Жил")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e.date||"")+"</td><td></td>";
         const bp=mk("button","btn bi");bp.textContent="🖨️";
         bp.onclick=(function(ent,pl){return function(){
           const planInds=S.inds.filter(ind=>ind.freq===ent.freq&&(ind.plans||[]).includes(pl));
@@ -989,14 +990,14 @@ function uBadge(n){const b=document.getElementById("tbadge");if(!b)return;b.text
 
 // ===== SUMMARY (Хяналт нэгтгэгдсэн) =====
 function tSummary(c){
-  const P=getPer(),sps=sFreq==="week"?P.w:sFreq==="month"?P.mn:P.q;
+  const P=getPer(),sps=sFreq==="week"?P.w:sFreq==="month"?P.mn:sFreq==="quarter"?P.q:P.yr;
   // ===== ХУГАЦАА ХААХ (төлөвлөгөө тус бүрээр) — хаагдсан жагсаалт "Архив" таб руу шилжив =====
   const lockCard=mk("div","card");
   let lockHtml="<h2>🔒 Хугацаа хаах</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Төлөвлөгөө тус бүрийг тусад нь хаана — нэг төлөвлөгөөг хаахад бусад төлөвлөгөөнд огт нөлөөлөхгүй. Хаагдсан төлөвлөгөөнүүдийг \u201c📁 Архив\u201d табаас харах, нээх боломжтой.</p>";
   lockCard.innerHTML=lockHtml;
   const lfr=mk("div","fr");
   const lfi0=mk("div","fi");lfi0.innerHTML="<label>Төлөвлөгөө</label><select id='lockPlan'></select>";lfr.appendChild(lfi0);
-  const lfi1=mk("div","fi");lfi1.innerHTML="<label>Давтамж</label><select id='lockFreq' disabled><option value='week'>7 Хоног</option><option value='month'>Сар бүр</option><option value='quarter'>Улирал бүр</option></select>";lfr.appendChild(lfi1);
+  const lfi1=mk("div","fi");lfi1.innerHTML="<label>Давтамж</label><select id='lockFreq' disabled><option value='week'>7 Хоног</option><option value='month'>Сар бүр</option><option value='quarter'>Улирал бүр</option><option value='year'>Жил бүр</option></select>";lfr.appendChild(lfi1);
   lockCard.appendChild(lfr);
   const lockInfo=mk("div");lockInfo.id="lockInfo";lockInfo.style.cssText="font-size:12px;color:var(--tx2);margin:6px 0 4px 0;padding:8px 10px;background:var(--bg3);border-radius:6px";lockCard.appendChild(lockInfo);
   const lbtn=mk("button","btn bw");lbtn.style.marginTop="8px";lbtn.textContent="🔒 Сонгосон төлөвлөгөөг өнөөдрөөр хаах";lbtn.onclick=lockPeriod;lockCard.appendChild(lbtn);
@@ -1011,7 +1012,7 @@ function tSummary(c){
       const f=S.planFreqs[plan]||"week";
       fsel.value=f;
       const P2=getPer();
-      const ps=f==="week"?P2.w:f==="month"?P2.mn:P2.q;
+      const ps=f==="week"?P2.w:f==="month"?P2.mn:f==="quarter"?P2.q:P2.yr;
       const today=ps[0];
       // Энэ төлөвлөгөө хамгийн сүүлд хэзээ нээгдсэнийг тодорхойлно:
       // 1) хамгийн сүүлд НЭЭГДСЭН (unlock хийсэн) огноо байвал тэрийг,
@@ -1034,7 +1035,7 @@ function tSummary(c){
   // ===== АРХИВЛАХ КАРТ =====
   const archCard=mk("div","card");archCard.innerHTML="<h2>📁 Мэдээ архивлах</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Хугацааны мэдээг тухайн төлөвлөгөөгөөр тусад нь архивт хадгална.</p>";
   const afr=mk("div","fr");
-  const afi1=mk("div","fi");afi1.innerHTML="<label>Давтамж</label><select id='aFreq'><option value='week'>7 Хоног</option><option value='month'>Сар бүр</option><option value='quarter'>Улирал бүр</option></select>";afr.appendChild(afi1);
+  const afi1=mk("div","fi");afi1.innerHTML="<label>Давтамж</label><select id='aFreq'><option value='week'>7 Хоног</option><option value='month'>Сар бүр</option><option value='quarter'>Улирал бүр</option><option value='year'>Жил бүр</option></select>";afr.appendChild(afi1);
   const afi2=mk("div","fi");afi2.innerHTML="<label>Период</label><select id='aPeriod'></select>";afr.appendChild(afi2);
   archCard.appendChild(afr);
   const afr2=mk("div","fr");
@@ -1060,7 +1061,7 @@ function tSummary(c){
     const aPlan=document.getElementById("aPlan");
     function fillArchPer(){
       const P=getPer();const f=aFreq.value;
-      const ps=f==="week"?P.w:f==="month"?P.mn:P.q;
+      const ps=f==="week"?P.w:f==="month"?P.mn:f==="quarter"?P.q:P.yr;
       aPeriod.innerHTML="";ps.forEach(p=>{const o=mk("option");o.textContent=p;aPeriod.appendChild(o);});
       // auto-fill name
       fillArchName();
@@ -1082,7 +1083,7 @@ function tSummary(c){
   // ===== НЭГДСЭН ДҮНГИЙН ҮР ДҮН =====
   const card=mk("div","card");card.innerHTML="<h2>📊 Нэгдсэн дүн</h2>";
   const pt=mk("div","ptabs");
-  [["week","7 Хоног"],["month","Сар бүр"],["quarter","Улирал бүр"]].forEach(([f,l])=>{
+  [["week","7 Хоног"],["month","Сар бүр"],["quarter","Улирал бүр"],["year","Жил бүр"]].forEach(([f,l])=>{
     const d=mk("div","pt"+(sFreq===f?" on":""));d.textContent=l;
     d.onclick=()=>{sFreq=f;renderTab("summary");};pt.appendChild(d);
   });
@@ -1125,7 +1126,7 @@ function lSum(){
   if(!from&&!to){el.innerHTML="";return;}
   // Сонгосон хугацааны мужид орох period-ууд
   const P=getPer();
-  const sps=sFreq==="week"?P.w:sFreq==="month"?P.mn:P.q;
+  const sps=sFreq==="week"?P.w:sFreq==="month"?P.mn:sFreq==="quarter"?P.q:P.yr;
   let selPeriods=[];
   if(from&&to){
     const fi=sps.indexOf(from),ti=sps.indexOf(to);
@@ -1317,7 +1318,7 @@ function showUnitDetail(ucode,uname,filterPlan){
     if(!allEntries.length){
       const emp=mk("div","empty");emp.textContent=isFiltered?"❌ '"+filterPlan+"' төлөвлөгөөгөөр мэдээ илгээгээгүй байна":"Мэдээ байхгүй";box.appendChild(emp);
     } else {
-      const fmap={"week":"7 Хоног","month":"Сар бүр","quarter":"Улирал бүр"};
+      const fmap={"week":"7 Хоног","month":"Сар бүр","quarter":"Улирал бүр","year":"Жил бүр"};
       allEntries.forEach(entry=>{
         const sub=mk("div","sub");sub.style.marginBottom="12px";
         sub.innerHTML="<h3>"+(fmap[entry.freq]||entry.freq)+" — "+entry.period+"</h3>";
@@ -1368,7 +1369,7 @@ async function exportExcel(){
   const to=document.getElementById("sTo")?.value;
   const planF=document.getElementById("sPl")?.value||"all";
   const freq=sFreq;
-  const P=getPer();const sps=freq==="week"?P.w:freq==="month"?P.mn:P.q;
+  const P=getPer();const sps=freq==="week"?P.w:freq==="month"?P.mn:freq==="quarter"?P.q:P.yr;
   let sel=[];
   if(from&&to){const fi=sps.indexOf(from),ti=sps.indexOf(to);if(fi>=0&&ti>=0)sel=sps.slice(Math.min(fi,ti),Math.max(fi,ti)+1);else sel=sps.filter(p=>p===from||p===to);}
   else if(from)sel=[from];else if(to)sel=[to];
@@ -1390,7 +1391,7 @@ async function exportExcel(){
     if(e.date>unitMap[e.unit].date)unitMap[e.unit].date=e.date;
   });
   const perLabel=sel.length>1?sel[sel.length-1]+" ~ "+sel[0]:sel[0];
-  const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":"Улирал бүр";
+  const freqLabel=freq==="week"?"7 хоног":freq==="month"?"Сар бүр":freq==="quarter"?"Улирал бүр":"Жил бүр";
   const planGroups={};const planOrder=[];
   inds.forEach(ind=>{(ind.plans||["Бусад"]).forEach(p=>{if(!planGroups[p]){planGroups[p]=[];planOrder.push(p);}planGroups[p].push(ind);});});
   const uniquePlans=[...new Set(planOrder)];
@@ -1909,7 +1910,7 @@ function buildCfg(c){
     const row=mk("div","urow");
     const uc=mk("span","uc");uc.textContent=ind.id;row.appendChild(uc);
     const un=mk("span","un");un.textContent=ind.name;row.appendChild(un);
-    const badge=mk("span","badge "+(ind.freq==="week"?"bok":ind.freq==="month"?"bwarn":"bfail"));badge.textContent=ind.freq==="week"?"7 хоног":ind.freq==="month"?"Сар":"Улирал";row.appendChild(badge);
+    const badge=mk("span","badge "+(ind.freq==="week"?"bok":ind.freq==="month"?"bwarn":ind.freq==="quarter"?"bfail":""));badge.textContent=ind.freq==="week"?"7 хоног":ind.freq==="month"?"Сар":ind.freq==="quarter"?"Улирал":"Жил";row.appendChild(badge);
     const bu=mk("button","btn bi");bu.textContent="↑";bu.title="Дээш";bu.style.cssText="font-size:12px;padding:2px 7px;opacity:"+(fi===0?"0.3":"1");bu.disabled=(fi===0);
     bu.onclick=(function(idx,fidx){return function(){if(fidx===0)return;const _sy=window.scrollY;const _il=document.querySelector("#MC .card div[style*='overflow-y']");const _isy=_il?_il.scrollTop:0;const tmp=S.inds[idx];S.inds[idx]=S.inds[idx-1];S.inds[idx-1]=tmp;saveInds();buildCfg(c);window.scrollTo(0,_sy);const _il2=document.querySelector("#MC .card div[style*='overflow-y']");if(_il2)_il2.scrollTop=_isy;};})(i,fi);row.appendChild(bu);
     const bdn=mk("button","btn bi");bdn.textContent="↓";bdn.title="Доош";bdn.style.cssText="font-size:12px;padding:2px 7px;opacity:"+(fi===filtLen-1?"0.3":"1");bdn.disabled=(fi===filtLen-1);
@@ -1921,7 +1922,7 @@ function buildCfg(c){
       const box=mk("div","modal-box");
       box.innerHTML="<h3>✏️ Үзүүлэлт засах</h3>";
       const f1=mk("div","mfi");f1.innerHTML="<label>Нэр</label><input id='ei_n' value='"+ind.name.replace(/'/g,"&#39;")+"'>";box.appendChild(f1);
-      const f2=mk("div","mfi");f2.innerHTML="<label>Давтамж</label><select id='ei_f'><option value='week'"+(ind.freq==="week"?" selected":"")+" >7 хоног</option><option value='month'"+(ind.freq==="month"?" selected":"")+">Сар бүр</option><option value='quarter'"+(ind.freq==="quarter"?" selected":"")+">Улирал бүр</option></select>";box.appendChild(f2);
+      const f2=mk("div","mfi");f2.innerHTML="<label>Давтамж</label><select id='ei_f'><option value='week'"+(ind.freq==="week"?" selected":"")+" >7 хоног</option><option value='month'"+(ind.freq==="month"?" selected":"")+">Сар бүр</option><option value='quarter'"+(ind.freq==="quarter"?" selected":"")+">Улирал бүр</option><option value='year'"+(ind.freq==="year"?" selected":"")+">Жил бүр</option></select>";box.appendChild(f2);
       const f3=mk("div","mfi");f3.innerHTML="<label>Хэлбэр</label><select id='ei_t'><option value='num'"+(ind.type==="num"?" selected":"")+">Тоо</option><option value='money'"+(ind.type==="money"?" selected":"")+">Мөнгөн дүн</option><option value='pct'"+(ind.type==="pct"?" selected":"")+">Хувь</option><option value='text'"+(ind.type==="text"?" selected":"")+">Текст</option></select>";box.appendChild(f3);
       const f3b=mk("div","mfi");f3b.innerHTML="<label>Дэд бүлэг</label><input id='ei_sg' placeholder='жишээ: Гомдол гаргагчаар' value='"+(ind.subgroup||"").replace(/'/g,"&#39;")+"'>";box.appendChild(f3b);
 
@@ -1986,7 +1987,7 @@ function buildCfg(c){
 
   // Төлөвлөгөөнүүд
   const c2=mk("div","card");
-  c2.innerHTML="<h2>📋 Төлөвлөгөөнүүд</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>✅ Идэвхтэй гэж тэмдэглэсэн төлөвлөгөөнүүд нэгжийн мэдээ оруулах хэсэгт харагдана. Хэдийг ч сонгож болно.</p>";
+  c2.innerHTML="<h2>📋 Төлөвлөгөөнүүд</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>✅ Идэвхтэй гэж тэмдэглэсэн төлөвлөгөөнүүд нэгжийн мэдээ оруулах хэсэгт харагдана. Давтамжийн сонголтыг өөрчилбөл, тухайн төлөвлөгөөний БҮХ асуулт нэгэн зэрэг тэр давтамж руу шилжинэ.</p>";
   S.plans.forEach((p,i)=>{
     const row=mk("div","urow");
     // Checkbox
@@ -2014,6 +2015,20 @@ function buildCfg(c){
     const un=mk("span","un");un.textContent=p;un.style.cursor="pointer";
     un.onclick=()=>{cb.checked=!cb.checked;cb.onchange.call(cb);};
     row.appendChild(un);
+    const freqSel=mk("select");freqSel.style.cssText="min-width:110px;font-size:12px;padding:4px 6px";
+    const curFreq=S.planFreqs[p]||(function(){const rel=S.inds.filter(i=>(i.plans||[]).some(pl=>pl&&pl.trim()===p.trim()));return rel.length?rel[0].freq:"week";})();
+    [["week","7 хоног"],["month","Сар бүр"],["quarter","Улирал бүр"],["year","Жил бүр"]].forEach(([v,l])=>{const o=mk("option");o.value=v;o.textContent=l;if(v===curFreq)o.selected=true;freqSel.appendChild(o);});
+    freqSel.onchange=(function(plan){return function(){
+      const newFreq=this.value;
+      if(!confirm("'"+plan+"' төлөвлөгөөний БҮХ асуултын давтамжийг '"+this.options[this.selectedIndex].textContent+"' болгож солих уу?\n\nЭнэ нь тухайн төлөвлөгөөнд харьяалагдах бүх асуултад нэгэн зэрэг хамаарна."))return;
+      S.planFreqs[plan]=newFreq;
+      let changed=0;
+      S.inds.forEach(i=>{if((i.plans||[]).some(pl=>pl&&pl.trim()===plan.trim())&&i.freq!==newFreq){i.freq=newFreq;changed++;}});
+      savePlanFreqs();saveInds();
+      toast("✅ '"+plan+"' — "+changed+" асуултын давтамж шинэчлэгдлээ","ts");
+      buildCfg(c);
+    };})(p);
+    row.appendChild(freqSel);
     const badge=mk("span","badge "+(S.activePlans.includes(p)?"bok":""));
     badge.textContent=S.activePlans.includes(p)?"✅ Идэвхтэй":"";
     badge.style.minWidth="80px";row.appendChild(badge);
@@ -2022,7 +2037,6 @@ function buildCfg(c){
       const ov=mk("div","modal-overlay");
       const bx=mk("div","modal-box");bx.innerHTML="<h3>✏️ Төлөвлөгөө засах</h3>";
       const pf1=mk("div","mfi");pf1.innerHTML="<label>Нэр</label><input id='pe_n' value='"+oldName.replace(/'/g,"&#39;")+"'>";bx.appendChild(pf1);
-      const pf1b=mk("div","mfi");const curF=S.planFreqs[oldName]||"";pf1b.innerHTML="<label>Давтамж</label><select id='pe_f'><option value=''"+(!curF?" selected":"")+">— Бүх давтамж —</option><option value='week'"+(curF==="week"?" selected":"")+">7 хоног</option><option value='month'"+(curF==="month"?" selected":"")+">Сар бүр</option><option value='quarter'"+(curF==="quarter"?" selected":"")+">Улирал бүр</option></select>";bx.appendChild(pf1b);
       const pf2=mk("div","mfi");pf2.innerHTML="<label>Анхааруулга (нэгжүүдэд бөглөх хэсгийн дээр харагдана)</label><input id='pe_h' placeholder='жишээ: Дүнг өссөн байдлаар, оны эхнээс нийлүүлэн бичнэ үү' value='"+(S.planHints[oldName]||"").replace(/'/g,"&#39;")+"'>";bx.appendChild(pf2);
       const pbr=mk("div","brow");
       const pbOk=mk("button","btn bp");pbOk.textContent="💾 Хадгалах";
@@ -2038,9 +2052,7 @@ function buildCfg(c){
           savePlans();saveActivePlans();saveInds();
         }
         if(h)S.planHints[newName||oldName]=h;else delete S.planHints[newName||oldName];
-        const pef=document.getElementById("pe_f").value;
-        if(pef){S.planFreqs[newName||oldName]=pef;}else{delete S.planFreqs[newName||oldName];}
-        await savePlanFreqs();await savePlanHints();
+        await savePlanHints();
         document.body.removeChild(ov);buildCfg(c);toast("✅ Хадгалагдлаа","ts");
       };
       const pbCan=mk("button","btn bx");pbCan.textContent="Болих";pbCan.onclick=()=>document.body.removeChild(ov);
