@@ -1028,7 +1028,20 @@ function doPrint(unit,period,rows,bt,bn,ht,hn,bt2,bn2){
 // ===== CHAT =====
 function tChat(c){
   S.unread=0;uBadge(0);
-  const card=mk("div","card");card.innerHTML="<h2>💬 Дотоод Чат</h2>";
+  const card=mk("div","card");
+  card.innerHTML="<h2 style='display:flex;align-items:center;justify-content:space-between'><span>💬 Дотоод Чат</span></h2>";
+  if(S.user&&S.user.isAdmin){
+    const clearBtn=mk("button","btn bd_");clearBtn.style.cssText="float:right;margin-top:-38px;font-size:12px";clearBtn.textContent="🗑️ Бүгдийг цэвэрлэх";
+    clearBtn.onclick=()=>{
+      if(!chatMsgs.length){toast("Мессеж байхгүй","te");return;}
+      if(!confirm("БҮХ чатны мессежийг устгах уу? Энэ үйлдлийг буцаах боломжгүй."))return;
+      const ids=chatMsgs.map(m=>m.id);
+      chatMsgs=[];renderChatMsgs();
+      ids.forEach(id=>{api("deleteChat",{id}).catch(()=>{});});
+      toast("🗑️ Чат цэвэрлэгдлээ","ts");
+    };
+    card.appendChild(clearBtn);
+  }
   const box=mk("div","cbox");box.id="CB";card.appendChild(box);
   const cinp=mk("div","cinp");
   const inp=mk("input");inp.id="CI";inp.placeholder="Мессеж бичнэ...";inp.onkeydown=e=>{if(e.key==="Enter")sMsg();};
