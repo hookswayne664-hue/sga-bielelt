@@ -2067,11 +2067,16 @@ async function gsFetchData(){
   });
 }
 function tGSheets(c){
-  const card=mk("div","card");
-  card.innerHTML="<h2>🔗 Хэргийн бүртгэл (Google Sheets)</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Зөвхөн танд харагдана — нэгжүүд энэ табыг харахгүй. Google акаунтаараа нэвтэрч, цахим бүртгэлийн мэдээллийг шууд харна.</p>";
-  const btn=mk("button","btn bw");btn.textContent="🔑 Google-р нэвтрэх, мэдээ татах";
-  btn.onclick=gsFetchData;card.appendChild(btn);
-  const res=mk("div");res.id="gsRes";res.style.marginTop="14px";card.appendChild(res);
+  const card=mk("div","card");card.style.maxWidth="none";
+  card.innerHTML="<h2>🔗 Хэргийн бүртгэл (Google Sheets)</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Зөвхөн танд харагдана — нэгжүүд энэ табыг харахгүй. Google Sheets-ийг яг байгаа хэлбэрээр нь харуулна. Хэрэв нэвтрэх шаардлагатай гарвал, доор нь Google акаунтаараа нэвтэрнэ үү.</p>";
+  const iframe=document.createElement("iframe");
+  iframe.src="https://docs.google.com/spreadsheets/d/"+GS_SHEET_ID+"/preview?gid="+GS_GID;
+  iframe.style.cssText="width:100%;height:80vh;border:1px solid var(--bd);border-radius:8px;background:#fff";
+  iframe.loading="lazy";
+  card.appendChild(iframe);
+  const hint=mk("div");hint.style.cssText="font-size:11px;color:var(--tx3);margin-top:8px";
+  hint.innerHTML="Хэрэв доор хоосон эсвэл нэвтрэх хуудас харагдвал, тухайн хэсэгт шууд өөрийн Google акаунтаараа нэвтэрнэ үү. Асуудал гарсаар байвал: <a href='https://docs.google.com/spreadsheets/d/"+GS_SHEET_ID+"/edit?gid="+GS_GID+"' target='_blank' style='color:var(--bl2)'>шинэ цонхонд шууд нээх</a>.";
+  card.appendChild(hint);
   c.appendChild(card);
 }
 function tConfig(c){buildCfg(c);}
