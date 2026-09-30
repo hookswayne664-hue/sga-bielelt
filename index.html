@@ -2142,6 +2142,22 @@ function tGSheets(c){
   c.appendChild(card);
 }
 function tConfig(c){buildCfg(c);}
+// Тохиргоо доторх карт бүрийг хураагддаг (collapsible) болгоно — доош гүйлгэх шаардлагыг багасгана.
+function collapseCard(card,defaultOpen){
+  const h2=card.querySelector("h2");
+  const title=h2?h2.innerHTML:"";
+  if(h2)h2.remove();
+  const det=document.createElement("details");
+  det.className="card";det.style.cssText="padding:0;overflow:hidden";
+  if(defaultOpen)det.open=true;
+  const sum=document.createElement("summary");
+  sum.innerHTML=title;
+  sum.style.cssText="cursor:pointer;font-weight:700;font-size:16px;padding:20px;list-style:none;border-bottom:1px solid var(--bd)";
+  det.appendChild(sum);
+  card.style.cssText="border:none;background:transparent;padding:20px;margin:0";
+  det.appendChild(card);
+  return det;
+}
 function buildCfg(c){
   c.innerHTML="";
   // Нэгжүүдийн Telegram группын холбоос (админ бүгдийг харна, засах/устгах эрхтэй)
@@ -2178,7 +2194,7 @@ function buildCfg(c){
     tr.appendChild(td4);
     tgTbl.appendChild(tr);
   });
-  tgTw.appendChild(tgTbl);tgC.appendChild(tgTw);c.appendChild(tgC);
+  tgTw.appendChild(tgTbl);tgC.appendChild(tgTw);c.appendChild(collapseCard(tgC,false));
   // Төлөвлөгөө бүрийн хугацаа (Telegram-аар автомат сануулга явуулах өдөр)
   const dlC=mk("div","card");
   dlC.innerHTML="<h2>⏰ Төлөвлөгөөний хугацаа — Telegram сануулга</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Төлөвлөгөө бүрт хэдэн өдөр дуустал бөглөх ёстойг тохируулна. Тухайн өдөр, мөн нэг өдрийн өмнө Telegram групп руу автоматаар сануулга очно (өдөр бүр шалгагдана).</p>";
@@ -2215,7 +2231,7 @@ function buildCfg(c){
     tr.appendChild(td4);
     dlTbl.appendChild(tr);
   });
-  dlTw.appendChild(dlTbl);dlC.appendChild(dlTw);c.appendChild(dlC);
+  dlTw.appendChild(dlTbl);dlC.appendChild(dlTw);c.appendChild(collapseCard(dlC,false));
   // Шалгуур үзүүлэлтүүд
   const c1=mk("div","card");c1.innerHTML="<h2>📊 Шалгуур үзүүлэлтүүд</h2>";
   // Plan filter
@@ -2310,7 +2326,7 @@ function buildCfg(c){
     const sg=document.getElementById("niSG").value.trim()||undefined;
     S.inds.push({id:"i"+Date.now(),name:n,type:t,freq:f,plans:p?[p]:[],subgroup:sg});
     saveInds();buildCfg(c);toast("✅ Нэмэгдлээ","ts");
-  };sub1.appendChild(b1);c1.appendChild(sub1);c.appendChild(c1);
+  };sub1.appendChild(b1);c1.appendChild(sub1);c.appendChild(collapseCard(c1,true));
 
   // Төлөвлөгөөнүүд
   const c2=mk("div","card");
@@ -2408,7 +2424,7 @@ function buildCfg(c){
     if(h){S.planHints[p]=h;await savePlanHints();}
     savePlans();buildCfg(c);
   };
-  sub2.appendChild(b2);c2.appendChild(sub2);c.appendChild(c2);
+  sub2.appendChild(b2);c2.appendChild(sub2);c.appendChild(collapseCard(c2,true));
 
   // Нууц үгийн удирдлага
   const c3=mk("div","card");c3.innerHTML="<h2>🔐 Нууц үгийн удирдлага</h2>";
@@ -2430,7 +2446,7 @@ function buildCfg(c){
       if(fbDB&&window._set){await window._set(window._r(fbDB,"passwords/"+code),pwd);}
     toast("✅ "+code+" нууц үг хадгалагдлаа","ts");
     };})(u.code);row.appendChild(bs);pwList.appendChild(row);
-  });c3.appendChild(pwList);c.appendChild(c3);
+  });c3.appendChild(pwList);c.appendChild(collapseCard(c3,false));
 
   // Нэгжийн удирдлага
   const c4=mk("div","card");c4.innerHTML="<h2>🏛️ Нэгжийн удирдлага</h2>";
@@ -2456,7 +2472,7 @@ function buildCfg(c){
     S.units.push({code,name:n,pwd:pw});S.pwds[code]=pw;
     try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
     buildCfg(c);toast("✅ "+code,"ts");
-  };sub4.appendChild(b4);c4.appendChild(sub4);c.appendChild(c4);
+  };sub4.appendChild(b4);c4.appendChild(sub4);c.appendChild(collapseCard(c4,false));
 
   // AI тохиргоо
   const c5=mk("div","card");c5.innerHTML="<h2>🤖 AI тохиргоо</h2>";
@@ -2465,7 +2481,7 @@ function buildCfg(c){
   inp5.value=localStorage.getItem("sga_ai_key")||"";fi5.appendChild(inp5);c5.appendChild(fi5);
   const bSave=mk("button","btn bs");bSave.style.marginTop="10px";bSave.textContent="💾 Хадгалах";
   bSave.onclick=()=>{const k=inp5.value.trim();if(!k)return toast("API түлхүүр үг оруулна уу","te");localStorage.setItem("sga_ai_key",k);toast("✅ Хадгалагдлаа","ts");};
-  c5.appendChild(bSave);c.appendChild(c5);
+  c5.appendChild(bSave);c.appendChild(collapseCard(c5,false));
 
   // Хуучин мэдээнд "аль төлөвлөгөөгөөр илгээснийг" нь (plans талбар) нөхөх — НЭГ УДАА ажиллуулах багаж
   const c7=mk("div","card");c7.innerHTML="<h2>🔧 Хуучин мэдээний төлөвлөгөө холбоосыг нөхөх</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Шинэ мэдээ илгээх бүрд систем яг аль төлөвлөгөөгөөр илгээснийг нь тэмдэглэдэг боллоо. Гэхдээ ӨМНӨ илгээгдсэн хуучин мэдээнд энэ тэмдэглэгээ байхгүй тул, зарим тохиолдолд (хуваалцсан үзүүлэлттэй үед) Нэгдсэн дүн дээр буруу харагдаж болзошгүй. Энэ товч хуучин мэдээ бүрийг шалгаж, бөглөгдсөн утгаас нь аль төлөвлөгөөнд харьяалагдахыг тооцоолж бичнэ — тоо, утга огт өөрчлөгдөхгүй, зөвхөн тэмдэглэгээ л нэмэгдэнэ.</p>";
@@ -2500,14 +2516,14 @@ function buildCfg(c){
     toast("✅ "+fixed+" мэдээ нөхөгдлөө"+(skipped?" ("+skipped+" алгассан — ямар ч төлөвлөгөөнд тохирсонгүй)":""),"ts");
     buildCfg(c);
   };
-  c7.appendChild(bMig);c.appendChild(c7);
+  c7.appendChild(bMig);c.appendChild(collapseCard(c7,false));
   // Мэдээ цэвэрлэх
   const c6=mk("div","card");c6.innerHTML="<h2>🗑️ Тест мэдээ цэвэрлэх</h2>";
   const stats=mk("div");stats.style.cssText="background:var(--bg3);border-radius:6px;padding:12px;margin-bottom:14px;font-size:13px";
   stats.innerHTML="Нийт мэдээ: <b style='color:var(--bl2)'>"+S.data.length+"</b> &nbsp;|&nbsp; Нэгж: <b style='color:var(--gr)'>"+new Set(S.data.map(d=>d.unit)).size+"</b>";c6.appendChild(stats);
   const bClear=mk("button","btn bd_");bClear.textContent="🗑️ Бүх мэдээг цэвэрлэх";
   bClear.onclick=()=>{if(!confirm("Бүх "+S.data.length+" мэдээг устгах уу?"))return;S.data=[];try{localStorage.removeItem("sga_data");}catch{}buildCfg(c);toast("✅ Цэвэрлэгдлаа","ts");};
-  c6.appendChild(bClear);c.appendChild(c6);
+  c6.appendChild(bClear);c.appendChild(collapseCard(c6,false));
 }
 
 async function saveInds(){
