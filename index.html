@@ -1060,7 +1060,12 @@ function renderChatMsgs(){
     const d=mk("div","msg "+(m.type==="announce"?"ann":m.sender===S.user.code?"mine":"other"));
     if(m.type!=="announce"&&m.sender!==S.user.code){const s=mk("div","msender");s.textContent=m.senderName||m.sender;d.appendChild(s);}
     const txt=document.createElement("span");txt.textContent=(m.type==="announce"?"📢 "+m.senderName+": ":"")+m.text;d.appendChild(txt);
-    const mt=mk("div","mtime");mt.textContent=m.time||"";d.appendChild(mt);
+    const mt=mk("div","mtime");
+    // m.id бол найдвартай тоон timestamp (millisecond) — Google Sheets үүнийг огноо гэж буруу хөрвүүлдэггүй тул,
+    // m.time (Sheets-ээр дамжсан цагийн текст) заримдаа "1899-12-30..." гэж эвдэрдэг байсныг эндээс сэргийлнэ.
+    const idNum=Number(m.id);
+    mt.textContent=(idNum&&idNum>1e12)?new Date(idNum).toLocaleTimeString("mn-MN"):(m.time||"");
+    d.appendChild(mt);
     if(S.user&&S.user.isAdmin){
       const bd=document.createElement("span");bd.textContent="🗑️";bd.title="Устгах";
       bd.style.cssText="cursor:pointer;margin-left:8px;font-size:11px;opacity:.6";
