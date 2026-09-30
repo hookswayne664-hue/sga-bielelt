@@ -761,8 +761,14 @@ function tData(c){
     const isLocked=!!(grpLock&&!S.user.isAdmin);
     if(!isLocked)allGroupsLocked=false;
     const entry=getEntryFor(grpPeriod);
+    // Энэ тодорхой ТӨЛӨВЛӨГӨӨ (pl) яг өнөөдрийн entry-д БОДИТ утгатай илгээгдсэн эсэхийг шалгана.
+    // Зөвхөн pInds-ийн утга шалгадаг тул, нэг период дор хэд хэдэн төлөвлөгөө зэрэг байвч,
+    // тус бүрийн статус тусад нь зөв харагдана (нэгийг илгээгээд нөгөөг нь илгээсэн мэт харагдахгүй).
+    const grpHasVal=pInds.some(i=>entry.values&&entry.values[i.id]!==undefined&&entry.values[i.id]!==null&&entry.values[i.id]!=="");
+    const grpSent=grpHasVal&&(entry.plans===undefined||entry.plans.includes(pl));
     const lockBadge=grpLock?" <span style='color:var(--or);font-size:11px;font-weight:600'>🔒 "+grpLock.period+" хаалттай</span>":"";
-    const sub=mk("div","sub");const phint=S.planHints&&S.planHints[pl];sub.innerHTML="<h3>"+pl+lockBadge+"</h3>"+(phint?"<div style='font-size:11px;color:var(--tx2);margin:-4px 0 8px 0;padding:4px 8px;background:rgba(255,200,0,.08);border-left:2px solid var(--or);border-radius:0 3px 3px 0'>ℹ️ "+phint+"</div>":"");
+    const sentBadge=!grpLock?(grpSent?" <span class='badge bok' style='font-size:11px'>✅ Илгээгдсэн ("+grpPeriod+")</span>":" <span class='badge bfail' style='font-size:11px'>○ Илгээгдээгүй</span>"):"";
+    const sub=mk("div","sub");const phint=S.planHints&&S.planHints[pl];sub.innerHTML="<h3>"+pl+lockBadge+sentBadge+"</h3>"+(phint?"<div style='font-size:11px;color:var(--tx2);margin:-4px 0 8px 0;padding:4px 8px;background:rgba(255,200,0,.08);border-left:2px solid var(--or);border-radius:0 3px 3px 0'>ℹ️ "+phint+"</div>":"");
     const hasSubgroup=pInds.some(i=>i.subgroup&&String(i.subgroup).trim().length>0);
 
     if(hasSubgroup){
@@ -776,17 +782,51 @@ function tData(c){
     } else {
       const ig=mk("div","ig");pInds.forEach(i=>mkIndInput(i,entry,ig,isLocked));sub.appendChild(ig);
     }
+    // Төлөвлөгөө БҮР ӨӨРИЙН ГЭСЭН тусдаа "Илгээх" товчтой — нэг товч бүх төлөвлөгөөг нэгэн зэрэг
+    // "илгээгдсэн" болгодог байсныг засав. Аль нэгийг илгээгээд нөгөөг хоосон орхивол,
+    // зөвхөн бодитоор илгээсэн нь "Илгээгдсэн" болно.
+    if(!isLocked){
+      const gbr=mk("div","brow");gbr.style.marginTop="10px";gbr.style.marginBottom="4px";
+      const gb=mk("button","btn "+(grpSent?"bs":"bp"));
+      gb.textContent=grpSent?"🔄 «"+pl+"» шинэчлэх":"✅ «"+pl+"» илгээх";
+      gb.onclick=(function(plan,period){return function(){subDataForPlan(plan,period);};})(pl,grpPeriod);
+      gbr.appendChild(gb);sub.appendChild(gbr);
+    }
     card.appendChild(sub);
   });
   const br=mk("div","brow");
-  const b1=mk("button","btn bp");
-  if(allGroupsLocked&&Object.keys(groups).length){b1.textContent="🔒 Бүх хэсэг хаалттай";b1.disabled=true;b1.style.opacity="0.5";b1.style.cursor="not-allowed";}
-  else{b1.textContent="✅ Мэдээ илгээх";b1.onclick=subData;}
-  br.appendChild(b1);
   const b2=mk("button","btn bi");b2.textContent="🖨️ Хэвлэх";b2.onclick=prtCur;br.appendChild(b2);
   card.appendChild(br);
   }
   c.appendChild(card);
+}
+
+// Зөвхөн НЭГ төлөвлөгөөний талбаруудыг цуглуулж, тухайн периодын entry-д зөвхөн энэ
+// төлөвлөгөөний хэсгийг нэгтгэж хадгалдаг — бусад төлөвлөгөөний хэсэгт хэзээ ч хүрэхгүй.
+async function subDataForPlan(plan,period){
+  const grpLock=getPlanLock(plan);
+  if(grpLock&&!S.user.isAdmin){toast("🔒 '"+plan+"' хаалттай — илгээх боломжгүй","te");return;}
+  const pInds=S.inds.filter(i=>i.freq===dFreq&&(i.plans||[]).some(p=>p&&p.trim()===plan.trim()));
+  const vals={};
+  pInds.forEach(i=>{const el=document.getElementById("v_"+i.id);if(el)vals[i.id]=parseVal(el.value);});
+  const hasAny=Object.values(vals).some(v=>v!==undefined&&v!==null&&v!=="");
+  if(!hasAny&&!confirm("«"+plan+"»-д ямар ч утга оруулаагүй байна. Хоосноор илгээх үү?"))return;
+  const idx=S.data.findIndex(d=>d.unit===S.user.code&&d.period===period&&d.freq===dFreq);
+  const prev=idx>=0?S.data[idx]:null;
+  const mergedValues=Object.assign({},prev&&prev.values||{},vals);
+  const prevPlans=(prev&&prev.plans!==undefined)?prev.plans:[];
+  const mergedPlans=hasAny?Array.from(new Set([...prevPlans,plan])):prevPlans.filter(p=>p!==plan);
+  const entry={unit:S.user.code,unitName:S.user.name,period,freq:dFreq,values:mergedValues,plans:mergedPlans,date:new Date().toLocaleString("mn-MN")};
+  if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
+  let fbOk=false;
+  if(fbDB&&window._set){
+    try{await window._set(window._r(fbDB,"data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_")),entry);fbOk=true;}
+    catch(e){console.error("[SGA subDataForPlan] Firebase FAIL:",e);}
+  }
+  try{api("saveData",{data:JSON.stringify(entry)});}catch{}
+  try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
+  toast((fbOk?"✅ ":"✅ (local) ")+"«"+plan+"» мэдээ хадгалагдлаа","ts");
+  renderTab("data");
 }
 
 async function subData(){
@@ -853,11 +893,20 @@ function tMyData(c){
     // Render each group
     Object.keys(planGroups).forEach(plan=>{
       const sub=mk("div","sub");sub.innerHTML="<h3>"+plan+"</h3>";
+      if(plan!=="(Ангилалгүй)"){
+        const bAllEx=mk("button","btn bs");bAllEx.style.cssText="margin-bottom:8px;font-size:12px";
+        bAllEx.textContent="📊 «"+plan+"» — бүх хугацааг Excel-ээр татах ("+planGroups[plan].length+")";
+        bAllEx.onclick=(function(pl,items){return function(){exportUnitPlanHistory(S.user.code,S.user.name,pl,items.map(x=>x.e));};})(plan,planGroups[plan]);
+        sub.appendChild(bAllEx);
+      }
       const tw=mk("div","tw"),tbl=mk("table");
       tbl.innerHTML="<tr><th>Хугацаа</th><th>Давтамж</th><th>Огноо</th><th></th></tr>";
       planGroups[plan].forEach(({e,i})=>{
         const tr=mk("tr");
         tr.innerHTML="<td>"+e.period+"</td><td>"+(e.freq==="week"?"7 хоног":e.freq==="month"?"Сар":e.freq==="quarter"?"Улирал":"Жил")+"</td><td style='font-size:12px;color:var(--tx3)'>"+(e.date||"")+"</td><td></td>";
+        const bx=mk("button","btn bs");bx.textContent="📊";bx.title="Энэ хугацааг Excel-ээр татах";
+        bx.onclick=(function(ent,pl){return function(){exportUnitPlanHistory(S.user.code,S.user.name,pl,[ent]);};})(e,plan);
+        tr.lastElementChild.appendChild(bx);
         const bp=mk("button","btn bi");bp.textContent="🖨️";
         bp.onclick=(function(ent,pl){return function(){
           const planInds=S.inds.filter(ind=>ind.freq===ent.freq&&(ind.plans||[]).includes(pl));
@@ -881,6 +930,20 @@ function tMyData(c){
     });
   }
   c.appendChild(card);
+}
+
+// Нэг нэгжийн, нэг төлөвлөгөөний БҮХ хугацааны мэдээг нэг Excel-д (мөр = хугацаа) гаргана.
+// Нэгжид "Миний мэдээ" дээрээс, админд "Нэгжийн түүх" хэсгээс дуудагдана.
+async function exportUnitPlanHistory(ucode,uname,plan,entries){
+  try{await loadSheetJS();}catch{return toast("Excel сан ачаалагдсангүй — интернэтээ шалгана уу","te");}
+  const inds=S.inds.filter(i=>(i.plans||[]).some(p=>p&&p.trim()===plan.trim()));
+  const fV2=(v,t)=>{if(v===undefined||v===null||v==="")return "";const s=String(v).trim();if(t!=="text"&&/^-?\d{1,3}(,\d{3})+(\.\d+)?$|^-?\d+(\.\d+)?$/.test(s))return parseFloat(s.replace(/,/g,""));return s;};
+  const sorted=entries.slice().sort((a,b)=>Date.parse(a.date)-Date.parse(b.date));
+  const aoa=[["Хугацаа","Давтамж","Илгээсэн огноо",...inds.map(i=>i.name)]];
+  sorted.forEach(e=>{aoa.push([e.period,e.freq==="week"?"7 хоног":e.freq==="month"?"Сар бүр":e.freq==="quarter"?"Улирал бүр":"Жил бүр",e.date||"",...inds.map(i=>fV2(e.values&&e.values[i.id],i.type))]);});
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),plan.substring(0,31));
+  XLSX.writeFile(wb,ucode+"_"+uname.replace(/[\\\/\?\*\[\]:]/g," ")+"_"+plan.replace(/[\\\/\?\*\[\]:]/g," ")+".xlsx");
 }
 
 // ===== PRINT =====
@@ -1032,6 +1095,32 @@ function tSummary(c){
     plSel.onchange=fillLockInfo;fillLockInfo();
   },50);
   c.appendChild(lockCard);
+  // ===== НЭГЖИЙН ТҮҮХ ТАТАХ (1 нэгж + 1 төлөвлөгөө — бүх хугацаа) =====
+  const histCard=mk("div","card");
+  histCard.innerHTML="<h2>🔍 Нэгжийн түүх татах</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Нэг нэгж, нэг төлөвлөгөөгөөр шүүж, тэр нэгжийн ХАМГИЙН ЭХНЭЭС хойшхи БҮХ хугацааны мэдээг нэг Excel-д (мөр бүр = period) татаж авна — харьцуулалт, шалгалт хийхэд зориулав.</p>";
+  const hfr=mk("div","fr");
+  const hfi1=mk("div","fi");hfi1.innerHTML="<label>Нэгж</label><select id='histUnit'></select>";hfr.appendChild(hfi1);
+  const hfi2=mk("div","fi");hfi2.innerHTML="<label>Төлөвлөгөө</label><select id='histPlan'></select>";hfr.appendChild(hfi2);
+  histCard.appendChild(hfr);
+  const hbtn=mk("button","btn bw");hbtn.style.marginTop="8px";hbtn.textContent="📊 Excel татах";
+  hbtn.onclick=()=>{
+    const ucode=document.getElementById("histUnit").value;
+    const plan=document.getElementById("histPlan").value;
+    if(!ucode||!plan)return;
+    const uname=(S.units.find(u=>u.code===ucode)||{}).name||ucode;
+    const inds=S.inds.filter(i=>(i.plans||[]).some(p=>p&&p.trim()===plan.trim()));const ids=inds.map(i=>i.id);
+    const entries=S.data.filter(d=>d.unit===ucode&&Object.keys(d.values||{}).some(k=>ids.includes(k)&&d.values[k]!==undefined&&d.values[k]!==null&&d.values[k]!==""));
+    if(!entries.length){toast("Энэ нэгж, төлөвлөгөөгөөр мэдээ олдсонгүй","te");return;}
+    exportUnitPlanHistory(ucode,uname,plan,entries);
+  };
+  histCard.appendChild(hbtn);
+  setTimeout(()=>{
+    const uSel=document.getElementById("histUnit"),pSel=document.getElementById("histPlan");
+    if(!uSel||!pSel)return;
+    S.units.filter(u=>!u.isAdmin&&!u.disabled).forEach(u=>{const o=mk("option");o.value=u.code;o.textContent=u.code+" — "+u.name;uSel.appendChild(o);});
+    S.plans.forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;pSel.appendChild(o);});
+  },50);
+  c.appendChild(histCard);
   // ===== АРХИВЛАХ КАРТ =====
   const archCard=mk("div","card");archCard.innerHTML="<h2>📁 Мэдээ архивлах</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Хугацааны мэдээг тухайн төлөвлөгөөгөөр тусад нь архивт хадгална.</p>";
   const afr=mk("div","fr");
@@ -1826,6 +1915,50 @@ function renderTrackMatrix(plan){
   h+="</table></div>";
   el.innerHTML=h;
 }
+// Архивын мөрүүдийг БҮХ нэгжээр (илгээсэн + илгээгээгүй) бэлдэнэ
+function archUnitRows(aa){
+  const inds=aa.inds||[];
+  const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+  const has=(vals)=>vals&&inds.some(i=>vals[i.id]!==undefined&&vals[i.id]!==null&&vals[i.id]!=="");
+  return units.map(u=>{
+    const d=(aa.data||{})[u.code];
+    const vals=d&&d.values?d.values:null;
+    return {code:u.code,name:u.name,sent:has(vals),vals:vals||{}};
+  });
+}
+function archSheetAoa(aa){
+  const inds=aa.inds||[];
+  const rows=archUnitRows(aa);
+  const aoa=[["Код","Нэгж","Статус",...inds.map(i=>i.name)]];
+  rows.forEach(r=>{aoa.push([r.code,r.name,r.sent?"Илгээсэн":"Илгээгээгүй",...inds.map(i=>{const v=r.vals[i.id];return v!==undefined&&v!==null&&v!==""?(isNaN(parseFloat(String(v).replace(/,/g,"")))||i.type==="text"?v:parseFloat(String(v).replace(/,/g,""))):"";})]);});
+  const tot=["","НИЙТ",rows.filter(r=>r.sent).length+"/"+rows.length];
+  inds.forEach(i=>{
+    if(i.type==="text"){tot.push("");return;}
+    const nums=rows.map(r=>parseFloat(String(r.vals[i.id]).replace(/,/g,""))).filter(n=>!isNaN(n));
+    tot.push(nums.length?(i.type==="pct"?Math.round(nums.reduce((a,b)=>a+b,0)/nums.length*10)/10:nums.reduce((a,b)=>a+b,0)):"");
+  });
+  aoa.push(tot);
+  return aoa;
+}
+function safeSheetName(s,used){
+  let n=String(s).replace(/[\\\/\?\*\[\]:]/g," ").trim().substring(0,31)||"Sheet";
+  let k=n,c=2;while(used.has(k)){k=n.substring(0,28)+" "+c;c++;}
+  used.add(k);return k;
+}
+async function exportArchiveExcel(aa){
+  try{await loadSheetJS();}catch{return toast("Excel сан ачаалагдсангүй — интернэтээ шалгана уу","te");}
+  const wb=XLSX.utils.book_new();const used=new Set();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(archSheetAoa(aa)),safeSheetName(aa.period||aa.name,used));
+  XLSX.writeFile(wb,String(aa.name).replace(/[\\\/\?\*\[\]:]/g," ")+".xlsx");
+}
+async function exportPlanArchives(plan,list){
+  try{await loadSheetJS();}catch{return toast("Excel сан ачаалагдсангүй — интернэтээ шалгана уу","te");}
+  const wb=XLSX.utils.book_new();const used=new Set();
+  list.slice().sort((a,b)=>Date.parse(a.date)-Date.parse(b.date)).forEach(aa=>{
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(archSheetAoa(aa)),safeSheetName(aa.period||aa.name,used));
+  });
+  XLSX.writeFile(wb,"Архив_"+String(plan).replace(/[\\\/\?\*\[\]:]/g," ")+".xlsx");
+}
 function renderArchList(el,items){
   el.innerHTML="";if(!items.length){el.innerHTML="<div class='empty'>Архив хоосон байна</div>";return;}
   // Төлөвлөгөөгөөр багцлана — нэг төлөвлөгөө дотор олон огноо байвал жагсаалт хэт урт болохоос сэргийлнэ
@@ -1842,25 +1975,18 @@ function renderArchList(el,items){
     if(aa.inds&&aa.data){
       const inds=aa.inds;
       const tw=mk("div","tw");const tbl=mk("table");
-      let hdr="<tr><th>Нэгж</th>";inds.forEach(i=>{hdr+="<th style='font-size:11px'>"+i.name+"</th>";});hdr+="</tr>";
+      let hdr="<tr><th>Код</th><th>Нэгж</th><th>Статус</th>";inds.forEach(i=>{hdr+="<th style='font-size:11px'>"+i.name+"</th>";});hdr+="</tr>";
       tbl.innerHTML=hdr;
-      Object.entries(aa.data).forEach(([code,u])=>{
+      archUnitRows(aa).forEach(r=>{
         const tr=mk("tr");
-        let row="<td style='font-weight:600'>"+u.name+"</td>";
-        inds.forEach(i=>{const v=u.values?u.values[i.id]:"";row+="<td style='text-align:right'>"+(v!==undefined&&v!==null&&v!==""?fV(v,i.type):"—")+"</td>";});
+        let row="<td style='font-weight:600'>"+r.code+"</td><td>"+r.name+"</td><td><span class='badge "+(r.sent?"bok":"bfail")+"'>"+(r.sent?"✅ Илгээсэн":"❌ Илгээгээгүй")+"</span></td>";
+        inds.forEach(i=>{const v=r.vals[i.id];row+="<td style='text-align:right'>"+(v!==undefined&&v!==null&&v!==""?fV(v,i.type):"—")+"</td>";});
         tr.innerHTML=row;tbl.appendChild(tr);
       });
       tw.appendChild(tbl);card.appendChild(tw);
       // Excel export
       const bEx=mk("button","btn bs");bEx.style.cssText="margin-top:10px;width:100%";bEx.textContent="📊 Excel татах";
-      bEx.onclick=()=>{
-        if(typeof XLSX==="undefined")return toast("XLSX ачаалагдаагүй","te");
-        const wb=XLSX.utils.book_new();
-        const rows=[[" ",...inds.map(i=>i.name)]];
-        Object.entries(aa.data).forEach(([code,u])=>{rows.push([u.name,...inds.map(i=>{const v=u.values?u.values[i.id]:"";return v!==undefined&&v!==null&&v!==""?v:"";})]);});
-        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),aa.name.substring(0,30));
-        XLSX.writeFile(wb,aa.name+".xlsx");
-      };
+      bEx.onclick=()=>exportArchiveExcel(aa);
       card.appendChild(bEx);
     } else {
       card.innerHTML+="<div class='empty'>Мэдээ байхгүй</div>";
@@ -1875,6 +2001,9 @@ function renderArchList(el,items){
     sum.innerHTML="📁 "+plan+" <span style='font-weight:400;color:var(--tx3);font-size:12px'>("+list.length+")</span>";
     det.appendChild(sum);
     const inner=mk("div");inner.style.cssText="padding:8px 4px 0 4px";
+    const bAll=mk("button","btn bs");bAll.style.cssText="margin:0 0 8px 0;width:100%;font-size:12px";bAll.textContent="📊 «"+plan+"» — бүх хугацааны архивыг нэг Excel-ээр татах ("+list.length+" sheet)";
+    bAll.onclick=(function(pl,ls){return function(){exportPlanArchives(pl,ls);};})(plan,list);
+    inner.appendChild(bAll);
     list.forEach(a=>{
       const d=mk("div","ai-item");d.innerHTML="<div style='font-weight:600;color:var(--bl2)'>"+a.period+"</div><div style='font-size:11px;color:var(--tx3);margin-top:3px'>"+a.date+" · "+a.author+"</div>";
       d.onclick=(function(aa){return function(){openArchive(aa);};})(a);
