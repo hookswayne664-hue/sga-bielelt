@@ -1103,7 +1103,6 @@ async function sMsg(){
   inp.value="";
   chatMsgs.push({...msg,id:Date.now()});renderChatMsgs();
   try{await api("sendChat",{msg:JSON.stringify(msg)});}catch{}
-  sendTelegramNotify("💬 "+msg.senderName+": "+msg.text);
 }
 async function sAnn(){
   const txt=prompt("Зарлал:");if(!txt)return;
