@@ -85,6 +85,7 @@ tr:hover td{background:var(--bg3)}
 .mfi input{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-size:13px}
 @media(max-width:600px){.fr{grid-template-columns:1fr}.ig{grid-template-columns:1fr}}
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div class="lpage" id="LP">
@@ -561,7 +562,7 @@ function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];
   if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
   tabs.push({id:"chat",l:"💬 Чат"});
-  if(isA){tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"survey",l:"📋 Судалгаа"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
+  if(isA){tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"survey",l:"📋 Судалгаа"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"gsheets",l:"🔗 Хэргийн бүртгэл"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
   const tb=document.getElementById("TB");tb.innerHTML="";
   tabs.forEach(t=>{
     const d=mk("div","tab"+(S.tab===t.id?" on":""));
@@ -582,6 +583,7 @@ function renderTab(id){
   else if(id==="files")tFiles(c);
   else if(id==="survey")tSurvey(c);
   else if(id==="archive")tArchive(c);
+  else if(id==="gsheets")tGSheets(c);
   else if(id==="config")tConfig(c);
 }
 
@@ -2015,6 +2017,63 @@ function renderArchList(el,items){
 }
 
 // ===== CONFIG =====
+// ===== GOOGLE SHEETS ХОЛБОЛТ (зөвхөн админ) =====
+const GS_CLIENT_ID="57104694321-jj6b9qqstvr4m2082oc2qg48p0o05vej.apps.googleusercontent.com";
+const GS_SHEET_ID="1d1v-zEkH-Ta7s30eAtrSxBhP1v1vsOC-U1k2ihvaubo";
+const GS_GID="176887179";
+let GS_TOKEN=null,GS_TOKEN_EXP=0;
+function gsGetToken(cb){
+  if(GS_TOKEN&&Date.now()<GS_TOKEN_EXP){cb(GS_TOKEN);return;}
+  if(typeof google==="undefined"||!google.accounts){toast("Google сан ачаалагдсангүй — интернэтээ шалгаад дахин оролдоно уу","te");return;}
+  const client=google.accounts.oauth2.initTokenClient({
+    client_id:GS_CLIENT_ID,
+    scope:"https://www.googleapis.com/auth/spreadsheets.readonly",
+    callback:(resp)=>{
+      if(resp.error){toast("Google нэвтрэлт амжилтгүй: "+resp.error,"te");return;}
+      GS_TOKEN=resp.access_token;GS_TOKEN_EXP=Date.now()+(resp.expires_in||3500)*1000;
+      cb(GS_TOKEN);
+    }
+  });
+  client.requestAccessToken();
+}
+async function gsFetchData(){
+  const el=document.getElementById("gsRes");if(!el)return;
+  el.innerHTML="<div class='empty'>⏳ Ачаалж байна...</div>";
+  gsGetToken(async(token)=>{
+    try{
+      const metaR=await fetch("https://sheets.googleapis.com/v4/spreadsheets/"+GS_SHEET_ID+"?fields=sheets.properties",{headers:{Authorization:"Bearer "+token}});
+      if(!metaR.ok){const t=await metaR.text();throw new Error(metaR.status+": "+t.substring(0,200));}
+      const meta=await metaR.json();
+      const sheet=(meta.sheets||[]).find(s=>String(s.properties.sheetId)===GS_GID);
+      if(!sheet){el.innerHTML="<div class='empty'>gid="+GS_GID+" тэй хуудас олдсонгүй</div>";return;}
+      const title=sheet.properties.title;
+      const range=encodeURIComponent(title+"!A1:Z1000");
+      const valR=await fetch("https://sheets.googleapis.com/v4/spreadsheets/"+GS_SHEET_ID+"/values/"+range,{headers:{Authorization:"Bearer "+token}});
+      if(!valR.ok){const t=await valR.text();throw new Error(valR.status+": "+t.substring(0,200));}
+      const data=await valR.json();
+      const rows=data.values||[];
+      if(!rows.length){el.innerHTML="<div class='empty'>Хоосон байна</div>";return;}
+      let h="<div style='font-size:12px;color:var(--tx2);margin-bottom:8px'>📄 "+title+" — "+rows.length+" мөр</div><div class='tw'><table><tr>";
+      (rows[0]||[]).forEach(cell=>h+="<th>"+(cell||"")+"</th>");
+      h+="</tr>";
+      rows.slice(1).forEach(r=>{h+="<tr>";const cols=Math.max(rows[0].length,r.length);for(let i=0;i<cols;i++)h+="<td>"+(r[i]!==undefined?r[i]:"")+"</td>";h+="</tr>";});
+      h+="</table></div>";
+      el.innerHTML=h;
+    }catch(e){
+      console.error("[SGA gsFetchData]",e);
+      el.innerHTML="<div class='empty'>Алдаа: "+e.message+"</div>";
+      if(String(e.message).includes("403"))toast("Хандах эрх татгалзсан — Sheet-ийг тухайн Google акаунттайгаа хуваалцсан эсэхээ шалгаарай","te");
+    }
+  });
+}
+function tGSheets(c){
+  const card=mk("div","card");
+  card.innerHTML="<h2>🔗 Хэргийн бүртгэл (Google Sheets)</h2><p style='font-size:12px;color:var(--tx2);margin-bottom:12px'>Зөвхөн танд харагдана — нэгжүүд энэ табыг харахгүй. Google акаунтаараа нэвтэрч, цахим бүртгэлийн мэдээллийг шууд харна.</p>";
+  const btn=mk("button","btn bw");btn.textContent="🔑 Google-р нэвтрэх, мэдээ татах";
+  btn.onclick=gsFetchData;card.appendChild(btn);
+  const res=mk("div");res.id="gsRes";res.style.marginTop="14px";card.appendChild(res);
+  c.appendChild(card);
+}
 function tConfig(c){buildCfg(c);}
 function buildCfg(c){
   c.innerHTML="";
