@@ -905,15 +905,29 @@ function renderDistPanel(sub,pl,pInds,period,dm,locked,mkInp){
   // Тойрогт одоо ажиллаж буй гүйцэтгэгч байгаа эсэх (заавал сонгоно)
   const stBox=mk("div");stBox.style.cssText="margin-bottom:12px;padding:8px 10px;border:1px solid var(--br);border-radius:6px";
   const stLbl=mk("label");stLbl.style.cssText="display:block;font-size:12px;font-weight:600;margin-bottom:6px";stLbl.textContent="👤 Энэ тойрогт одоо ажиллаж буй гүйцэтгэгч байгаа юу?";stBox.appendChild(stLbl);
-  const stSel=mk("select");stSel.id="d_stat";stSel.style.cssText="width:100%";
+  const stSel=mk("input");stSel.type="hidden";stSel.id="d_stat";
   const curSt=rec.status&&rec.status.k?(rec.status.k==="has"?"has":"none:"+(rec.status.reason||"")):"";
-  [["","— Сонгоно уу —"],["has","✅ Байгаа — ажиллаж буй гүйцэтгэгч байгаа"],...DIST_REASONS.map(r=>["none:"+r,"❌ Байхгүй — "+r])].forEach(([v,l])=>{const o=mk("option");o.value=v;o.textContent=l;if(v===curSt)o.selected=true;stSel.appendChild(o);});
-  if(locked)stSel.disabled=true;
-  stBox.appendChild(stSel);
-  const stNote=mk("input");stNote.id="d_note";stNote.type="text";stNote.placeholder="Тайлбар (заавал биш, жишээ нь: ажлаас гарсан, томилогдоогүй...)";stNote.style.cssText="width:100%;margin-top:6px";stNote.value=(rec.status&&rec.status.note)||"";
+  stSel.value=curSt;stBox.appendChild(stSel);
+  const mkRadio=(name,val,label,checked)=>{
+    const lb=mk("label");lb.style.cssText="display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:13px;cursor:"+(locked?"default":"pointer");
+    const rd=mk("input");rd.type="radio";rd.name=name;rd.value=val;rd.checked=checked;rd.style.cssText="width:auto;margin:0";if(locked)rd.disabled=true;
+    lb.appendChild(rd);const sp=mk("span");sp.textContent=label;lb.appendChild(sp);return {lb,rd};
+  };
+  const grp1=mk("div");
+  const r1=mkRadio("d_has","has","✅ Хүнтэй — ажиллаж буй гүйцэтгэгч байгаа",curSt==="has");
+  const r2=mkRadio("d_has","none","❌ Хүнгүй — ажиллаж буй гүйцэтгэгч байхгүй",curSt.startsWith("none:"));
+  grp1.appendChild(r1.lb);grp1.appendChild(r2.lb);stBox.appendChild(grp1);
+  const reasons=mk("div");reasons.style.cssText="margin:4px 0 0 22px;padding-left:10px;border-left:2px solid var(--rd)";
+  const lr=mk("div");lr.style.cssText="font-size:11px;color:var(--tx2);margin-bottom:2px";lr.innerHTML="Шалтгаанаа сонгоно уу: <span style='color:var(--or)'>(Шалтгаантай ч өөр хүн орлож гүйцэтгэдэг тул доорх мэдээг заавал оруулна)</span>";reasons.appendChild(lr);
+  DIST_REASONS.forEach(r=>{const x=mkRadio("d_reason",r,r,curSt==="none:"+r);x.rd.onchange=()=>{stSel.value="none:"+r;};reasons.appendChild(x.lb);});
+  stBox.appendChild(reasons);
+  const stNote=mk("input");stNote.id="d_note";stNote.type="text";stNote.placeholder="Тайлбар (заавал биш, жишээ нь: ажлаас гарсан, томилогдоогүй...)";stNote.style.cssText="width:100%;margin:6px 0 0 0";stNote.value=(rec.status&&rec.status.note)||"";
   if(locked)stNote.disabled=true;
-  const syncNote=()=>{stNote.style.display=stSel.value.startsWith("none:")?"block":"none";};
-  stSel.onchange=syncNote;syncNote();stBox.appendChild(stNote);
+  stBox.appendChild(stNote);
+  const sync=()=>{const none=r2.rd.checked;reasons.style.display=none?"block":"none";stNote.style.display=none?"block":"none";};
+  r1.rd.onchange=()=>{stSel.value="has";sync();};
+  r2.rd.onchange=()=>{const chosen=reasons.querySelector("input[name=d_reason]:checked");stSel.value=chosen?"none:"+chosen.value:"none:";sync();};
+  sync();
   sub.appendChild(stBox);
   const hasSub=pInds.some(i=>i.subgroup&&String(i.subgroup).trim());
   if(hasSub){
@@ -961,10 +975,11 @@ async function saveDistrict(plan,period,did,pInds){
   const vals={};pInds.forEach(i=>{const el=document.getElementById("v_"+i.id);if(el)vals[i.id]=parseVal(el.value);});
   const stEl=document.getElementById("d_stat");
   const sv=stEl?stEl.value:"";
-  if(!sv){toast("Эхлээд «Ажиллаж буй гүйцэтгэгч байгаа юу?» гэдгийг сонгоно уу","te");if(stEl)stEl.focus();return;}
+  if(!sv){toast("Эхлээд «Хүнтэй» эсвэл «Хүнгүй»-г сонгоно уу","te");return;}
+  if(sv==="none:"){toast("«Хүнгүй» бол шалтгаанаа сонгоно уу","te");return;}
   const status=sv==="has"?{k:"has"}:{k:"none",reason:sv.slice(5),note:((document.getElementById("d_note")||{}).value||"").trim()};
   const any=Object.values(vals).some(hasVal);
-  if(!any&&status.k==="has"&&!confirm("Тойрог №"+did+"-д ямар ч утга оруулаагүй байна. Хоосноор хадгалах уу? (бөглөөгүй гэж тооцогдоно)"))return;
+  if(!any&&!confirm("Тойрог №"+did+"-д ямар ч утга оруулаагүй байна. Хоосноор хадгалах уу? (бөглөөгүй гэж тооцогдоно)"))return;
   const key=distKey(code,freq,period,did);
   const prev=S.dist[key];
   const wasFilled=distFilled(prev,pInds);
