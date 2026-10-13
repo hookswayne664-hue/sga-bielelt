@@ -216,7 +216,44 @@ const DINDS=[
 ];
 const DPLANS=["АД №01","АД №02","ХЗДХС 01","Эрс сайжруулах","ЗГ 2024-2028","Алсын Харааа-2050","2026-2030","Өргөдөл, гомдлын нэгжийн судалгаа"];
 
-let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[],activeSurveys:{},surveyResps:{},planHints:{},planFreqs:{},planActivatedAt:{},telegramLinks:{},planDeadlines:{}};
+let S={units:[...UNITS],inds:[...DINDS],plans:[...DPLANS],pwds:{},data:[],archives:[],user:null,tab:"",unread:0,lockedPeriods:[],activePlans:[],activeSurveys:{},surveyResps:{},planHints:{},planFreqs:{},planActivatedAt:{},telegramLinks:{},planDeadlines:{},planModes:{},dist:{}};
+
+// ===== ТОЙРОГООР МЭДЭЭ АВАХ =====
+// Нэгж → тойргийн дугаарын муж (нийт 304 тойрог, 48 нэгж). ШГА01, ШГА15-д тойрог байхгүй.
+const DIST_MAP={"ШГА16":[1,5],"ШГА18":[6,10],"ШГА20":[11,15],"ШГА19":[16,21],"ШГА21":[22,26],"ШГА22":[27,29],"ШГА24":[30,34],"ШГА28":[35,38],"ШГА25":[39,45],"ШГА26":[46,49],"ШГА23":[50,60],"ШГА27":[61,64],"ШГА37":[65,66],"ШГА31":[67,77],"ШГА32":[78,82],"ШГА41":[83,85],"ШГА33":[86,90],"ШГА40":[91,92],"ШГА36":[93,98],"ШГА34":[99,100],"ШГА29":[101,105],"ШГА35":[106,109],"ШГА38":[110,116],"ШГА39":[117,121],"ШГА42":[122,127],"ШГА43":[128,135],"ШГА44":[136,142],"ШГА30":[143,147],"ШГА17":[148,151],"ШГА09":[152,163],"ШГА10":[164,171],"ШГА11":[172,178],"ШГА12":[179,185],"ШГА13":[186,194],"ШГА14":[195,203],"ШГА07":[204,213],"ШГА08":[214,222],"ШГА05":[223,230],"ШГА06":[231,239],"ШГА02":[240,248],"ШГА03":[249,257],"ШГА04":[258,265],"ШГА45":[266,269],"ШГА49":[270,275],"ШГА48":[276,283],"ШГА50":[284,292],"ШГА47":[293,299],"ШГА46":[300,304]};
+const distSel={};
+function unitDists(code){const r=DIST_MAP[code];if(!r)return [];const a=[];for(let n=r[0];n<=r[1];n++)a.push(n);return a;}
+function distMode(plan){const m=S.planModes&&S.planModes[plan];return(m&&m.districts)?m:null;}
+function distKey(unit,freq,period,did){return unit+"_"+freq+"_"+String(period).replace(/[.\s]/g,"_")+"_"+did;}
+function hasVal(v){return v!==undefined&&v!==null&&v!=="";}
+function distFilled(rec,pInds){return !!rec&&pInds.some(i=>hasVal((rec.values||{})[i.id]));}
+// Нэгжийн бүх тойргийн утгыг нэгтгэнэ: тоо/мөнгө — нийлбэр, текст — "№дугаар: текст" жагсаалт
+function aggregateDist(unit,freq,period,pInds){
+  const ds=unitDists(unit);const values={};let filled=0;
+  ds.forEach(d=>{if(distFilled(S.dist[distKey(unit,freq,period,d)],pInds))filled++;});
+  pInds.forEach(i=>{
+    if(i.type==="text"){
+      const parts=[];ds.forEach(d=>{const r=S.dist[distKey(unit,freq,period,d)];const v=r&&(r.values||{})[i.id];if(hasVal(v)&&String(v).trim())parts.push("№"+d+": "+String(v).trim());});
+      values[i.id]=parts.join("; ");
+    } else {
+      let sum=0,any=false;
+      ds.forEach(d=>{const r=S.dist[distKey(unit,freq,period,d)];const v=r&&(r.values||{})[i.id];if(hasVal(v)){const n=parseFloat(String(v).replace(/,/g,""));if(!isNaN(n)){sum+=n;any=true;}}});
+      values[i.id]=any?String(Math.round(sum*100)/100):"";
+    }
+  });
+  return {values,filled,total:ds.length};
+}
+// Нэгдсэн дүнд харуулах явц: сонгосон хугацаанаас хамгийн их бөглөгдсөн period-ын дүн
+function distProgress(unit,freq,periods,plan){
+  if(!distMode(plan))return null;const ds=unitDists(unit);if(!ds.length)return null;
+  const pInds=S.inds.filter(i=>i.freq===freq&&(i.plans||[]).some(p=>p&&p.trim()===plan.trim()));
+  let best=0;periods.forEach(per=>{let f=0;ds.forEach(d=>{if(distFilled(S.dist[distKey(unit,freq,per,d)],pInds))f++;});if(f>best)best=f;});
+  return {filled:best,total:ds.length};
+}
+async function savePlanModes(){
+  try{localStorage.setItem("sga_planModes",JSON.stringify(S.planModes));}catch{}
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"config/planModes"),S.planModes);}catch{}}
+}
 let aiTxt="",dFreq="week",dPer="",mFreq="week",sFreq="week";
 let chatMsgs=[],chatLastId=0,chatTimer=null;
 
@@ -297,6 +334,8 @@ async function initLogin(){
   try{const lpl=localStorage.getItem("sga_plans");if(lpl){const p=JSON.parse(lpl);if(p&&p.length)S.plans=p;}}catch{}
   try{const lph=localStorage.getItem("sga_planHints");if(lph)S.planHints=JSON.parse(lph)||{};}catch{}
   try{const lpf=localStorage.getItem("sga_planFreqs");if(lpf)S.planFreqs=JSON.parse(lpf)||{};}catch{}
+  try{const lpm=localStorage.getItem("sga_planModes");if(lpm)S.planModes=JSON.parse(lpm)||{};}catch{}
+  try{const ldi=localStorage.getItem("sga_dist");if(ldi)S.dist=JSON.parse(ldi)||{};}catch{}
   try{const ltg=localStorage.getItem("sga_telegram");if(ltg)S.telegramLinks=JSON.parse(ltg)||{};}catch{}
   try{const lpd=localStorage.getItem("sga_planDeadlines");if(lpd)S.planDeadlines=JSON.parse(lpd)||{};}catch{}
   const sel=document.getElementById("lC");
@@ -323,6 +362,8 @@ async function initLogin(){
       if(sph&&sph.exists&&sph.exists()&&sph.val()){S.planHints=sph.val();try{localStorage.setItem("sga_planHints",JSON.stringify(S.planHints));}catch{}}
       const spf=await window._get(window._r(fbDB,"config/planFreqs"));
       if(spf&&spf.exists&&spf.exists()&&spf.val()){S.planFreqs=spf.val();try{localStorage.setItem("sga_planFreqs",JSON.stringify(S.planFreqs));}catch{}}
+      const spm=await window._get(window._r(fbDB,"config/planModes"));
+      if(spm&&spm.exists&&spm.exists()&&spm.val()){S.planModes=spm.val();try{localStorage.setItem("sga_planModes",JSON.stringify(S.planModes));}catch{}}
       const stg=await window._get(window._r(fbDB,"telegramLinks"));
       if(stg&&stg.exists&&stg.exists()&&stg.val()){S.telegramLinks=stg.val();try{localStorage.setItem("sga_telegram",JSON.stringify(S.telegramLinks));}catch{}}
       const spd=await window._get(window._r(fbDB,"config/planDeadlines"));
@@ -414,6 +455,16 @@ async function loadAllData(){
         }
       }
     }catch(e){console.error("[SGA loadAllData] Firebase read fail:",e);}
+  }
+  // 1б. Тойргийн мэдээ (Firebase: dist/)
+  if(fbDB&&window._get){
+    try{
+      const dd=await window._get(window._r(fbDB,"dist"));
+      if(dd&&dd.exists&&dd.exists()&&dd.val()&&typeof dd.val()==="object"){
+        Object.entries(dd.val()).forEach(([k,r])=>{if(r&&r.unit){const cur=S.dist[k];if(!cur||!cur.date||r.date>=cur.date)S.dist[k]=r;}});
+        try{localStorage.setItem("sga_dist",JSON.stringify(S.dist));}catch{}
+      }
+    }catch(e){console.error("[SGA loadAllData] dist read fail:",e);}
   }
   // 2. GAS-аас нөөцлөн уншина
   try{
@@ -782,6 +833,12 @@ function tData(c){
     const sub=mk("div","sub");const phint=S.planHints&&S.planHints[pl];sub.innerHTML="<h3>"+pl+lockBadge+sentBadge+"</h3>"+(phint?"<div style='font-size:11px;color:var(--tx2);margin:-4px 0 8px 0;padding:4px 8px;background:rgba(255,200,0,.08);border-left:2px solid var(--or);border-radius:0 3px 3px 0'>ℹ️ "+phint+"</div>":"");
     const hasSubgroup=pInds.some(i=>i.subgroup&&String(i.subgroup).trim().length>0);
 
+    // Тойргоор авдаг төлөвлөгөө (зөвхөн тойрогтой нэгжид) — тойрог сонгож бөглөнө
+    if(!S.user.isAdmin&&distMode(pl)&&unitDists(S.user.code).length){
+      renderDistPanel(sub,pl,pInds,grpPeriod,distMode(pl),isLocked,mkIndInput);
+      card.appendChild(sub);return;
+    }
+
     if(hasSubgroup){
       const subgroups={};const sgOrder=[];
       pInds.forEach(i=>{const sg=i.subgroup||"Бусад";if(!subgroups[sg]){subgroups[sg]=[];sgOrder.push(sg);}subgroups[sg].push(i);});
@@ -810,6 +867,128 @@ function tData(c){
   card.appendChild(br);
   }
   c.appendChild(card);
+}
+
+
+// ===== Тойрог сонгож бөглөх хэсэг =====
+function renderDistPanel(sub,pl,pInds,period,dm,locked,mkInp){
+  const code=S.user.code,freq=dFreq,ds=unitDists(code);
+  const recOf=d=>S.dist[distKey(code,freq,period,d)];
+  let cur=distSel[code+"|"+pl];
+  if(!ds.includes(cur)){cur=ds.find(d=>!distFilled(recOf(d),pInds));if(cur===undefined)cur=ds[0];}
+  distSel[code+"|"+pl]=cur;
+  const agg=aggregateDist(code,freq,period,pInds);
+  const info=mk("div");info.style.cssText="font-size:12px;margin-bottom:8px;padding:6px 10px;border-radius:4px;background:rgba(31,111,235,.08)";
+  const ents=S.data.find(d=>d.unit===code&&d.period===period&&d.freq===freq);
+  const unitSent=!!(ents&&(ents.plans||[]).includes(pl));
+  const stale=unitSent&&pInds.some(i=>String(ents.values&&ents.values[i.id]!==undefined?ents.values[i.id]:"")!==String(agg.values[i.id]));
+  const missing=ds.filter(d=>!distFilled(recOf(d),pInds));
+  info.innerHTML="📍 Тойрог бүрийг ямар ч дарааллаар, буцаж ирж бөглөж болно (тойрог бүрийг «Хадгалах»). Бүгдийг нь хадгалсны дараа доорх <b>«Нэгжийн мэдээг илгээх»</b> товчоор ахлах баталгаажуулж илгээнэ.<br>Хадгалсан: <b>"+agg.filled+"/"+agg.total+"</b> тойрог"+(missing.length&&missing.length<=12?" · Бөглөөгүй: "+missing.map(d=>"№"+d).join(", "):"")+"<br>Нэгжийн мэдээ: "+(unitSent?(stale?"<b style='color:var(--or)'>⚠️ Илгээсэн, гэхдээ дараа нь өөрчилсөн — дахин илгээнэ үү</b>":"<b style='color:var(--gr)'>✅ Илгээгдсэн</b>"):"<b>○ Илгээгдээгүй</b>")+(dm.requireAll?"<br>🔒 Бүх "+agg.total+" тойргийг хадгалсны дараа л илгээх боломжтой.":"");
+  sub.appendChild(info);
+  const chips=mk("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px";
+  ds.forEach(d=>{
+    const f=distFilled(recOf(d),pInds);
+    const b=mk("button","btn "+(f?"bs":"bi"));b.style.cssText="padding:4px 10px;font-size:12px"+(d===cur?";outline:2px solid var(--bl2)":"");
+    b.textContent=(f?"✅ ":"○ ")+"№"+d;
+    b.onclick=function(){
+      if(d!==cur&&distDirty(code,freq,period,cur,pInds)&&!confirm("Тойрог №"+cur+"-ийн хадгалаагүй өөрчлөлт байна. Хадгалахгүйгээр шилжих үү?"))return;
+      distSel[code+"|"+pl]=d;renderTab("data");
+    };
+    chips.appendChild(b);
+  });
+  sub.appendChild(chips);
+  const hd=mk("div");hd.style.cssText="font-weight:600;font-size:13px;margin:4px 0 8px";hd.textContent="Тойрог №"+cur+(distFilled(recOf(cur),pInds)?" — ✅ бөглөгдсөн":" — ○ бөглөөгүй");sub.appendChild(hd);
+  const rec=recOf(cur)||{values:{}};
+  const hasSub=pInds.some(i=>i.subgroup&&String(i.subgroup).trim());
+  if(hasSub){
+    const groups={},order=[];pInds.forEach(i=>{const g=i.subgroup||"Бусад";if(!groups[g]){groups[g]=[];order.push(g);}groups[g].push(i);});
+    order.forEach(g=>{
+      const dv=mk("div");dv.style.marginBottom="12px";
+      const h=mk("div");h.style.cssText="font-size:11px;font-weight:600;color:var(--tx2);margin:4px 0 8px;padding:3px 8px;border-left:3px solid var(--bl);background:rgba(31,111,235,.07);border-radius:0 4px 4px 0";h.textContent=g;dv.appendChild(h);
+      const ig=mk("div","ig");groups[g].forEach(i=>mkInp(i,rec,ig,locked));dv.appendChild(ig);sub.appendChild(dv);
+    });
+  } else {const ig=mk("div","ig");pInds.forEach(i=>mkInp(i,rec,ig,locked));sub.appendChild(ig);}
+  if(!locked){
+    const br=mk("div","brow");br.style.margin="10px 0 4px";
+    const f=distFilled(recOf(cur),pInds);
+    const b=mk("button","btn "+(f?"bs":"bp"));b.textContent=(f?"🔄 Тойрог №"+cur+" шинэчлэн хадгалах":"💾 Тойрог №"+cur+" хадгалах");
+    b.onclick=function(){saveDistrict(pl,period,cur,pInds);};
+    br.appendChild(b);sub.appendChild(br);
+    // Нэгжийн мэдээг баталгаажуулж илгээх (ахлах)
+    const sb=mk("div","brow");sb.style.margin="14px 0 4px";sb.style.paddingTop="10px";sb.style.borderTop="1px dashed var(--br)";
+    const blocked=(dm.requireAll&&agg.filled<agg.total)||agg.filled===0;
+    const ub=mk("button","btn "+((unitSent&&!stale)?"bs":"bp"));
+    ub.textContent=(unitSent?"🔄 Нэгжийн мэдээг шинэчлэн илгээх":"📤 Нэгжийн мэдээг илгээх")+" ("+agg.filled+"/"+agg.total+" тойрог)";
+    if(blocked){ub.disabled=true;ub.style.opacity=".5";ub.title=dm.requireAll?"Бүх тойргийг хадгалсны дараа илгээнэ":"Ядаж нэг тойрог хадгална уу";}
+    ub.onclick=function(){submitUnitDist(pl,period,pInds,dm);};
+    sb.appendChild(ub);sub.appendChild(sb);
+  }
+  // Нэгжийн автомат нийт дүн
+  const det=mk("details");det.style.marginTop="10px";
+  const sm=mk("summary");sm.style.cssText="cursor:pointer;font-size:12px;color:var(--bl2)";sm.textContent="📊 Нэгжийн нийт дүн (тойргуудын нийлбэр, "+agg.filled+"/"+agg.total+")";det.appendChild(sm);
+  let h="<table style='width:100%;margin-top:6px'>";
+  pInds.forEach(i=>{const v=agg.values[i.id];if(!hasVal(v)||v==="")return;h+="<tr><td style='padding:4px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+i.name+"</td><td style='padding:4px 8px;font-size:12px;text-align:right;border-bottom:1px solid var(--bd)'>"+(i.type==="text"?String(v):fN(v))+"</td></tr>";});
+  h+="</table>";
+  det.insertAdjacentHTML("beforeend",agg.filled?h:"<div style='font-size:12px;color:var(--tx3);padding:6px'>Одоогоор бөглөсөн тойрог алга</div>");
+  sub.appendChild(det);
+}
+function distDirty(code,freq,period,did,pInds){
+  const rec=S.dist[distKey(code,freq,period,did)];
+  return pInds.some(i=>{const el=document.getElementById("v_"+i.id);if(!el)return false;const nv=parseVal(el.value);const ov=rec&&hasVal((rec.values||{})[i.id])?String(parseVal(rec.values[i.id])):"";return nv!==ov;});
+}
+async function saveDistrict(plan,period,did,pInds){
+  const grpLock=getPlanLock(plan);
+  if(grpLock&&!S.user.isAdmin){toast("🔒 '"+plan+"' хаалттай — илгээх боломжгүй","te");return;}
+  const code=S.user.code,freq=dFreq;
+  const vals={};pInds.forEach(i=>{const el=document.getElementById("v_"+i.id);if(el)vals[i.id]=parseVal(el.value);});
+  const any=Object.values(vals).some(hasVal);
+  if(!any&&!confirm("Тойрог №"+did+"-д ямар ч утга оруулаагүй байна. Хоосноор хадгалах уу? (бөглөөгүй гэж тооцогдоно)"))return;
+  const key=distKey(code,freq,period,did);
+  const prev=S.dist[key];
+  const wasFilled=distFilled(prev,pInds);
+  const rec={unit:code,freq,period,did,plan,values:Object.assign({},prev&&prev.values||{},vals),date:new Date().toLocaleString("mn-MN")};
+  S.dist[key]=rec;
+  let fbOk=false;
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"dist/"+key),rec);fbOk=true;}catch(e){console.error("[SGA saveDistrict] Firebase FAIL:",e);}}
+  try{localStorage.setItem("sga_dist",JSON.stringify(S.dist));}catch{}
+  // Шинээр бөглөсөн бол дараагийн бөглөөгүй тойрог руу автоматаар шилжинэ
+  if(!wasFilled&&distFilled(rec,pInds)){
+    const ds=unitDists(code);const nxt=ds.find(d=>d!==did&&!distFilled(S.dist[distKey(code,freq,period,d)],pInds));
+    if(nxt!==undefined)distSel[code+"|"+plan]=nxt;
+  }
+  const agg=aggregateDist(code,freq,period,pInds);
+  toast((fbOk?"💾 ":"💾 (local) ")+"Тойрог №"+did+" хадгалагдлаа ("+agg.filled+"/"+agg.total+"). Бүгдийг нь хадгалаад «Нэгжийн мэдээг илгээх» дарна уу","ts");
+  renderTab("data");
+}
+// Ахлах баталгаажуулж нэгжийн мэдээг илгээнэ
+async function submitUnitDist(plan,period,pInds,dm){
+  const grpLock=getPlanLock(plan);
+  if(grpLock&&!S.user.isAdmin){toast("🔒 '"+plan+"' хаалттай — илгээх боломжгүй","te");return;}
+  const code=S.user.code,freq=dFreq;
+  const agg=aggregateDist(code,freq,period,pInds);
+  if(agg.filled===0){toast("Ядаж нэг тойргийг хадгална уу","te");return;}
+  if(dm.requireAll&&agg.filled<agg.total){toast("Бүх тойргийг хадгалсны дараа илгээнэ ("+agg.filled+"/"+agg.total+")","te");return;}
+  if(agg.filled<agg.total){
+    const miss=unitDists(code).filter(d=>!distFilled(S.dist[distKey(code,freq,period,d)],pInds)).map(d=>"№"+d);
+    if(!confirm("Зөвхөн "+agg.filled+"/"+agg.total+" тойрог хадгалагдсан байна.\nБөглөөгүй: "+miss.join(", ")+"\n\nЭдгээрээс өмнө нэгжийн мэдээг илгээх үү? (Дараа нь тойргоо бөглөөд дахин илгээж болно)"))return;
+  } else if(!confirm("Бүх "+agg.total+" тойргийн мэдээг нэгтгэж нэгжийн мэдээг илгээх үү?"))return;
+  await commitUnitPlan(plan,period,agg.values,true);
+  toast("✅ Нэгжийн мэдээ илгээгдлээ ("+agg.filled+"/"+agg.total+" тойрог)","ts");
+  renderTab("data");
+}
+// Нэгжийн entry-д нэг төлөвлөгөөний нэгтгэсэн утгыг бичнэ (subDataForPlan-тай ижил дүрэм)
+async function commitUnitPlan(plan,period,vals,hasAny){
+  const freq=dFreq;
+  const idx=S.data.findIndex(d=>d.unit===S.user.code&&d.period===period&&d.freq===freq);
+  const prev=idx>=0?S.data[idx]:null;
+  const mergedValues=Object.assign({},prev&&prev.values||{},vals);
+  const prevPlans=(prev&&prev.plans!==undefined)?prev.plans:[];
+  const mergedPlans=hasAny?Array.from(new Set([...prevPlans,plan])):prevPlans.filter(p=>p!==plan);
+  const entry={unit:S.user.code,unitName:S.user.name,period,freq,values:mergedValues,plans:mergedPlans,date:new Date().toLocaleString("mn-MN")};
+  if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_")),entry);}catch(e){console.error("[SGA commitUnitPlan] Firebase FAIL:",e);}}
+  try{api("saveData",{data:JSON.stringify(entry)});}catch{}
+  try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
 }
 
 // Зөвхөн НЭГ төлөвлөгөөний талбаруудыг цуглуулж, тухайн периодын entry-д зөвхөн энэ
@@ -1371,7 +1550,10 @@ function lSum(){
     const sp=mk("span");sp.textContent=u.name;sp.style.cssText="cursor:pointer;color:var(--bl2)";sp.title="Дэлгэрэнгүй";
     sp.onclick=(function(cc,nn){return function(){showUnitDetail(cc,nn,plan);};})(u.code,u.name);
     td2.appendChild(sp);tr.appendChild(td2);
-    const td3=mk("td");const badge=mk("span","badge "+(sent?"bok":"bfail"));badge.textContent=sent?"✅ Илгээсэн":"❌ Илгээгээгүй";td3.appendChild(badge);
+    const td3=mk("td");const badge=mk("span","badge "+(sent?"bok":"bfail"));badge.textContent=sent?"✅ Илгээсэн":"❌ Илгээгээгүй";
+    const dp=(plan!=="all")?distProgress(u.code,sFreq,selPeriods,plan):null;
+    if(dp)badge.textContent+=" ("+dp.filled+"/"+dp.total+" тойрог)";
+    td3.appendChild(badge);
     if(sent&&plan!=="all"){
       const bUndo=mk("button","btn bx");bUndo.textContent="✕";bUndo.title="Илгээгээгүй болгох (буруу тэмдэглэгдсэн бол)";
       bUndo.style.cssText="margin-left:6px;padding:2px 8px;font-size:11px";
@@ -1449,6 +1631,22 @@ function entryMatchesPlan(e,filterPlan){
   return true;
 }
 
+// Нэгжийн дэлгэрэнгүйд тойрог тус бүрийн утгыг харуулна
+function appendDistDetail(sub,ucode,entry,inds){
+  const ds=unitDists(ucode);if(!ds.length)return;
+  const recs=ds.map(d=>({d,r:S.dist[distKey(ucode,entry.freq,entry.period,d)]})).filter(x=>x.r);
+  if(!recs.length)return;
+  const shown=inds.filter(i=>recs.some(x=>hasVal((x.r.values||{})[i.id])));
+  if(!shown.length)return;
+  const det=mk("details");det.style.marginTop="8px";
+  const sm=mk("summary");sm.style.cssText="cursor:pointer;font-size:12px;color:var(--bl2)";sm.textContent="📍 Тойргоор ("+recs.length+"/"+ds.length+" тойрог бөглөгдсөн)";det.appendChild(sm);
+  const w=mk("div");w.style.cssText="overflow-x:auto;margin-top:6px";
+  let h="<table style='border-collapse:collapse'><tr><th style='text-align:left;padding:4px 8px;font-size:11px;border-bottom:1px solid var(--bd)'>Үзүүлэлт</th>";
+  recs.forEach(x=>h+="<th style='padding:4px 8px;font-size:11px;border-bottom:1px solid var(--bd)'>№"+x.d+"</th>");
+  h+="</tr>";
+  shown.forEach(i=>{h+="<tr><td style='padding:4px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+i.name+"</td>";recs.forEach(x=>{const v=(x.r.values||{})[i.id];h+="<td style='padding:4px 8px;font-size:12px;text-align:right;border-bottom:1px solid var(--bd)'>"+(hasVal(v)?(i.type==="text"?String(v):fN(v)):"")+"</td>";});h+="</tr>";});
+  h+="</table>";w.innerHTML=h;det.appendChild(w);sub.appendChild(det);
+}
 function showUnitDetail(ucode,uname,filterPlan){
   const allRaw=S.data.filter(d=>d.unit===ucode).sort((a,b)=>a.period>b.period?-1:1);
   const isFiltered=filterPlan&&filterPlan!=="all";
@@ -1502,6 +1700,7 @@ function showUnitDetail(ucode,uname,filterPlan){
         }
         if(!hasVal)sub.innerHTML+="<div style='font-size:12px;color:var(--tx3);padding:8px'>Утга байхгүй</div>";
         else sub.appendChild(tbl);
+        appendDistDetail(sub,ucode,entry,inds);
         box.appendChild(sub);
       });
     }
@@ -1559,6 +1758,21 @@ async function exportExcel(){
     const ws=XLSX.utils.aoa_to_sheet(rows);
     ws['!cols']=[{wch:35},...units.map(()=>({wch:12}))];
     XLSX.utils.book_append_sheet(wb,ws,plan.substring(0,31));
+  });
+  // Тойргоор авдаг төлөвлөгөө бүрт 304 тойргийн тусдаа хуудас
+  uniquePlans.filter(pl=>distMode(pl)).forEach((plan,pi)=>{
+    const pInds=planGroups[plan];
+    const rows=[["Тойрог №","Нэгж код","Нэгж",...pInds.map(i=>i.name)]];
+    units.forEach(u=>{
+      unitDists(u.code).forEach(d=>{
+        let best=null;
+        sel.forEach(per=>{const r=S.dist[distKey(u.code,freq,per,d)];if(r&&(!best||r.date>best.date))best=r;});
+        rows.push([d,u.code,u.name,...pInds.map(i=>{const v=best&&(best.values||{})[i.id];return hasVal(v)?(i.type==="text"?v:(isNaN(Number(v))?v:Number(v))):"";})]);
+      });
+    });
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:10},{wch:9},{wch:30},...pInds.map(()=>({wch:14}))];
+    XLSX.utils.book_append_sheet(wb,ws,("Тойрог "+(pi+1)+" "+plan).substring(0,31));
   });
   XLSX.writeFile(wb,"ШГА_"+perLabel+"_"+freqLabel+".xlsx");
   toast("📊 Excel файл бэлэн болоо","ts");
@@ -2371,6 +2585,15 @@ function buildCfg(c){
       buildCfg(c);
     };})(p);
     row.appendChild(freqSel);
+    const dmSel=mk("select");dmSel.style.cssText="min-width:150px;font-size:12px;padding:4px 6px";dmSel.title="Тойргоор мэдээ авах эсэх";
+    const dmCur=S.planModes[p]&&S.planModes[p].districts?(S.planModes[p].requireAll?"all":"some"):"off";
+    [["off","Нэгжээр (энгийн)"],["some","Тойргоор (1+ бол илгээсэн)"],["all","Тойргоор (бүгд заавал)"]].forEach(([v,l])=>{const o=mk("option");o.value=v;o.textContent=l;if(v===dmCur)o.selected=true;dmSel.appendChild(o);});
+    dmSel.onchange=(function(plan){return function(){
+      const v=this.value;
+      if(v==="off")delete S.planModes[plan];else S.planModes[plan]={districts:true,requireAll:v==="all"};
+      savePlanModes();toast("✅ '"+plan+"' — "+(v==="off"?"нэгжээр авна":v==="all"?"тойргоор авна (бүгд заавал)":"тойргоор авна (1+ тойрог)"),"ts");
+    };})(p);
+    row.appendChild(dmSel);
     const badge=mk("span","badge "+(S.activePlans.includes(p)?"bok":""));
     badge.textContent=S.activePlans.includes(p)?"✅ Идэвхтэй":"";
     badge.style.minWidth="80px";row.appendChild(badge);
