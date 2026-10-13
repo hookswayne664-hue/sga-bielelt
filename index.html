@@ -226,7 +226,9 @@ function unitDists(code){const r=DIST_MAP[code];if(!r)return [];const a=[];for(l
 function distMode(plan){const m=S.planModes&&S.planModes[plan];return(m&&m.districts)?m:null;}
 function distKey(unit,freq,period,did){return unit+"_"+freq+"_"+String(period).replace(/[.\s]/g,"_")+"_"+did;}
 function hasVal(v){return v!==undefined&&v!==null&&v!=="";}
-function distFilled(rec,pInds){return !!rec&&pInds.some(i=>hasVal((rec.values||{})[i.id]));}
+function distFilled(rec,pInds){return !!rec&&(!!(rec.status&&rec.status.k)||pInds.some(i=>hasVal((rec.values||{})[i.id])));}
+const DIST_REASONS=["Өвчтэй","Сургуулийн чөлөөтэй","Жирэмсний амралттай","Ээлжийн амралттай","Бусад шалтгаан"];
+function distStatusText(st){if(!st||!st.k)return "";if(st.k==="has")return "Ажиллаж буй гүйцэтгэгч байгаа";return "Байхгүй — "+(st.reason||"")+(st.note?" ("+st.note+")":"");}
 // Нэгжийн бүх тойргийн утгыг нэгтгэнэ: тоо/мөнгө — нийлбэр, текст — "№дугаар: текст" жагсаалт
 function aggregateDist(unit,freq,period,pInds){
   const ds=unitDists(unit);const values={};let filled=0;
@@ -883,7 +885,8 @@ function renderDistPanel(sub,pl,pInds,period,dm,locked,mkInp){
   const unitSent=!!(ents&&(ents.plans||[]).includes(pl));
   const stale=unitSent&&pInds.some(i=>String(ents.values&&ents.values[i.id]!==undefined?ents.values[i.id]:"")!==String(agg.values[i.id]));
   const missing=ds.filter(d=>!distFilled(recOf(d),pInds));
-  info.innerHTML="📍 Тойрог бүрийг ямар ч дарааллаар, буцаж ирж бөглөж болно (тойрог бүрийг «Хадгалах»). Бүгдийг нь хадгалсны дараа доорх <b>«Нэгжийн мэдээг илгээх»</b> товчоор ахлах баталгаажуулж илгээнэ.<br>Хадгалсан: <b>"+agg.filled+"/"+agg.total+"</b> тойрог"+(missing.length&&missing.length<=12?" · Бөглөөгүй: "+missing.map(d=>"№"+d).join(", "):"")+"<br>Нэгжийн мэдээ: "+(unitSent?(stale?"<b style='color:var(--or)'>⚠️ Илгээсэн, гэхдээ дараа нь өөрчилсөн — дахин илгээнэ үү</b>":"<b style='color:var(--gr)'>✅ Илгээгдсэн</b>"):"<b>○ Илгээгдээгүй</b>")+(dm.requireAll?"<br>🔒 Бүх "+agg.total+" тойргийг хадгалсны дараа л илгээх боломжтой.":"");
+  const noExec=ds.map(d=>recOf(d)).filter(r=>r&&r.status&&r.status.k==="none");
+  info.innerHTML="📍 Тойрог бүрийг ямар ч дарааллаар, буцаж ирж бөглөж болно (тойрог бүрийг «Хадгалах»). Бүгдийг нь хадгалсны дараа доорх <b>«Нэгжийн мэдээг илгээх»</b> товчоор ахлах баталгаажуулж илгээнэ.<br>Хадгалсан: <b>"+agg.filled+"/"+agg.total+"</b> тойрог"+(missing.length&&missing.length<=12?" · Бөглөөгүй: "+missing.map(d=>"№"+d).join(", "):"")+"<br>Нэгжийн мэдээ: "+(unitSent?(stale?"<b style='color:var(--or)'>⚠️ Илгээсэн, гэхдээ дараа нь өөрчилсөн — дахин илгээнэ үү</b>":"<b style='color:var(--gr)'>✅ Илгээгдсэн</b>"):"<b>○ Илгээгдээгүй</b>")+(noExec.length?"<br>👤 Гүйцэтгэгчгүй тойрог: <b>"+noExec.length+"</b> ("+noExec.map(r=>"№"+r.did+" "+r.status.reason).join(", ")+")":"")+(dm.requireAll?"<br>🔒 Бүх "+agg.total+" тойргийг хадгалсны дараа л илгээх боломжтой.":"");
   sub.appendChild(info);
   const chips=mk("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px";
   ds.forEach(d=>{
@@ -899,6 +902,19 @@ function renderDistPanel(sub,pl,pInds,period,dm,locked,mkInp){
   sub.appendChild(chips);
   const hd=mk("div");hd.style.cssText="font-weight:600;font-size:13px;margin:4px 0 8px";hd.textContent="Тойрог №"+cur+(distFilled(recOf(cur),pInds)?" — ✅ бөглөгдсөн":" — ○ бөглөөгүй");sub.appendChild(hd);
   const rec=recOf(cur)||{values:{}};
+  // Тойрогт одоо ажиллаж буй гүйцэтгэгч байгаа эсэх (заавал сонгоно)
+  const stBox=mk("div");stBox.style.cssText="margin-bottom:12px;padding:8px 10px;border:1px solid var(--br);border-radius:6px";
+  const stLbl=mk("label");stLbl.style.cssText="display:block;font-size:12px;font-weight:600;margin-bottom:6px";stLbl.textContent="👤 Энэ тойрогт одоо ажиллаж буй гүйцэтгэгч байгаа юу?";stBox.appendChild(stLbl);
+  const stSel=mk("select");stSel.id="d_stat";stSel.style.cssText="width:100%";
+  const curSt=rec.status&&rec.status.k?(rec.status.k==="has"?"has":"none:"+(rec.status.reason||"")):"";
+  [["","— Сонгоно уу —"],["has","✅ Байгаа — ажиллаж буй гүйцэтгэгч байгаа"],...DIST_REASONS.map(r=>["none:"+r,"❌ Байхгүй — "+r])].forEach(([v,l])=>{const o=mk("option");o.value=v;o.textContent=l;if(v===curSt)o.selected=true;stSel.appendChild(o);});
+  if(locked)stSel.disabled=true;
+  stBox.appendChild(stSel);
+  const stNote=mk("input");stNote.id="d_note";stNote.type="text";stNote.placeholder="Тайлбар (заавал биш, жишээ нь: ажлаас гарсан, томилогдоогүй...)";stNote.style.cssText="width:100%;margin-top:6px";stNote.value=(rec.status&&rec.status.note)||"";
+  if(locked)stNote.disabled=true;
+  const syncNote=()=>{stNote.style.display=stSel.value.startsWith("none:")?"block":"none";};
+  stSel.onchange=syncNote;syncNote();stBox.appendChild(stNote);
+  sub.appendChild(stBox);
   const hasSub=pInds.some(i=>i.subgroup&&String(i.subgroup).trim());
   if(hasSub){
     const groups={},order=[];pInds.forEach(i=>{const g=i.subgroup||"Бусад";if(!groups[g]){groups[g]=[];order.push(g);}groups[g].push(i);});
@@ -934,6 +950,8 @@ function renderDistPanel(sub,pl,pInds,period,dm,locked,mkInp){
 }
 function distDirty(code,freq,period,did,pInds){
   const rec=S.dist[distKey(code,freq,period,did)];
+  const stEl=document.getElementById("d_stat");
+  if(stEl){const sv=rec&&rec.status&&rec.status.k?(rec.status.k==="has"?"has":"none:"+(rec.status.reason||"")):"";if(stEl.value!==sv)return true;}
   return pInds.some(i=>{const el=document.getElementById("v_"+i.id);if(!el)return false;const nv=parseVal(el.value);const ov=rec&&hasVal((rec.values||{})[i.id])?String(parseVal(rec.values[i.id])):"";return nv!==ov;});
 }
 async function saveDistrict(plan,period,did,pInds){
@@ -941,12 +959,16 @@ async function saveDistrict(plan,period,did,pInds){
   if(grpLock&&!S.user.isAdmin){toast("🔒 '"+plan+"' хаалттай — илгээх боломжгүй","te");return;}
   const code=S.user.code,freq=dFreq;
   const vals={};pInds.forEach(i=>{const el=document.getElementById("v_"+i.id);if(el)vals[i.id]=parseVal(el.value);});
+  const stEl=document.getElementById("d_stat");
+  const sv=stEl?stEl.value:"";
+  if(!sv){toast("Эхлээд «Ажиллаж буй гүйцэтгэгч байгаа юу?» гэдгийг сонгоно уу","te");if(stEl)stEl.focus();return;}
+  const status=sv==="has"?{k:"has"}:{k:"none",reason:sv.slice(5),note:((document.getElementById("d_note")||{}).value||"").trim()};
   const any=Object.values(vals).some(hasVal);
-  if(!any&&!confirm("Тойрог №"+did+"-д ямар ч утга оруулаагүй байна. Хоосноор хадгалах уу? (бөглөөгүй гэж тооцогдоно)"))return;
+  if(!any&&status.k==="has"&&!confirm("Тойрог №"+did+"-д ямар ч утга оруулаагүй байна. Хоосноор хадгалах уу? (бөглөөгүй гэж тооцогдоно)"))return;
   const key=distKey(code,freq,period,did);
   const prev=S.dist[key];
   const wasFilled=distFilled(prev,pInds);
-  const rec={unit:code,freq,period,did,plan,values:Object.assign({},prev&&prev.values||{},vals),date:new Date().toLocaleString("mn-MN")};
+  const rec={unit:code,freq,period,did,plan,status,values:Object.assign({},prev&&prev.values||{},vals),date:new Date().toLocaleString("mn-MN")};
   S.dist[key]=rec;
   let fbOk=false;
   if(fbDB&&window._set){try{await window._set(window._r(fbDB,"dist/"+key),rec);fbOk=true;}catch(e){console.error("[SGA saveDistrict] Firebase FAIL:",e);}}
@@ -1637,13 +1659,15 @@ function appendDistDetail(sub,ucode,entry,inds){
   const recs=ds.map(d=>({d,r:S.dist[distKey(ucode,entry.freq,entry.period,d)]})).filter(x=>x.r);
   if(!recs.length)return;
   const shown=inds.filter(i=>recs.some(x=>hasVal((x.r.values||{})[i.id])));
-  if(!shown.length)return;
+  const anySt=recs.some(x=>x.r.status&&x.r.status.k);
+  if(!shown.length&&!anySt)return;
   const det=mk("details");det.style.marginTop="8px";
   const sm=mk("summary");sm.style.cssText="cursor:pointer;font-size:12px;color:var(--bl2)";sm.textContent="📍 Тойргоор ("+recs.length+"/"+ds.length+" тойрог бөглөгдсөн)";det.appendChild(sm);
   const w=mk("div");w.style.cssText="overflow-x:auto;margin-top:6px";
   let h="<table style='border-collapse:collapse'><tr><th style='text-align:left;padding:4px 8px;font-size:11px;border-bottom:1px solid var(--bd)'>Үзүүлэлт</th>";
   recs.forEach(x=>h+="<th style='padding:4px 8px;font-size:11px;border-bottom:1px solid var(--bd)'>№"+x.d+"</th>");
   h+="</tr>";
+  if(anySt){h+="<tr><td style='padding:4px 8px;font-size:12px;border-bottom:1px solid var(--bd)'><b>👤 Гүйцэтгэгч</b></td>";recs.forEach(x=>{const st=x.r.status;const none=st&&st.k==="none";h+="<td style='padding:4px 8px;font-size:11px;text-align:center;border-bottom:1px solid var(--bd);"+(none?"color:var(--rd)":"color:var(--gr)")+"'>"+(st&&st.k?(none?"❌ "+(st.reason||"")+(st.note?" ("+st.note+")":""):"✅ байгаа"):"")+"</td>";});h+="</tr>";}
   shown.forEach(i=>{h+="<tr><td style='padding:4px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+i.name+"</td>";recs.forEach(x=>{const v=(x.r.values||{})[i.id];h+="<td style='padding:4px 8px;font-size:12px;text-align:right;border-bottom:1px solid var(--bd)'>"+(hasVal(v)?(i.type==="text"?String(v):fN(v)):"")+"</td>";});h+="</tr>";});
   h+="</table>";w.innerHTML=h;det.appendChild(w);sub.appendChild(det);
 }
@@ -1762,16 +1786,16 @@ async function exportExcel(){
   // Тойргоор авдаг төлөвлөгөө бүрт 304 тойргийн тусдаа хуудас
   uniquePlans.filter(pl=>distMode(pl)).forEach((plan,pi)=>{
     const pInds=planGroups[plan];
-    const rows=[["Тойрог №","Нэгж код","Нэгж",...pInds.map(i=>i.name)]];
+    const rows=[["Тойрог №","Нэгж код","Нэгж","Ажиллаж буй гүйцэтгэгч","Шалтгаан / тайлбар",...pInds.map(i=>i.name)]];
     units.forEach(u=>{
       unitDists(u.code).forEach(d=>{
         let best=null;
         sel.forEach(per=>{const r=S.dist[distKey(u.code,freq,per,d)];if(r&&(!best||r.date>best.date))best=r;});
-        rows.push([d,u.code,u.name,...pInds.map(i=>{const v=best&&(best.values||{})[i.id];return hasVal(v)?(i.type==="text"?v:(isNaN(Number(v))?v:Number(v))):"";})]);
+        rows.push([d,u.code,u.name,best&&best.status&&best.status.k?(best.status.k==="has"?"Байгаа":"Байхгүй"):"",best&&best.status&&best.status.k==="none"?((best.status.reason||"")+(best.status.note?" — "+best.status.note:"")):"",...pInds.map(i=>{const v=best&&(best.values||{})[i.id];return hasVal(v)?(i.type==="text"?v:(isNaN(Number(v))?v:Number(v))):"";})]);
       });
     });
     const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:10},{wch:9},{wch:30},...pInds.map(()=>({wch:14}))];
+    ws['!cols']=[{wch:10},{wch:9},{wch:30},{wch:16},{wch:28},...pInds.map(()=>({wch:14}))];
     XLSX.utils.book_append_sheet(wb,ws,("Тойрог "+(pi+1)+" "+plan).substring(0,31));
   });
   XLSX.writeFile(wb,"ШГА_"+perLabel+"_"+freqLabel+".xlsx");
