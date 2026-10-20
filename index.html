@@ -252,6 +252,34 @@ function distProgress(unit,freq,periods,plan){
   let best=0;periods.forEach(per=>{let f=0;ds.forEach(d=>{if(distFilled(S.dist[distKey(unit,freq,per,d)],pInds))f++;});if(f>best)best=f;});
   return {filled:best,total:ds.length};
 }
+
+// Тойргийн мэдээг сервертэй (config/dist) тулгаж нэгтгэнэ. Серверт дутуу байгаа өөрийн (энэ браузерт үлдсэн) мэдээг
+// сервер рүү нөхөж оруулна. Буцаах утга: {ok:true} эсвэл {ok:false} (нөхөж оруулж чадаагүй бол).
+async function syncDist(){
+  if(!fbDB||!window._get||!S.user)return {ok:true};
+  const isAdm=!!S.user.isAdmin;
+  const snap=await window._get(window._r(fbDB,isAdm?"config/dist":"config/dist/"+S.user.code));
+  const server={};
+  if(snap&&snap.exists&&snap.exists()&&snap.val()&&typeof snap.val()==="object"){
+    const v=snap.val();
+    if(isAdm)Object.values(v).forEach(m=>{if(m&&typeof m==="object")Object.entries(m).forEach(([k,r])=>{if(r&&r.unit)server[k]=r;});});
+    else Object.entries(v).forEach(([k,r])=>{if(r&&r.unit)server[k]=r;});
+  }
+  const local=Object.assign({},S.dist);
+  Object.entries(server).forEach(([k,r])=>{const cur=S.dist[k];if(!cur||(r.ts||0)>=(cur.ts||0))S.dist[k]=r;});
+  let ok=true;
+  if(!isAdm&&window._set){
+    for(const [k,r] of Object.entries(local)){
+      if(r.unit!==S.user.code)continue;
+      const sv=server[k];
+      if(!sv||(r.ts||0)>(sv.ts||0)){
+        try{await window._set(window._r(fbDB,"config/dist/"+S.user.code+"/"+k),r);}catch(e){ok=false;console.error("[SGA syncDist] upload fail",k,e);}
+      }
+    }
+  }
+  try{localStorage.setItem("sga_dist",JSON.stringify(S.dist));}catch{}
+  return {ok};
+}
 async function savePlanModes(){
   try{localStorage.setItem("sga_planModes",JSON.stringify(S.planModes));}catch{}
   if(fbDB&&window._set){try{await window._set(window._r(fbDB,"config/planModes"),S.planModes);}catch{}}
@@ -366,7 +394,8 @@ async function initLogin(){
       if(spf&&spf.exists&&spf.exists()&&spf.val()){S.planFreqs=spf.val();try{localStorage.setItem("sga_planFreqs",JSON.stringify(S.planFreqs));}catch{}}
       const spm=await window._get(window._r(fbDB,"config/planModes"));
       if(spm&&spm.exists&&spm.exists()&&spm.val()){S.planModes=spm.val();try{localStorage.setItem("sga_planModes",JSON.stringify(S.planModes));}catch{}}
-      const stg=await window._get(window._r(fbDB,"telegramLinks"));
+      let stg=await window._get(window._r(fbDB,"config/telegramLinks"));
+      if(!(stg&&stg.exists&&stg.exists()&&stg.val()))stg=await window._get(window._r(fbDB,"telegramLinks"));
       if(stg&&stg.exists&&stg.exists()&&stg.val()){S.telegramLinks=stg.val();try{localStorage.setItem("sga_telegram",JSON.stringify(S.telegramLinks));}catch{}}
       const spd=await window._get(window._r(fbDB,"config/planDeadlines"));
       if(spd&&spd.exists&&spd.exists()&&spd.val()){S.planDeadlines=spd.val();try{localStorage.setItem("sga_planDeadlines",JSON.stringify(S.planDeadlines));}catch{}}
@@ -458,15 +487,12 @@ async function loadAllData(){
       }
     }catch(e){console.error("[SGA loadAllData] Firebase read fail:",e);}
   }
-  // 1б. Тойргийн мэдээ (Firebase: dist/)
-  if(fbDB&&window._get){
-    try{
-      const dd=await window._get(window._r(fbDB,"dist"));
-      if(dd&&dd.exists&&dd.exists()&&dd.val()&&typeof dd.val()==="object"){
-        Object.entries(dd.val()).forEach(([k,r])=>{if(r&&r.unit){const cur=S.dist[k];if(!cur||!cur.date||r.date>=cur.date)S.dist[k]=r;}});
-        try{localStorage.setItem("sga_dist",JSON.stringify(S.dist));}catch{}
-      }
-    }catch(e){console.error("[SGA loadAllData] dist read fail:",e);}
+  // 1б. Тойргийн мэдээ (Firebase: config/dist/<нэгж>/<түлхүүр>) — админ бүгдийг, нэгж зөвхөн өөрийнхийг уншина
+  if(fbDB&&window._get&&S.user){
+    window._distTick=(window._distTick||0)+1;
+    // Админы өгөгдөл том тул 5 минутад нэг, нэгж 2 минутад нэг удаа (эхний удаад заавал) тулгана
+    const every=S.user.isAdmin?10:4;
+    if(window._distTick===1||window._distTick%every===0){try{await syncDist();}catch(e){console.error("[SGA loadAllData] dist sync fail:",e);}}
   }
   // 2. GAS-аас нөөцлөн уншина
   try{
@@ -537,7 +563,7 @@ function doLogout(){
   document.getElementById("lP").value="";
 }
 
-function manualRefresh(){loadAllData();}
+function manualRefresh(){window._distTick=0;loadAllData();}
 
 // Тухайн төлөвлөгөөнд идэвхтэй хаалт байгаа эсэхийг олно (нэг freq доторх өөр өөр төлөвлөгөөнүүд тус тусдаа хаагдаж болно)
 function getPlanLock(plan){
@@ -983,10 +1009,10 @@ async function saveDistrict(plan,period,did,pInds){
   const key=distKey(code,freq,period,did);
   const prev=S.dist[key];
   const wasFilled=distFilled(prev,pInds);
-  const rec={unit:code,freq,period,did,plan,status,values:Object.assign({},prev&&prev.values||{},vals),date:new Date().toLocaleString("mn-MN")};
+  const rec={unit:code,freq,period,did,plan,status,values:Object.assign({},prev&&prev.values||{},vals),ts:Date.now(),date:new Date().toLocaleString("mn-MN")};
   S.dist[key]=rec;
   let fbOk=false;
-  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"dist/"+key),rec);fbOk=true;}catch(e){console.error("[SGA saveDistrict] Firebase FAIL:",e);}}
+  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"config/dist/"+code+"/"+key),rec);fbOk=true;}catch(e){console.error("[SGA saveDistrict] Firebase FAIL:",e);}}
   try{localStorage.setItem("sga_dist",JSON.stringify(S.dist));}catch{}
   // Шинээр бөглөсөн бол дараагийн бөглөөгүй тойрог руу автоматаар шилжинэ
   if(!wasFilled&&distFilled(rec,pInds)){
@@ -994,7 +1020,8 @@ async function saveDistrict(plan,period,did,pInds){
     if(nxt!==undefined)distSel[code+"|"+plan]=nxt;
   }
   const agg=aggregateDist(code,freq,period,pInds);
-  toast((fbOk?"💾 ":"💾 (local) ")+"Тойрог №"+did+" хадгалагдлаа ("+agg.filled+"/"+agg.total+"). Бүгдийг нь хадгалаад «Нэгжийн мэдээг илгээх» дарна уу","ts");
+  if(!fbOk)toast("⚠️ Тойрог №"+did+" серверт хадгалагдсангүй (зөвхөн энэ компьютерт үлдлээ). Интернэтээ шалгаад дахин «хадгалах» дарна уу","te");
+  else toast("💾 Тойрог №"+did+" хадгалагдлаа ("+agg.filled+"/"+agg.total+"). Бүгдийг нь хадгалаад «Нэгжийн мэдээг илгээх» дарна уу","ts");
   renderTab("data");
 }
 // Ахлах баталгаажуулж нэгжийн мэдээг илгээнэ
@@ -1002,6 +1029,8 @@ async function submitUnitDist(plan,period,pInds,dm){
   const grpLock=getPlanLock(plan);
   if(grpLock&&!S.user.isAdmin){toast("🔒 '"+plan+"' хаалттай — илгээх боломжгүй","te");return;}
   const code=S.user.code,freq=dFreq;
+  // Илгээхийн өмнө серверийн мэдээгээр шинэчилж (өөр компьютер/хүн бөглөсөн тойргийг оруулж), өөрийн мэдээг нөхөж оруулна
+  try{const r=await syncDist();if(!r.ok){toast("⚠️ Тойргийн мэдээг серверт хадгалж чадсангүй — интернэтээ шалгаад дахин оролдоно уу","te");return;}}catch(e){toast("⚠️ Серверээс тойргийн мэдээг уншиж чадсангүй — дахин оролдоно уу","te");return;}
   const agg=aggregateDist(code,freq,period,pInds);
   if(agg.filled===0){toast("Ядаж нэг тойргийг хадгална уу","te");return;}
   if(dm.requireAll&&agg.filled<agg.total){toast("Бүх тойргийг хадгалсны дараа илгээнэ ("+agg.filled+"/"+agg.total+")","te");return;}
@@ -2809,8 +2838,8 @@ async function saveTelegramLink(unitCode,url){
   try{localStorage.setItem("sga_telegram",JSON.stringify(S.telegramLinks));}catch{}
   if(fbDB&&window._set){
     try{
-      if(url)await window._set(window._r(fbDB,"telegramLinks/"+unitCode),url);
-      else await window._set(window._r(fbDB,"telegramLinks/"+unitCode),null);
+      if(url)await window._set(window._r(fbDB,"config/telegramLinks/"+unitCode),url);
+      else await window._set(window._r(fbDB,"config/telegramLinks/"+unitCode),null);
     }catch(e){console.warn("[SGA] Telegram link save FAIL:",e);}
   }
 }
