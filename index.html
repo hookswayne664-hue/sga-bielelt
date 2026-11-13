@@ -712,7 +712,9 @@ function smartDefaultPeriod(freq){
 }
 
 // ===== DATA ENTRY =====
+let dFreqInit=false;
 function tData(c){
+  if(!dFreqInit){dFreqInit=true;const act=S.activePlans||[];const has=f=>S.inds.some(i=>i.freq===f&&(i.plans||[]).some(p=>act.includes(p)));if(!has(dFreq)){const f=["week","month","quarter","year"].find(has);if(f){dFreq=f;dPer="";}}}
   const P=getPer();if(!dPer)dPer=smartDefaultPeriod(dFreq);
   const ps=dFreq==="week"?P.w:dFreq==="month"?P.mn:dFreq==="quarter"?P.q:P.yr;
   const inds=S.inds.filter(i=>i.freq===dFreq);
@@ -1082,7 +1084,9 @@ async function subDataForPlan(plan,period){
   try{api("saveData",{data:JSON.stringify(entry)});}catch{}
   try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
   toast((fbOk?"✅ ":"✅ (local) ")+"«"+plan+"» мэдээ хадгалагдлаа","ts");
+  const keepUnsent={};document.querySelectorAll("[id^='v_']").forEach(el=>{if(!Object.prototype.hasOwnProperty.call(vals,el.id.slice(2))&&el.value)keepUnsent[el.id]=el.value;});
   renderTab("data");
+  Object.entries(keepUnsent).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&!el.value&&!el.disabled)el.value=v;});
 }
 
 async function subData(){
