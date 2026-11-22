@@ -60,6 +60,7 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 .lmode{display:flex;gap:4px;padding:4px;background:#EEF2F7;border-radius:12px;margin-bottom:18px}.lmode button{flex:1;border:0;background:transparent;padding:9px 6px;border-radius:9px;font:600 13px/1.2 inherit;font-family:inherit;color:#475569;cursor:pointer}.lmode button.on{background:#fff;color:#0F766E;box-shadow:0 2px 8px rgba(15,30,54,.10)}
 .sttbl{width:100%;border-collapse:collapse;font-size:13.5px}.sttbl th,.sttbl td{padding:9px 10px;border-bottom:1px solid #E2E8F0;text-align:left;vertical-align:middle}.sttbl th{font-size:12px;color:#64748B;font-weight:600;background:#F8FAFC}.stbadge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600}.stok{background:#DCFCE7;color:#166534}.stnew{background:#FEF3C7;color:#92400E}.stoff{background:#F1F5F9;color:#64748B}.stres{margin-top:14px;padding:16px;border-radius:14px;background:#ECFDF5;border:1px solid #A7F3D0;font-size:14px;line-height:1.7}.stres b{font-size:16px}
 @media(min-width:900px){.lh1 .shine{white-space:nowrap;font-size:.8em}}
+.pwwrap{position:relative}.pwwrap input{padding-right:46px!important;width:100%;box-sizing:border-box}.pweye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:#64748B;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}.pweye:hover{background:#EEF2F7;color:#0F766E}.pweye.on{color:#0F766E}
 .fg{margin-bottom:16px}.fg label{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:8px}
 .fg select,.fg input{width:100%;min-height:48px;padding:0 14px;background:var(--bg3);border:1px solid #CBD5E1;border-radius:12px;color:var(--tx);font-size:15px;font-family:inherit}
 .fg select:focus,.fg input:focus{outline:none;border-color:#14B8A6;box-shadow:0 0 0 3px rgba(20,184,166,.2)}
@@ -259,7 +260,7 @@ tr:hover td{background:#F8FAFC}
           <div class="lmode"><button type="button" id="lmU" class="on" onclick="setLMode('unit')">Нэгжээр (ахлах)</button><button type="button" id="lmP" onclick="setLMode('person')">Шийдвэр гүйцэтгэгч</button></div>
           <div class="fg"><label for="lC">Нэгж</label><select id="lC"><option value="">— Нэгжээ сонгоно уу —</option></select></div>
           <div class="fg" id="lNg" hidden><label for="lN">Тойрог</label><select id="lN"><option value="">— Эхлээд нэгжээ сонгоно уу —</option></select></div>
-          <div class="fg"><label for="lP">Нууц үг</label><input type="password" id="lP" autocomplete="new-password" placeholder="Нууц үг" onkeydown="if(event.key==='Enter')doLogin()"></div>
+          <div class="fg"><label for="lP">Нууц үг</label><div class="pwwrap"><input type="password" id="lP" autocomplete="new-password" placeholder="Нууц үг" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" class="pweye" title="Нууц үгийг харах" aria-label="Нууц үгийг харах" onclick="togglePw(this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
           <button class="lbtn" id="lB" onclick="doLogin()">⏳ Ачаалж байна...</button>
           <div class="lerr" id="lE"></div>
           <div class="lhint">Нууц үгээ мартсан бол Төлөвлөлт, дотоод ажлын хэлтэст хандана уу</div>
@@ -787,12 +788,18 @@ function doLogout(){
   document.getElementById("LP").style.display="flex";
   document.getElementById("AP").style.display="none";
   document.getElementById("lP").value="";
+  const lp=document.getElementById("lP");if(lp.type!=="password"){const b=lp.parentElement.querySelector(".pweye");if(b)togglePw(b);lp.blur();}
 }
 
 // ===== ХУВИЙН НЭВТРЭХ ЭРХ (Firebase Authentication) =====
 // Шийдвэр гүйцэтгэгчийн эрх тойргоор: config/people/<нэгж>/<тойрог> = {name, email, rev, uid, active, history}
 // Нэвтрэх: нэгж + тойрог + нууц үг. Эрхийг ахлах (нэгжийн нэвтрэлт) нээж, нууц үгийг олгоно. Имэйл нь дотоод (sgaNN-тойрог@...).
 let LMODE="unit";
+// Нууц үгийн талбарт «нүд»: дарахад бичсэн үгээ харна, дахин дарахад нууна
+const EYE_SVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF_SVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-7-11-7a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>';
+function togglePw(btn){const inp=btn.parentElement.querySelector("input");const show=inp.type==="password";inp.type=show?"text":"password";btn.innerHTML=show?EYE_OFF_SVG:EYE_SVG;btn.classList.toggle("on",show);const t=show?"Нууц үгийг нуух":"Нууц үгийг харах";btn.title=t;btn.setAttribute("aria-label",t);inp.focus();}
+function addEye(inp){if(!inp||inp.parentElement.classList.contains("pwwrap"))return;const w=mk("div","pwwrap");inp.parentElement.insertBefore(w,inp);w.appendChild(inp);const b=mk("button","pweye");b.type="button";b.title="Нууц үгийг харах";b.setAttribute("aria-label","Нууц үгийг харах");b.innerHTML=EYE_SVG;b.onclick=()=>togglePw(b);w.appendChild(b);}
 function isExec(){return !!(S.user&&S.user.person&&S.user.person.role==="exec");}
 function setLMode(m){
   LMODE=m;
@@ -857,7 +864,7 @@ function pwChangeModal(A){
       +"<div class='mfi'><label>Шинэ нууц үгээ давтан оруулна уу</label><input type='password' id='pc2' autocomplete='new-password'></div>"
       +"<div id='pcE' style='color:#B91C1C;font-size:13px;min-height:18px'></div>"
       +"<div class='brow' style='justify-content:flex-end'><button class='btn bx' id='pcC'>Болих</button><button class='btn bp' id='pcS'>Хадгалах</button></div>";
-    document.body.appendChild(ov);setTimeout(()=>{const i=document.getElementById("pc1");if(i)i.focus();},50);
+    document.body.appendChild(ov);addEye(bx.querySelector("#pc1"));addEye(bx.querySelector("#pc2"));setTimeout(()=>{const i=document.getElementById("pc1");if(i)i.focus();},50);
     const close=v=>{ov.remove();res(v);};
     bx.querySelector("#pcC").onclick=()=>close(false);
     bx.querySelector("#pcS").onclick=async()=>{
@@ -996,7 +1003,7 @@ function myPwModal(){
     +"<div class='mfi'><label>Шинэ нууц үгээ давтан оруулна уу</label><input type='password' id='mp2' autocomplete='new-password'></div>"
     +"<div id='mpE' style='color:#B91C1C;font-size:13px;min-height:18px'></div>"
     +"<div class='brow' style='justify-content:flex-end'><button class='btn bx' id='mpC'>Болих</button><button class='btn bp' id='mpS'>Хадгалах</button></div>";
-  document.body.appendChild(ov);
+  document.body.appendChild(ov);addEye(bx.querySelector("#mp1"));addEye(bx.querySelector("#mp2"));
   bx.querySelector("#mpC").onclick=()=>ov.remove();
   bx.querySelector("#mpS").onclick=async()=>{
     const a=bx.querySelector("#mp1").value,b=bx.querySelector("#mp2").value,e=bx.querySelector("#mpE");e.textContent="";
