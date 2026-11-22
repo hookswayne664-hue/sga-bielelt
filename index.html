@@ -60,6 +60,9 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 .lmode{display:flex;gap:4px;padding:4px;background:#EEF2F7;border-radius:12px;margin-bottom:18px}.lmode button{flex:1;border:0;background:transparent;padding:9px 6px;border-radius:9px;font:600 13px/1.2 inherit;font-family:inherit;color:#475569;cursor:pointer}.lmode button.on{background:#fff;color:#0F766E;box-shadow:0 2px 8px rgba(15,30,54,.10)}
 .sttbl{width:100%;border-collapse:collapse;font-size:13.5px}.sttbl th,.sttbl td{padding:9px 10px;border-bottom:1px solid #E2E8F0;text-align:left;vertical-align:middle}.sttbl th{font-size:12px;color:#64748B;font-weight:600;background:#F8FAFC}.stbadge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600}.stok{background:#DCFCE7;color:#166534}.stnew{background:#FEF3C7;color:#92400E}.stoff{background:#F1F5F9;color:#64748B}.stres{margin-top:14px;padding:16px;border-radius:14px;background:#ECFDF5;border:1px solid #A7F3D0;font-size:14px;line-height:1.7}.stres b{font-size:16px}
 @media(min-width:900px){.lh1 .shine{white-space:nowrap;font-size:.8em}}
+.sndbtn{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:900;width:44px;height:44px;border-radius:50%;border:1px solid #CBD5E1;background:rgba(255,255,255,.92);box-shadow:0 6px 18px rgba(15,30,54,.14);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}.sndbtn:hover{transform:scale(1.06)}
+.sndpan{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(68px + env(safe-area-inset-bottom,0px));z-index:900;background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 14px 34px rgba(15,30,54,.16);padding:10px 14px;display:flex;flex-direction:column;gap:8px;font-size:14px}.sndpan label{display:flex;gap:8px;align-items:center;cursor:pointer;white-space:nowrap}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:2000;overflow:hidden}.confetti i{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;animation-name:cfall;animation-timing-function:cubic-bezier(.25,.6,.4,1);animation-fill-mode:forwards}@keyframes cfall{to{top:105%;transform:translateX(40px) rotate(720deg)}}
 .pwwrap{position:relative}.pwwrap input{padding-right:46px!important;width:100%;box-sizing:border-box}.pweye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:#64748B;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}.pweye:hover{background:#EEF2F7;color:#0F766E}.pweye.on{color:#0F766E}
 .fg{margin-bottom:16px}.fg label{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:8px}
 .fg select,.fg input{width:100%;min-height:48px;padding:0 14px;background:var(--bg3);border:1px solid #CBD5E1;border-radius:12px;color:var(--tx);font-size:15px;font-family:inherit}
@@ -488,7 +491,7 @@ function fV(v,t){if(v===undefined||v===null||v==="")return"";if(t==="money")retu
 function fmtInput(el){const r=(el.value+"").replace(/[^0-9]/g,"");el.value=r?parseInt(r).toLocaleString("en-US"):"";}
 function parseVal(v){return(v+"").replace(/,/g,"");}
 function mk(t,c){const e=document.createElement(t);if(c)e.className=c;return e;}
-function toast(m,c){const t=document.getElementById("tst");t.textContent=m;t.className="toast show "+(c||"");clearTimeout(t._t);t._t=setTimeout(()=>{t.className="toast";},3000);}
+function toast(m,c){try{if(c==="te")SND.play("err");}catch{}const t=document.getElementById("tst");t.textContent=m;t.className="toast show "+(c||"");clearTimeout(t._t);t._t=setTimeout(()=>{t.className="toast";},3000);}
 function getPer(){
   const n=new Date(),y=n.getFullYear(),m=n.getMonth()+1;
   const w=[],mn=[],q=[],yr=[];
@@ -780,6 +783,7 @@ function enterApp(u){
   }
   renderTab("home");
   updPwBtn();
+  try{SND.play("login");}catch{}
 }
 
 function doLogout(){
@@ -1156,6 +1160,66 @@ function calForm(it){
     try{await dbSet("config/calendar/"+id,{plan,freq,period,asOf:asOf||"",due,note,by:S.user.code,updated:new Date().toISOString()});ov.remove();toast("✅ Хадгалагдлаа","ts");renderTab("calendar");}
     catch(x){e.textContent="Хадгалж чадсангүй: "+(x&&x.message||x);}
   };
+}
+
+// ===== ДУУ (Web Audio — файлгүй, таван эгшигт аялгуу) =====
+// Эффект: анхдагчаар асаалттай. Фон ая: анхдагчаар унтраалттай. Сонголт энэ хөтөчид хадгалагдана.
+const SND=(()=>{
+  const P={D4:293.66,E4:329.63,Fs4:369.99,A4:440,B4:493.88,D5:587.33,E5:659.25,Fs5:739.99,A5:880,B5:987.77,D6:1174.66,E6:1318.51};
+  const PENTA=[P.D5,P.E5,P.Fs5,P.A5,P.B5,P.D6];
+  const get=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:v==="1";}catch{return d;}};
+  const set=(k,v)=>{try{localStorage.setItem(k,v?"1":"0");}catch{}};
+  let ctx=null,master=null,sfx=get("sga_sfx",true),music=get("sga_music",false),mus=null;
+  const ac=()=>{if(!ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;ctx=new C();master=ctx.createGain();master.gain.value=.55;master.connect(ctx.destination);}if(ctx.state==="suspended")ctx.resume();return ctx;};
+  // Хонхон өнгөтэй нэг нот (үндсэн + 2, 3 дахь давтамж, зөөлөн бууралт)
+  const bell=(f,t,dur,vol,out)=>{const c=ac();if(!c)return;const o=out||master;
+    [[1,1],[2,.32],[3,.12]].forEach(([m,a])=>{const os=c.createOscillator(),g=c.createGain();os.type=m===1?"triangle":"sine";os.frequency.value=f*m;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol*a,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dur*(m===1?1:.6));
+      os.connect(g);g.connect(o);os.start(t);os.stop(t+dur+.05);});};
+  const seq=(notes,gap,dur,vol)=>{const c=ac();if(!c)return;const t0=c.currentTime+.02;notes.forEach((f,i)=>bell(f,t0+i*gap,dur,vol));};
+  const FX={
+    login:()=>seq([P.D5,P.A5],.16,.9,.18),
+    send:()=>seq([P.A5,P.B5,P.D6],.09,1.1,.16),
+    done:()=>{seq([P.D5,P.E5,P.Fs5,P.A5,P.B5,P.D6],.08,1.4,.15);const c=ac();if(c){const t=c.currentTime+.6;[P.D5,P.Fs5,P.A5].forEach(f=>bell(f,t,2.2,.07));}},
+    ting:()=>seq([P.E6],0,.7,.12),
+    err:()=>{const c=ac();if(!c)return;const t=c.currentTime+.02,o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.setValueAtTime(P.A4,t);o.frequency.exponentialRampToValueAtTime(P.Fs4,t+.22);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.12,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.35);o.connect(g);g.connect(master);o.start(t);o.stop(t+.4);}
+  };
+  function play(k){if(!sfx||!FX[k])return;try{FX[k]();}catch{}}
+  // Фон ая: намуухан доод дуу (D, A) + хааяа таван эгшгийн хонхон нот
+  function startMusic(){const c=ac();if(!c||mus)return;const g=c.createGain();g.gain.value=0;g.connect(master);g.gain.linearRampToValueAtTime(.5,c.currentTime+3);
+    const lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=900;lp.connect(g);
+    const drones=[P.D4/2,P.A4/2,P.D4].map((f,i)=>{const o=c.createOscillator(),og=c.createGain(),l=c.createOscillator(),lg=c.createGain();o.type="sine";o.frequency.value=f;og.gain.value=[.09,.06,.035][i];l.frequency.value=.07+i*.03;lg.gain.value=og.gain.value*.5;l.connect(lg);lg.connect(og.gain);o.connect(og);og.connect(lp);o.start();l.start();return[o,l];});
+    let alive=true;const tick=()=>{if(!alive)return;const n=1+Math.floor(Math.random()*3);let t=c.currentTime+.05;for(let i=0;i<n;i++){bell(PENTA[Math.floor(Math.random()*PENTA.length)]/(Math.random()<.5?2:1),t,2.6,.05,lp);t+=.35+Math.random()*.4;}mus.timer=setTimeout(tick,2600+Math.random()*2600);};
+    mus={g,drones,stop(){alive=false;clearTimeout(this.timer);const t=c.currentTime;g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(0,t+1.2);setTimeout(()=>drones.forEach(d=>d.forEach(x=>{try{x.stop();}catch{}})),1400);}};tick();}
+  function stopMusic(){if(mus){mus.stop();mus=null;}}
+  function setSfx(v){sfx=v;set("sga_sfx",v);if(v)play("ting");ui();}
+  function setMusic(v){music=v;set("sga_music",v);v?startMusic():stopMusic();ui();}
+  // Хөтөч дуу тоглуулахыг зөвхөн хэрэглэгч дарсны дараа зөвшөөрдөг
+  document.addEventListener("pointerdown",()=>{ac();if(music)startMusic();},{once:true});
+  // Булангийн товч
+  let btn,pan;
+  function ui(){if(!btn)return;btn.innerHTML=(sfx||music)?"🔊":"🔇";btn.title="Дуу: "+(sfx?"эффект асаалттай":"эффект унтраалттай")+", "+(music?"фон ая тоглож байна":"фон ая унтраалттай");if(pan){pan.querySelector("#sndS").checked=sfx;pan.querySelector("#sndM").checked=music;}}
+  function mount(){btn=document.createElement("button");btn.type="button";btn.className="sndbtn";btn.setAttribute("aria-label","Дууны тохиргоо");
+    pan=document.createElement("div");pan.className="sndpan";pan.hidden=true;
+    pan.innerHTML="<label><input type='checkbox' id='sndM'> 🎵 Фон ая</label><label><input type='checkbox' id='sndS'> 🔔 Дууны эффект</label>";
+    btn.onclick=e=>{e.stopPropagation();pan.hidden=!pan.hidden;};pan.onclick=e=>e.stopPropagation();document.addEventListener("click",()=>{pan.hidden=true;});
+    pan.querySelector("#sndS").onchange=e=>setSfx(e.target.checked);pan.querySelector("#sndM").onchange=e=>setMusic(e.target.checked);
+    document.body.appendChild(pan);document.body.appendChild(btn);ui();}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();
+  return{play,setSfx,setMusic};
+})();
+// Бүх төлөвлөгөөгөө илгээж дуусахад гялбаа + ялалтын ая
+function celebrate(){
+  SND.play("done");
+  try{if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;}catch{}
+  const cols=["#14B8A6","#3B82F6","#F59E0B","#EC4899","#8B5CF6","#10B981"];const box=document.createElement("div");box.className="confetti";
+  for(let i=0;i<70;i++){const s=document.createElement("i");s.style.cssText="left:"+(Math.random()*100)+"%;background:"+cols[i%cols.length]+";animation-delay:"+(Math.random()*.6)+"s;animation-duration:"+(2+Math.random()*1.4)+"s;transform:rotate("+(Math.random()*360)+"deg)";box.appendChild(s);}
+  document.body.appendChild(box);setTimeout(()=>box.remove(),4200);
+}
+function checkAllSent(){
+  try{if(!S.user||S.user.isAdmin||S.user.person)return;const pr=computeProgress(S.data||[]);const mine=pr.rows.filter(r=>r.elig.has(S.user.code));
+    if(!S._cel&&mine.length&&mine.every(r=>r.sent.has(S.user.code))){S._cel=1;celebrate();toast("🎉 Бүх төлөвлөгөөний мэдээгээ илгээж дууслаа. Баярлалаа!","ts");return true;}}catch{}
+  return false;
 }
 
 function manualRefresh(){window._distTick=0;loadAllData();}
@@ -1924,7 +1988,7 @@ async function subDataForPlan(plan,period){
   }
   try{api("saveData",{data:JSON.stringify(entry)});}catch{}
   try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
-  toast((fbOk?"✅ ":"✅ (local) ")+"«"+plan+"» мэдээ хадгалагдлаа","ts");
+  if(!checkAllSent()){toast((fbOk?"✅ ":"✅ (local) ")+"«"+plan+"» мэдээ хадгалагдлаа","ts");SND.play("send");}
   const keepUnsent={};document.querySelectorAll("[id^='v_']").forEach(el=>{if(!Object.prototype.hasOwnProperty.call(vals,el.id.slice(2))&&el.value)keepUnsent[el.id]=el.value;});
   renderTab("data");
   Object.entries(keepUnsent).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&!el.value&&!el.disabled)el.value=v;});
@@ -1966,7 +2030,7 @@ async function subData(){
     api("saveData",{data:JSON.stringify(entry)});
   }
   try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
-  toast(fbOkAll?"✅ Мэдээ хадгалагдлаа!":"✅ Мэдээ хадгалагдлаа (local)","ts");
+  if(!checkAllSent()){toast(fbOkAll?"✅ Мэдээ хадгалагдлаа!":"✅ Мэдээ хадгалагдлаа (local)","ts");SND.play("send");}
   renderTab("data");
 }
 
@@ -2187,7 +2251,7 @@ async function pollChat(){
       r.msgs.forEach(m=>{if(!chatMsgs.find(x=>x.id===m.id))chatMsgs.push(m);});
       chatLastId=r.lastId||chatLastId;
       if(S.tab==="chat")renderChatMsgs();
-      else{S.unread+=r.msgs.length;uBadge(S.unread);}
+      else{S.unread+=r.msgs.length;uBadge(S.unread);try{SND.play("ting");}catch{}}
     }
   }catch{}
 }
