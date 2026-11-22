@@ -57,6 +57,8 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 .o3{width:620px;height:620px;margin:-310px 0 0 -310px;animation:spin 120s linear infinite;border-color:rgba(15,30,54,.08)}
 .lbox{position:relative;width:100%;max-width:400px;padding:34px 32px;border-radius:28px;background:rgba(255,255,255,.88);border:1px solid var(--bd);box-shadow:0 30px 70px rgba(15,30,54,.14);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .logo{margin-bottom:20px}.logo h1{font-size:24px;font-weight:800;color:var(--tx)}.logo p{color:var(--tx2);font-size:14px;margin-top:6px}
+.lmode{display:flex;gap:4px;padding:4px;background:#EEF2F7;border-radius:12px;margin-bottom:18px}.lmode button{flex:1;border:0;background:transparent;padding:9px 6px;border-radius:9px;font:600 13px/1.2 inherit;font-family:inherit;color:#475569;cursor:pointer}.lmode button.on{background:#fff;color:#0F766E;box-shadow:0 2px 8px rgba(15,30,54,.10)}
+.sttbl{width:100%;border-collapse:collapse;font-size:13.5px}.sttbl th,.sttbl td{padding:9px 10px;border-bottom:1px solid #E2E8F0;text-align:left;vertical-align:middle}.sttbl th{font-size:12px;color:#64748B;font-weight:600;background:#F8FAFC}.stbadge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600}.stok{background:#DCFCE7;color:#166534}.stnew{background:#FEF3C7;color:#92400E}.stoff{background:#F1F5F9;color:#64748B}.stres{margin-top:14px;padding:16px;border-radius:14px;background:#ECFDF5;border:1px solid #A7F3D0;font-size:14px;line-height:1.7}.stres b{font-size:16px}
 .fg{margin-bottom:16px}.fg label{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:8px}
 .fg select,.fg input{width:100%;min-height:48px;padding:0 14px;background:var(--bg3);border:1px solid #CBD5E1;border-radius:12px;color:var(--tx);font-size:15px;font-family:inherit}
 .fg select:focus,.fg input:focus{outline:none;border-color:#14B8A6;box-shadow:0 0 0 3px rgba(20,184,166,.2)}
@@ -253,7 +255,9 @@ tr:hover td{background:#F8FAFC}
         </div>
         <div class="lbox">
           <div class="logo"><h1>Нэвтрэх</h1><p>Нэгжээ сонгоод нууц үгээ оруулна уу</p></div>
+          <div class="lmode"><button type="button" id="lmU" class="on" onclick="setLMode('unit')">Нэгжээр</button><button type="button" id="lmP" onclick="setLMode('person')">Хувийн эрхээр</button></div>
           <div class="fg"><label for="lC">Нэгж</label><select id="lC"><option value="">— Нэгжээ сонгоно уу —</option></select></div>
+          <div class="fg" id="lNg" hidden><label for="lN">Нэвтрэх дугаар</label><input id="lN" inputmode="numeric" autocomplete="off" placeholder="Жишээ нь: 3" onkeydown="if(event.key==='Enter')doLogin()"></div>
           <div class="fg"><label for="lP">Нууц үг</label><input type="password" id="lP" autocomplete="new-password" placeholder="Нууц үг" onkeydown="if(event.key==='Enter')doLogin()"></div>
           <button class="lbtn" id="lB" onclick="doLogin()">⏳ Ачаалж байна...</button>
           <div class="lerr" id="lE"></div>
@@ -533,7 +537,7 @@ async function initFB(){
     const l=async()=>{
       const{initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
       const{getDatabase,ref,get,set,onValue}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
-      const app=initializeApp(FC);fbDB=getDatabase(app);
+      const app=initializeApp(FC);window._fbApp=app;fbDB=getDatabase(app);
       window._r=ref;window._get=get;window._set=set;window._onVal=onValue;
     };
     await Promise.race([l(),t]);
@@ -702,6 +706,7 @@ async function loadAllData(){
 }
 
 function doLogin(){
+  if(LMODE==="person")return doPersonLogin();
   const code=document.getElementById("lC").value,pwd=document.getElementById("lP").value;
   const err=document.getElementById("lE");err.textContent="";
   if(!code){err.textContent="Нэгжээ сонгоно уу!";return;}
@@ -710,10 +715,13 @@ function doLogin(){
   if(!u||u.disabled){err.textContent="Нэгж олдсонгүй!";return;}
   const correctPwd=S.pwds.hasOwnProperty(code)&&S.pwds[code]!==0&&S.pwds[code]!==""?S.pwds[code]:u.pwd;
   if(pwd!==String(correctPwd)){err.textContent="Нууц үг буруу!";return;}
+  enterApp(u);
+}
+function enterApp(u){
   S.user=u;
   document.getElementById("LP").style.display="none";
   document.getElementById("AP").style.display="block";
-  document.getElementById("nU").textContent=u.code+" · "+u.name;
+  document.getElementById("nU").textContent=u.code+" · "+u.name+(u.person?" · "+u.person.name:"");
   const rb=document.getElementById("btnRefresh");if(rb)rb.style.display=u.isAdmin?"inline-block":"none";
   renderTabs();
   if(u.isAdmin){
@@ -750,9 +758,173 @@ function doLogin(){
 
 function doLogout(){
   S.user=null;stopChat();
+  if(_authMod){try{_authMod.signOut(_authMod.auth);}catch{}}
   document.getElementById("LP").style.display="flex";
   document.getElementById("AP").style.display="none";
   document.getElementById("lP").value="";
+}
+
+// ===== ХУВИЙН НЭВТРЭХ ЭРХ (Firebase Authentication) =====
+// Эрхийн бүртгэл: config/people/<нэгж>/<дугаар> = {name, role, email, rev, uid, active, mustChange}
+// Нэвтрэх: нэгж + дугаар + нууц үг. Имэйл нь дотоод (sgaNN-дугаар@...) — хэрэглэгч мэдэх шаардлагагүй.
+let LMODE="unit";
+const ROLE_MN={ahlah:"Ахлах шийдвэр гүйцэтгэгч",exec:"Шийдвэр гүйцэтгэгч"};
+function isExec(){return !!(S.user&&S.user.person&&S.user.person.role==="exec");}
+function setLMode(m){
+  LMODE=m;
+  document.getElementById("lmU").classList.toggle("on",m==="unit");
+  document.getElementById("lmP").classList.toggle("on",m==="person");
+  document.getElementById("lNg").hidden=m!=="person";
+  document.getElementById("lE").textContent="";
+}
+function pEmail(code,no,rev){return "sga"+String(code).replace(/\D/g,"")+"-"+no+(rev?"-r"+rev:"")+"@shga-bilelt.firebaseapp.com";}
+let _authMod=null;
+async function authMod(){
+  if(_authMod)return _authMod;
+  const A=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
+  const{initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+  let sec;try{sec=initializeApp(FC,"creator");}catch{const{getApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");sec=getApp("creator");}
+  _authMod={auth:A.getAuth(window._fbApp),sec:A.getAuth(sec),signIn:A.signInWithEmailAndPassword,create:A.createUserWithEmailAndPassword,updatePassword:A.updatePassword,signOut:A.signOut};
+  return _authMod;
+}
+function tmpPwd(){const a=new Uint32Array(1);crypto.getRandomValues(a);return String(100000+a[0]%900000);}
+async function doPersonLogin(){
+  const code=document.getElementById("lC").value,no=String(document.getElementById("lN").value||"").trim(),pwd=document.getElementById("lP").value;
+  const err=document.getElementById("lE"),btn=document.getElementById("lB");err.textContent="";
+  if(!code){err.textContent="Нэгжээ сонгоно уу!";return;}
+  if(!/^\d{1,3}$/.test(no)){err.textContent="Нэвтрэх дугаараа оруулна уу!";return;}
+  if(!pwd){err.textContent="Нууц үг оруулна уу!";return;}
+  const u=S.units.find(x=>x.code===code&&!x.isAdmin&&!x.disabled);
+  if(!u){err.textContent="Нэгж олдсонгүй!";return;}
+  if(!fbDB||!window._get){err.textContent="Сервертэй холбогдож чадсангүй. Хуудсаа дахин ачаална уу.";return;}
+  const old=btn.textContent;btn.disabled=true;btn.textContent="⏳ Шалгаж байна...";
+  try{
+    const s=await window._get(window._r(fbDB,"config/people/"+code+"/"+no));
+    const p=s&&s.exists&&s.exists()?s.val():null;
+    if(!p||!p.email){err.textContent="Энэ нэгжид ийм дугаартай эрх алга.";return;}
+    if(p.active===false){err.textContent="Энэ эрх идэвхгүй болсон байна. Ахлахдаа хандана уу.";return;}
+    const A=await authMod();let cr;
+    try{cr=await A.signIn(A.auth,p.email,pwd);}catch(e){err.textContent=/too-many/.test(e&&e.code||"")?"Олон удаа буруу оруулсан тул түр хүлээгээд дахин оролдоно уу.":"Нууц үг буруу!";return;}
+    const base="config/people/"+code+"/"+no;
+    if(p.uid!==cr.user.uid){try{await window._set(window._r(fbDB,base+"/uid"),cr.user.uid);}catch{}}
+    if(p.mustChange){
+      const ok=await pwChangeModal(A);
+      if(!ok){try{await A.signOut(A.auth);}catch{}err.textContent="Шинэ нууц үгээ сонгосны дараа нэвтэрнэ.";return;}
+      try{await window._set(window._r(fbDB,base+"/mustChange"),false);}catch{}
+    }
+    try{await window._set(window._r(fbDB,base+"/lastLogin"),new Date().toISOString());}catch{}
+    enterApp(Object.assign({},u,{person:{no:no,name:p.name,role:p.role||"exec"}}));
+  }catch(e){err.textContent="Алдаа гарлаа: "+(e&&e.message||e);}
+  finally{btn.disabled=false;btn.textContent=old;}
+}
+function pwChangeModal(A){
+  return new Promise(res=>{
+    const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.width="420px";ov.appendChild(bx);
+    bx.innerHTML="<h3>Өөрийн нууц үгийг сонгоно уу</h3><p style='font-size:13px;color:#64748B;margin:0 0 14px'>Түр нууц үгийг зөвхөн нэг удаа ашиглана. Өөрийн санахад хялбар, бусдад мэдэгдэхгүй нууц үгийг (6-аас доошгүй тэмдэгт) сонгоно уу.</p>"
+      +"<div class='mfi'><label>Шинэ нууц үг</label><input type='password' id='pc1' autocomplete='new-password'></div>"
+      +"<div class='mfi'><label>Шинэ нууц үгээ давтан оруулна уу</label><input type='password' id='pc2' autocomplete='new-password'></div>"
+      +"<div id='pcE' style='color:#B91C1C;font-size:13px;min-height:18px'></div>"
+      +"<div class='brow' style='justify-content:flex-end'><button class='btn bx' id='pcC'>Болих</button><button class='btn bp' id='pcS'>Хадгалах</button></div>";
+    document.body.appendChild(ov);setTimeout(()=>{const i=document.getElementById("pc1");if(i)i.focus();},50);
+    const close=v=>{ov.remove();res(v);};
+    bx.querySelector("#pcC").onclick=()=>close(false);
+    bx.querySelector("#pcS").onclick=async()=>{
+      const a=bx.querySelector("#pc1").value,b=bx.querySelector("#pc2").value,e=bx.querySelector("#pcE");e.textContent="";
+      if(a.length<6){e.textContent="6-аас доошгүй тэмдэгт оруулна уу.";return;}
+      if(a!==b){e.textContent="Хоёр нууц үг таарахгүй байна.";return;}
+      try{await A.updatePassword(A.auth.currentUser,a);toast("✅ Нууц үг шинэчлэгдлээ","ts");close(true);}catch(x){e.textContent="Хадгалж чадсангүй: "+(x&&x.code||x);}
+    };
+  });
+}
+async function loadPeople(unit){
+  if(!fbDB||!window._get)return null;
+  const s=await window._get(window._r(fbDB,"config/people"+(unit?"/"+unit:"")));
+  return s&&s.exists&&s.exists()?(s.val()||{}):{};
+}
+async function issuePerson(unit,name,role,no){
+  const A=await authMod();
+  const all=await loadPeople(unit)||{};
+  const isNew=!no;
+  if(isNew){const nums=Object.keys(all).map(Number).filter(n=>n>0);no=String((nums.length?Math.max(...nums):0)+1);}
+  const prev=all[no]||{};
+  let rev=isNew?0:(prev.rev||0)+1,cr=null,email="";const pw=tmpPwd();
+  for(let t=0;t<6&&!cr;t++){
+    email=pEmail(unit,no,rev);
+    try{cr=await A.create(A.sec,email,pw);}
+    catch(e){if(/email-already-in-use/.test(e&&e.code||""))rev++;else throw e;}
+  }
+  if(!cr)throw new Error("Эрх үүсгэж чадсангүй");
+  try{await A.signOut(A.sec);}catch{}
+  const now=new Date().toISOString();
+  const rec=Object.assign({},prev,{name:name||prev.name,role:role||prev.role||"exec",email,rev,uid:cr.user.uid,active:true,mustChange:true,updated:now,by:S.user.code});
+  if(isNew)rec.created=now;
+  await window._set(window._r(fbDB,"config/people/"+unit+"/"+no),rec);
+  return{no,pw,name:rec.name};
+}
+function staffResult(box,unit,r,reset){
+  const un=(S.units.find(x=>x.code===unit)||{}).name||unit;
+  const txt="ШГА Биелэлт — "+(reset?"нууц үг шинэчлэгдлээ":"нэвтрэх эрх")+"\n"+r.name+"\nНэгж: "+unit+" · "+un+"\nНэвтрэх дугаар: "+r.no+"\nТүр нууц үг: "+r.pw+"\nСайтын «Хувийн эрхээр» хэсгээр нэвтэрч, өөрийн нууц үгийг сонгоно.";
+  box.innerHTML="<div class='stres'>✅ <b>"+esc(r.name)+"</b>-д "+(reset?"шинэ түр нууц үг":"эрх")+" үүслээ<br>Нэгж: <b>"+esc(unit)+"</b> · Нэвтрэх дугаар: <b>"+esc(r.no)+"</b> · Түр нууц үг: <b>"+esc(r.pw)+"</b>"
+    +"<div style='font-size:12.5px;color:#475569;margin-top:6px'>Энэ түр нууц үгийг дахин харах боломжгүй тул одоо хуулж тухайн хүнд өгнө үү. Эхний удаа нэвтрэхэд өөрийн нууц үгийг сонгоно.</div></div>";
+  const b=mk("button","btn bp");b.style.marginTop="10px";b.textContent="📋 Заавар хуулах";
+  b.onclick=()=>{const done=()=>toast("✅ Хуулагдлаа","ts");try{navigator.clipboard.writeText(txt).then(done,()=>prompt("Хуулна уу:",txt));}catch{prompt("Хуулна уу:",txt);}};
+  box.firstChild.appendChild(b);
+}
+async function tStaff(c){
+  const isA=!!S.user.isAdmin;
+  const head=mk("div","card");
+  head.innerHTML="<h3 style='margin:0 0 6px'>👥 Алба хаагчдын нэвтрэх эрх</h3><p style='margin:0;font-size:13.5px;color:#475569;line-height:1.6'>Шийдвэр гүйцэтгэгч, ахлах бүрт өөрийн нэвтрэх эрх үүсгэнэ. Нэвтрэх дугаар, түр нууц үгийг тухайн хүнд өгөхөд тэр «Хувийн эрхээр» хэсгээр нэвтэрч, өөрийн нууц үгийг сонгоно. Эрхийг устгадаггүй, зөвхөн идэвхгүй болгоно.</p>";
+  c.appendChild(head);
+  const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+  let unit=isA?(S._staffUnit||units[0].code):S.user.code;
+  const card=mk("div","card");c.appendChild(card);
+  card.innerHTML="<div style='color:#64748B'>⏳ Ачаалж байна...</div>";
+  let all;try{all=await loadPeople(isA?"":unit);}catch{all=null;}
+  if(all==null){card.innerHTML="<div style='color:#B91C1C'>Сервертэй холбогдож чадсангүй.</div>";return;}
+  const people=isA?(all[unit]||{}):all;
+  card.innerHTML="";
+  if(isA){
+    const row=mk("div","brow");row.style.marginBottom="12px";
+    const sel=mk("select");sel.style.cssText="padding:9px 12px;border:1px solid #CBD5E1;border-radius:10px;font-family:inherit;min-width:260px;max-width:100%";
+    units.forEach(u=>{const o=mk("option");o.value=u.code;const n=Object.values(all[u.code]||{}).filter(p=>p.active!==false).length;o.textContent=u.code+" — "+u.name+(n?" ("+n+")":"");if(u.code===unit)o.selected=true;sel.appendChild(o);});
+    sel.onchange=()=>{S._staffUnit=sel.value;renderTab("staff");};
+    const tot=Object.values(all).reduce((s,o)=>s+Object.values(o||{}).filter(p=>p.active!==false).length,0);
+    const info=mk("span");info.style.cssText="font-size:13px;color:#64748B";info.textContent="Нийт идэвхтэй эрх: "+tot;
+    row.appendChild(sel);row.appendChild(info);card.appendChild(row);
+  }
+  const keys=Object.keys(people).sort((a,b)=>Number(a)-Number(b));
+  const wrap=mk("div");wrap.style.overflowX="auto";
+  if(keys.length){
+    const t=mk("table","sttbl");t.innerHTML="<thead><tr><th>Дугаар</th><th>Овог нэр</th><th>Үүрэг</th><th>Төлөв</th><th></th></tr></thead>";
+    const tb=mk("tbody");
+    keys.forEach(no=>{const p=people[no]||{};const tr=mk("tr");
+      const st=p.active===false?"<span class='stbadge stoff'>Идэвхгүй</span>":p.mustChange?"<span class='stbadge stnew'>Нэвтрээгүй</span>":"<span class='stbadge stok'>Идэвхтэй</span>";
+      tr.innerHTML="<td><b>"+esc(no)+"</b></td><td>"+esc(p.name||"")+"</td><td>"+esc(ROLE_MN[p.role]||p.role||"")+"</td><td>"+st+"</td><td style='white-space:nowrap;text-align:right'></td>";
+      const act=tr.lastElementChild;
+      const br=mk("button","btn bx");br.textContent="🔑 Нууц үг";br.title="Шинэ түр нууц үг олгох";
+      br.onclick=async()=>{br.disabled=true;br.textContent="⏳";try{const r=await issuePerson(unit,p.name,p.role,no);S._staffMsg={unit,r,reset:true};renderTab("staff");}catch(e){toast("❌ "+(e&&e.message||e),"te");br.disabled=false;br.textContent="🔑 Нууц үг";}};
+      const ba=mk("button","btn bx");ba.style.marginLeft="6px";ba.textContent=p.active===false?"▶ Идэвхжүүлэх":"⏸ Идэвхгүй";
+      ba.onclick=async()=>{ba.disabled=true;try{await window._set(window._r(fbDB,"config/people/"+unit+"/"+no+"/active"),p.active===false);renderTab("staff");}catch{toast("❌ Хадгалж чадсангүй","te");ba.disabled=false;}};
+      act.appendChild(br);act.appendChild(ba);tb.appendChild(tr);});
+    t.appendChild(tb);wrap.appendChild(t);
+  }else{wrap.innerHTML="<div style='color:#64748B;font-size:13.5px;padding:6px 0 4px'>Одоогоор эрх үүсгээгүй байна.</div>";}
+  card.appendChild(wrap);
+  const res=mk("div");res.id="stRes";
+  const add=mk("div","card");
+  add.innerHTML="<h4 style='margin:0 0 10px'>➕ Шинэ эрх үүсгэх"+(isA?" — "+esc(unit):"")+"</h4><div style='display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end'>"
+    +"<div style='flex:2 1 220px;min-width:0'><label style='display:block;font-size:12.5px;font-weight:600;margin-bottom:6px'>Овог нэр</label><input id='stN' placeholder='Жишээ нь: Б.Бат' style='width:100%;padding:9px 12px;border:1px solid #CBD5E1;border-radius:10px;font-family:inherit;box-sizing:border-box'></div>"
+    +"<div style='flex:1 1 200px;min-width:0'><label style='display:block;font-size:12.5px;font-weight:600;margin-bottom:6px'>Үүрэг</label><select id='stR' style='width:100%;padding:9px 12px;border:1px solid #CBD5E1;border-radius:10px;font-family:inherit'><option value='exec'>Шийдвэр гүйцэтгэгч</option><option value='ahlah'>Ахлах шийдвэр гүйцэтгэгч</option></select></div>"
+    +"<button class='btn bp' id='stAdd'>Эрх үүсгэх</button></div>";
+  add.appendChild(res);c.appendChild(add);
+  if(S._staffMsg&&S._staffMsg.unit===unit){staffResult(res,unit,S._staffMsg.r,S._staffMsg.reset);S._staffMsg=null;setTimeout(()=>res.scrollIntoView({behavior:"smooth",block:"center"}),50);}
+  add.querySelector("#stAdd").onclick=async()=>{
+    const nm=add.querySelector("#stN").value.trim(),rl=add.querySelector("#stR").value,b=add.querySelector("#stAdd");
+    if(nm.length<2){toast("Овог нэрээ оруулна уу","te");return;}
+    if(Object.values(people).some(p=>p&&p.active!==false&&String(p.name||"").trim().toLowerCase()===nm.toLowerCase())&&!confirm(nm+" нэртэй эрх аль хэдийн байна. Дахин үүсгэх үү?"))return;
+    b.disabled=true;b.textContent="⏳ Үүсгэж байна...";
+    try{const r=await issuePerson(unit,nm,rl,null);S._staffMsg={unit,r,reset:false};renderTab("staff");}
+    catch(e){toast("❌ "+(e&&e.message||e),"te");b.disabled=false;b.textContent="Эрх үүсгэх";}
+  };
 }
 
 function manualRefresh(){window._distTick=0;loadAllData();}
@@ -1009,8 +1181,9 @@ function tHome(c){
 }
 function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];tabs.push({id:"home",l:"🏠 Нүүр"});
-  if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
-  tabs.push({id:"chat",l:"💬 Чат"});
+  if(isExec()){tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
+  else if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
+  if(!isExec()){tabs.push({id:"chat",l:"💬 Чат"});tabs.push({id:"staff",l:"👥 Алба хаагчид"});}
   if(isA){tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"survey",l:"📋 Судалгаа"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"gsheets",l:"🔗 Хэргийн бүртгэл"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
   const tb=document.getElementById("TB");tb.innerHTML="";
   tabs.forEach(t=>{
@@ -1022,6 +1195,7 @@ function renderTabs(){
   });
 }
 function renderTab(id){
+  if(isExec()&&!["home","mydata"].includes(id))id="home";
   S.tab=id;renderTabs();
   const c=document.getElementById("MC");c.innerHTML="";
   if(id==="home")tHome(c);
@@ -1035,6 +1209,7 @@ function renderTab(id){
   else if(id==="archive")tArchive(c);
   else if(id==="gsheets")tGSheets(c);
   else if(id==="config")tConfig(c);
+  else if(id==="staff")tStaff(c);
 }
 
 // Нэгж "Мэдээ оруулах" руу ороход аль period-г анхны утгаар харуулахыг тодорхойлно.
