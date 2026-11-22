@@ -64,6 +64,28 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 .sndpan{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(68px + env(safe-area-inset-bottom,0px));z-index:900;background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 14px 34px rgba(15,30,54,.16);padding:10px 14px;display:flex;flex-direction:column;gap:8px;font-size:14px}.sndpan label{display:flex;gap:8px;align-items:center;cursor:pointer;white-space:nowrap}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:2000;overflow:hidden}.confetti i{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;animation-name:cfall;animation-timing-function:cubic-bezier(.25,.6,.4,1);animation-fill-mode:forwards}@keyframes cfall{to{top:105%;transform:translateX(40px) rotate(720deg)}}
 .mdet{border:1px solid #E2E8F0;border-radius:14px;margin-bottom:10px;background:#fff;overflow:hidden}.mdet>summary{list-style:none;cursor:pointer;padding:13px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-weight:600;font-size:14.5px}.mdet>summary::-webkit-details-marker{display:none}.mdet>summary .mmeta{font-weight:500;font-size:12.5px;color:#64748B}.mdet>summary .mchev{margin-left:auto;color:#94A3B8;transition:transform .2s}.mdet[open]>summary .mchev{transform:rotate(180deg)}.mdet[open]>summary{border-bottom:1px solid #EEF2F6;background:#F8FAFC}.mdet .mbody{padding:12px 16px}
+#intro{position:fixed;inset:0;z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;background:radial-gradient(120% 90% at 50% 42%,#13294B 0%,#0A1830 55%,#050D1C 100%);color:#F3DFA2;overflow:hidden;transition:opacity .6s ease,transform .6s ease;cursor:pointer;padding:0 16px}
+#intro.out{opacity:0;transform:scale(1.06);pointer-events:none}
+#intro .in-stage{position:relative;width:min(340px,68vw,46vh);aspect-ratio:1}
+#intro svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#intro .in-glow{opacity:0;animation:inFade 1.4s .1s ease forwards}
+#intro .in-r1{stroke-dasharray:1056;stroke-dashoffset:1056;animation:inDraw 1s .05s cubic-bezier(.6,.05,.3,1) forwards}
+#intro .in-r3{stroke-dasharray:767;stroke-dashoffset:767;animation:inDraw .9s .55s cubic-bezier(.6,.05,.3,1) forwards}
+#intro .in-r2{opacity:0;transform-origin:200px 200px;animation:inFade .6s .5s forwards,inSpin 24s linear infinite}
+#intro .in-dots{opacity:0;fill:#E6C25A;animation:inFade .6s .8s forwards}
+#intro .in-petals path{fill:url(#gldI);opacity:0;transform-box:fill-box;transform-origin:50% 100%;animation:inPetal .5s cubic-bezier(.3,1.5,.5,1) forwards}
+#intro .in-logo{position:absolute;left:50%;top:50%;width:58%;height:58%;object-fit:contain;transform:translate(-50%,-50%) scale(.72);opacity:0;filter:blur(8px) drop-shadow(0 0 0 rgba(240,200,90,0));animation:inLogo .8s 1s cubic-bezier(.2,.8,.2,1) forwards;border-radius:50%}
+#intro .in-shine{position:absolute;left:21%;top:21%;width:58%;height:58%;border-radius:50%;overflow:hidden;pointer-events:none}
+#intro .in-shine::after{content:"";position:absolute;top:-20%;left:-60%;width:40%;height:140%;background:linear-gradient(100deg,transparent,rgba(255,244,200,.75),transparent);transform:rotate(12deg);animation:inShine .9s 1.75s ease-in-out forwards}
+#intro .in-txt{text-align:center;opacity:0;transform:translateY(10px);animation:inUp .8s 1.45s ease forwards}
+#intro .in-t1{font:600 clamp(12px,3.4vw,15px)/1.4 Montserrat,Inter,system-ui,sans-serif;letter-spacing:.32em;color:#E9D08A}
+#intro .in-t2{margin-top:8px;font:800 clamp(22px,6vw,32px)/1.1 Montserrat,Inter,system-ui,sans-serif;letter-spacing:.14em;background:linear-gradient(90deg,#FFF3C4,#E6C25A 45%,#B8892A);-webkit-background-clip:text;background-clip:text;color:transparent}
+#intro .in-skip{position:absolute;bottom:calc(22px + env(safe-area-inset-bottom,0px));font:500 12px Inter,system-ui,sans-serif;color:rgba(233,208,138,.55);letter-spacing:.08em}
+@keyframes inDraw{to{stroke-dashoffset:0}}@keyframes inFade{to{opacity:1}}@keyframes inSpin{to{transform:rotate(360deg)}}
+@keyframes inPetal{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+@keyframes inLogo{to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:blur(0) drop-shadow(0 0 22px rgba(240,200,90,.45))}}
+@keyframes inShine{to{left:130%}}@keyframes inUp{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#intro *{animation-duration:.01s!important;animation-delay:0s!important}}
 .pwwrap{position:relative}.pwwrap input{padding-right:46px!important;width:100%;box-sizing:border-box}.pweye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:#64748B;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}.pweye:hover{background:#EEF2F7;color:#0F766E}.pweye.on{color:#0F766E}
 .fg{margin-bottom:16px}.fg label{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:8px}
 .fg select,.fg input{width:100%;min-height:48px;padding:0 14px;background:var(--bg3);border:1px solid #CBD5E1;border-radius:12px;color:var(--tx);font-size:15px;font-family:inherit}
@@ -219,6 +241,30 @@ tr:hover td{background:#F8FAFC}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+<div id="intro" aria-hidden="true">
+  <div class="in-stage">
+    <svg viewBox="0 0 400 400">
+      <defs><linearGradient id="gldI" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF3C4"/><stop offset=".45" stop-color="#E6C25A"/><stop offset="1" stop-color="#A97A1C"/></linearGradient>
+      <radialGradient id="glwI"><stop offset="0" stop-color="rgba(246,214,120,.42)"/><stop offset=".6" stop-color="rgba(246,214,120,.08)"/><stop offset="1" stop-color="rgba(246,214,120,0)"/></radialGradient></defs>
+      <circle class="in-glow" cx="200" cy="200" r="200" fill="url(#glwI)"/>
+      <circle class="in-r1" cx="200" cy="200" r="168" fill="none" stroke="url(#gldI)" stroke-width="3.2"/>
+      <g class="in-petals"><g transform="rotate(0 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.45s"/></g><g transform="rotate(22.5 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.49s"/></g><g transform="rotate(45 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.54s"/></g><g transform="rotate(67.5 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.58s"/></g><g transform="rotate(90 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.63s"/></g><g transform="rotate(112.5 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.68s"/></g><g transform="rotate(135 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.72s"/></g><g transform="rotate(157.5 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.77s"/></g><g transform="rotate(180 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.81s"/></g><g transform="rotate(202.5 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.85s"/></g><g transform="rotate(225 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.90s"/></g><g transform="rotate(247.5 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.95s"/></g><g transform="rotate(270 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:0.99s"/></g><g transform="rotate(292.5 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:1.03s"/></g><g transform="rotate(315 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:1.08s"/></g><g transform="rotate(337.5 200 200)"><path d="M200 26 C209 38,209 52,200 62 C191 52,191 38,200 26Z" style="animation-delay:1.12s"/></g></g>
+      <circle class="in-r2" cx="200" cy="200" r="150" fill="none" stroke="url(#gldI)" stroke-width="1.4" stroke-dasharray="3 8"/>
+      <g class="in-dots"><circle cx="334.8" cy="217.8" r="2.2"/><circle cx="325.6" cy="252.0" r="2.2"/><circle cx="307.9" cy="282.8" r="2.2"/><circle cx="282.8" cy="307.9" r="2.2"/><circle cx="252.0" cy="325.6" r="2.2"/><circle cx="217.8" cy="334.8" r="2.2"/><circle cx="182.2" cy="334.8" r="2.2"/><circle cx="148.0" cy="325.6" r="2.2"/><circle cx="117.2" cy="307.9" r="2.2"/><circle cx="92.1" cy="282.8" r="2.2"/><circle cx="74.4" cy="252.0" r="2.2"/><circle cx="65.2" cy="217.8" r="2.2"/><circle cx="65.2" cy="182.2" r="2.2"/><circle cx="74.4" cy="148.0" r="2.2"/><circle cx="92.1" cy="117.2" r="2.2"/><circle cx="117.2" cy="92.1" r="2.2"/><circle cx="148.0" cy="74.4" r="2.2"/><circle cx="182.2" cy="65.2" r="2.2"/><circle cx="217.8" cy="65.2" r="2.2"/><circle cx="252.0" cy="74.4" r="2.2"/><circle cx="282.8" cy="92.1" r="2.2"/><circle cx="307.9" cy="117.2" r="2.2"/><circle cx="325.6" cy="148.0" r="2.2"/><circle cx="334.8" cy="182.2" r="2.2"/></g>
+      <circle class="in-r3" cx="200" cy="200" r="122" fill="none" stroke="url(#gldI)" stroke-width="2.4"/>
+    </svg>
+    <img class="in-logo" src="logo.png" alt="">
+    <div class="in-shine"></div>
+  </div>
+  <div class="in-txt"><div class="in-t1">ШҮҮХИЙН ШИЙДВЭР ГҮЙЦЭТГЭХ АЛБА</div><div class="in-t2">ШГА · БИЕЛЭЛТ</div></div>
+  <div class="in-skip">Дарж алгасах</div>
+</div>
+<script>
+(function(){var el=document.getElementById("intro");if(!el)return;var seen=false;try{seen=sessionStorage.getItem("sga_intro")==="1";}catch(e){}
+if(seen){el.remove();return;}try{sessionStorage.setItem("sga_intro","1");}catch(e){}
+var done=false;function end(){if(done)return;done=true;el.classList.add("out");setTimeout(function(){el.remove();},650);}
+el.addEventListener("click",end);document.addEventListener("keydown",function(e){if(e.key==="Escape"||e.key==="Enter")end();},{once:true});setTimeout(end,3500);})();
+</script>
 <div class="lpage" id="LP">
   <div class="lbg" aria-hidden="true">
     <div class="lgrid"></div>
