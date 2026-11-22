@@ -59,6 +59,7 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 .logo{margin-bottom:20px}.logo h1{font-size:24px;font-weight:800;color:var(--tx)}.logo p{color:var(--tx2);font-size:14px;margin-top:6px}
 .lmode{display:flex;gap:4px;padding:4px;background:#EEF2F7;border-radius:12px;margin-bottom:18px}.lmode button{flex:1;border:0;background:transparent;padding:9px 6px;border-radius:9px;font:600 13px/1.2 inherit;font-family:inherit;color:#475569;cursor:pointer}.lmode button.on{background:#fff;color:#0F766E;box-shadow:0 2px 8px rgba(15,30,54,.10)}
 .sttbl{width:100%;border-collapse:collapse;font-size:13.5px}.sttbl th,.sttbl td{padding:9px 10px;border-bottom:1px solid #E2E8F0;text-align:left;vertical-align:middle}.sttbl th{font-size:12px;color:#64748B;font-weight:600;background:#F8FAFC}.stbadge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600}.stok{background:#DCFCE7;color:#166534}.stnew{background:#FEF3C7;color:#92400E}.stoff{background:#F1F5F9;color:#64748B}.stres{margin-top:14px;padding:16px;border-radius:14px;background:#ECFDF5;border:1px solid #A7F3D0;font-size:14px;line-height:1.7}.stres b{font-size:16px}
+@media(min-width:900px){.lh1 .shine{white-space:nowrap;font-size:.8em}}
 .fg{margin-bottom:16px}.fg label{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:8px}
 .fg select,.fg input{width:100%;min-height:48px;padding:0 14px;background:var(--bg3);border:1px solid #CBD5E1;border-radius:12px;color:var(--tx);font-size:15px;font-family:inherit}
 .fg select:focus,.fg input:focus{outline:none;border-color:#14B8A6;box-shadow:0 0 0 3px rgba(20,184,166,.2)}
@@ -239,10 +240,10 @@ tr:hover td{background:#F8FAFC}
     <section class="lhero">
       <div class="lleft">
         <span class="lchip rise d1"><span class="live"></span>Шийдвэр гүйцэтгэх албаны нэгдсэн систем</span>
-        <h1 class="lh1 rise d2">Нэг систем.<br><span class="shine">50 нэгж.</span><br>Нэг зорилго.</h1>
+        <h1 class="lh1 rise d2">Нэг систем.<br><span class="shine">31 газар, хэлтэс.</span><br>Нэг зорилго.</h1>
         <p class="llead rise d3">Төлөвлөгөө, биелэлт, судалгааны мэдээг нэг цонхноос бөглөж, нэг товчоор илгээнэ. Албаны бодит биелэлт, нэгж бүрийн хувь нэмэр — бүгд нэг дор.</p>
         <div class="lstats rise d4">
-          <div><b style="color:#0F766E" data-count="50">0</b><span>нэгж</span></div>
+          <div><b style="color:#0F766E" data-count="31">0</b><span>газар, хэлтэс</span></div>
           <div><b style="color:#1D4ED8" data-count="6" id="lsPlans">0</b><span>төлөвлөгөө, судалгаа</span></div>
           <div><b style="color:#B45309" data-count="304">0</b><span>тойрог</span></div>
         </div>
@@ -558,6 +559,7 @@ async function initLogin(){
   try{const lpl=localStorage.getItem("sga_plans");if(lpl){const p=JSON.parse(lpl);if(p&&p.length)S.plans=p;}}catch{}
   try{const lph=localStorage.getItem("sga_planHints");if(lph)S.planHints=JSON.parse(lph)||{};}catch{}
   try{const lpf=localStorage.getItem("sga_planFreqs");if(lpf)S.planFreqs=JSON.parse(lpf)||{};}catch{}
+  try{const lpt=localStorage.getItem("sga_planTargets");if(lpt)S.planTargets=JSON.parse(lpt)||{};}catch{}
   try{const lpm=localStorage.getItem("sga_planModes");if(lpm)S.planModes=JSON.parse(lpm)||{};}catch{}
   try{const ldi=localStorage.getItem("sga_dist");if(ldi)S.dist=JSON.parse(ldi)||{};}catch{}
   try{const ltg=localStorage.getItem("sga_telegram");if(ltg)S.telegramLinks=JSON.parse(ltg)||{};}catch{}
@@ -599,6 +601,7 @@ async function bootLoad(){
       if(sph&&sph.exists&&sph.exists()&&sph.val()){S.planHints=sph.val();try{localStorage.setItem("sga_planHints",JSON.stringify(S.planHints));}catch{}}
       const spf=await window._get(window._r(fbDB,"config/planFreqs"));
       if(spf&&spf.exists&&spf.exists()&&spf.val()){S.planFreqs=spf.val();try{localStorage.setItem("sga_planFreqs",JSON.stringify(S.planFreqs));}catch{}}
+      try{const spt=await window._get(window._r(fbDB,"config/planTargets"));const m={};if(spt&&spt.exists&&spt.exists()&&spt.val()){(Array.isArray(spt.val())?spt.val():Object.values(spt.val())).forEach(x=>{if(x&&x.plan&&Array.isArray(x.units))m[x.plan]=x.units;});}S.planTargets=m;try{localStorage.setItem("sga_planTargets",JSON.stringify(m));}catch{}}catch{}
       const spm=await window._get(window._r(fbDB,"config/planModes"));
       if(spm&&spm.exists&&spm.exists()&&spm.val()){S.planModes=spm.val();try{localStorage.setItem("sga_planModes",JSON.stringify(S.planModes));}catch{}}
       let stg=await window._get(window._r(fbDB,"config/telegramLinks"));
@@ -1057,7 +1060,7 @@ async function tCalendar(c){
   const cal=await loadCalendar();
   let entries=S.data||[];if(isA){try{entries=await getAllEntries();}catch{}}
   const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
-  const items=Object.entries(cal).map(([id,it])=>Object.assign({id},it)).filter(it=>it&&it.plan&&it.due).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:0);
+  const items=Object.entries(cal).map(([id,it])=>Object.assign({id},it)).filter(it=>it&&it.plan&&it.due&&(isA||unitInPlan(S.user.code,it.plan))).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:0);
   box.innerHTML="";
   // Сарын хүснэгт
   const now=new Date();if(S._calM==null){S._calY=now.getFullYear();S._calM=now.getMonth();}
@@ -1094,14 +1097,14 @@ async function tCalendar(c){
     const dl=daysLeft(it.due);
     let st="";
     if(isA){
-      const sub=units.filter(u=>calSubmitted(it,u.code,entries));const miss=units.filter(u=>!sub.includes(u));
+      const pu=planUnits(it.plan);const sub=pu.filter(u=>calSubmitted(it,u.code,entries));const miss=pu.filter(u=>!sub.includes(u));
       const cls=miss.length===0?"stok":dl<0?"stoff' style='background:#FEE2E2;color:#991B1B":"stnew";
-      st="<span class='stbadge "+cls+"'>"+sub.length+" / "+units.length+" нэгж хүргүүлсэн</span>";
+      st="<span class='stbadge "+cls+"'>"+sub.length+" / "+pu.length+" нэгж хүргүүлсэн</span>";
       row.innerHTML="<div style='display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between'><div style='min-width:0'><b>"+esc(it.plan)+"</b> · "+esc(it.period)+"<div style='font-size:12.5px;color:#64748B;margin-top:3px'>📌 Мэдээний огноо: "+(ymdMn(it.asOf)||"—")+" · 📮 Хүргүүлэх: <b>"+ymdMn(it.due)+"</b>"+(dl>=0?" ("+dl+" хоног үлдсэн)":" (хугацаа дууссан)")+(it.note?" · "+esc(it.note):"")+"</div></div><div style='display:flex;gap:6px;align-items:center'>"+st+"</div></div>";
       const acts=row.firstChild.lastChild;
       const be=mk("button","btn bx");be.textContent="✏️";be.title="Засах";be.onclick=()=>calForm(it);acts.appendChild(be);
       const bd=mk("button","btn bx");bd.textContent="🗑️";bd.title="Хуваарийг хасах";bd.onclick=async()=>{if(!confirm("«"+it.plan+" — "+it.period+"» хуваарийг хасах уу? (Ирүүлсэн мэдээнд нөлөөлөхгүй)"))return;try{await dbSet("config/calendar/"+it.id,null);renderTab("calendar");}catch{toast("❌ Хадгалж чадсангүй","te");}};acts.appendChild(bd);
-      if(miss.length&&miss.length<units.length){const ml=mk("div");ml.style.cssText="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px";ml.innerHTML="<span style='font-size:12px;color:#64748B;margin-right:4px'>Хүргүүлээгүй:</span>"+miss.map(u=>"<span class='stbadge' style='background:"+(dl<0?"#FEE2E2;color:#991B1B":"#FEF3C7;color:#92400E")+"' title='"+esc(u.name)+"'>"+esc(u.code)+"</span>").join("");row.appendChild(ml);}
+      if(miss.length&&miss.length<pu.length){const ml=mk("div");ml.style.cssText="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px";ml.innerHTML="<span style='font-size:12px;color:#64748B;margin-right:4px'>Хүргүүлээгүй:</span>"+miss.map(u=>"<span class='stbadge' style='background:"+(dl<0?"#FEE2E2;color:#991B1B":"#FEF3C7;color:#92400E")+"' title='"+esc(u.name)+"'>"+esc(u.code)+"</span>").join("");row.appendChild(ml);}
     }else{
       const done=calSubmitted(it,S.user.code,entries);
       st=done?"<span class='stbadge stok'>✓ Хүргүүлсэн</span>":dl<0?"<span class='stbadge' style='background:#FEE2E2;color:#991B1B'>Хугацаа хэтэрсэн</span>":"<span class='stbadge stnew'>Хүргүүлээгүй · "+dl+" хоног үлдсэн</span>";
@@ -1240,6 +1243,49 @@ function countUp(root){
   });
 }
 const FREQ_MN={week:"7 хоног бүр",month:"Сар бүр",quarter:"Улирал бүр",year:"Жил бүр"};
+// ===== ХАМРАХ НЭГЖ (төлөвлөгөө, судалгааг зөвхөн сонгосон нэгжээс авах) =====
+// config/planTargets = [{plan, units:[код...]}]  (байхгүй бол бүх нэгж). Судалгаанд survey.units.
+const NIIS_CODES=["ШГА01","ШГА02","ШГА03","ШГА04","ШГА05","ШГА06","ШГА07","ШГА08","ШГА09","ШГА10","ШГА11","ШГА12","ШГА13","ШГА14"];
+const GROUP_MN={niislel:"Нийслэлийн ШШГГ",aimag:"Орон нутаг",bank:"Банкны ТБГ"};
+function unitGroup(u){return NIIS_CODES.includes(u.code)?"niislel":/банк/i.test(u.name)?"bank":"aimag";}
+function allUnits(){return S.units.filter(u=>!u.isAdmin&&!u.disabled);}
+function planTarget(plan){const t=S.planTargets&&S.planTargets[plan];return Array.isArray(t)&&t.length?t:null;}
+function unitInPlan(code,plan){const t=planTarget(plan);return !t||t.includes(code);}
+function planUnits(plan){return allUnits().filter(u=>unitInPlan(u.code,plan));}
+function myActivePlans(){const a=S.activePlans||[];return S.user&&!S.user.isAdmin?a.filter(p=>unitInPlan(S.user.code,p)):a;}
+function svForMe(sv){return !sv||!sv.units||!sv.units.length||!S.user||S.user.isAdmin||sv.units.includes(S.user.code);}
+function svUnits(sv){const a=allUnits();return sv&&sv.units&&sv.units.length?a.filter(u=>sv.units.includes(u.code)):a;}
+function targetLabel(list){const a=allUnits();if(!list||!list.length||list.length>=a.length)return "Бүх нэгж";const g=Object.keys(GROUP_MN).find(k=>{const gs=a.filter(u=>unitGroup(u)===k).map(u=>u.code);return gs.length===list.length&&gs.every(c=>list.includes(c));});return g?GROUP_MN[g]:list.length+" нэгж";}
+async function savePlanTargets(){
+  const arr=Object.entries(S.planTargets||{}).filter(([k,v])=>Array.isArray(v)&&v.length).map(([plan,units])=>({plan,units}));
+  try{localStorage.setItem("sga_planTargets",JSON.stringify(S.planTargets||{}));}catch{}
+  if(fbDB&&window._set){await window._set(window._r(fbDB,"config/planTargets"),arr.length?arr:null);}
+}
+function pickUnits(title,sel,onSave){
+  const a=allUnits();let cur=new Set(sel&&sel.length?sel:a.map(u=>u.code));
+  const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.width="720px";ov.appendChild(bx);
+  bx.innerHTML="<h3>🎯 "+esc(title)+"</h3><div style='font-size:13px;color:#64748B;margin-bottom:10px'>Зөвхөн сонгосон нэгжүүдэд харагдана. Сонгоогүй нэгж «ирүүлээгүй» гэж тоологдохгүй.</div>";
+  const qb=mk("div");qb.style.cssText="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px";bx.appendChild(qb);
+  const cnt=mk("div");cnt.style.cssText="font-size:13px;font-weight:600;margin-bottom:8px";bx.appendChild(cnt);
+  const list=mk("div");list.style.cssText="max-height:46vh;overflow-y:auto;border:1px solid #E2E8F0;border-radius:10px;padding:8px";bx.appendChild(list);
+  const boxes={};
+  const sync=()=>{Object.entries(boxes).forEach(([c,b])=>b.checked=cur.has(c));cnt.textContent="Сонгосон: "+cur.size+" / "+a.length;};
+  [["Бүгд",()=>a.map(u=>u.code)],...Object.keys(GROUP_MN).map(k=>[GROUP_MN[k],()=>a.filter(u=>unitGroup(u)===k).map(u=>u.code)]),["Арилгах",()=>[]]].forEach(([l,f])=>{const b=mk("button","btn bx");b.type="button";b.textContent=l;b.onclick=()=>{cur=new Set(f());sync();};qb.appendChild(b);});
+  Object.keys(GROUP_MN).forEach(k=>{
+    const us=a.filter(u=>unitGroup(u)===k);if(!us.length)return;
+    const h=mk("div");h.style.cssText="font-weight:700;font-size:13px;margin:8px 4px 4px;display:flex;align-items:center;gap:8px";
+    const gcb=mk("input");gcb.type="checkbox";gcb.title="Бүлгийг бүхэлд нь сонгох";gcb.onchange=()=>{us.forEach(u=>gcb.checked?cur.add(u.code):cur.delete(u.code));sync();};
+    h.appendChild(gcb);h.appendChild(document.createTextNode(GROUP_MN[k]+" ("+us.length+")"));list.appendChild(h);
+    const gr=mk("div");gr.style.cssText="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px 10px";
+    us.forEach(u=>{const l=mk("label");l.style.cssText="display:flex;gap:6px;align-items:center;font-size:12.5px;padding:3px 4px;cursor:pointer;min-width:0";const cb=mk("input");cb.type="checkbox";cb.onchange=()=>{cb.checked?cur.add(u.code):cur.delete(u.code);cnt.textContent="Сонгосон: "+cur.size+" / "+a.length;};boxes[u.code]=cb;const t=mk("span");t.style.cssText="overflow:hidden;text-overflow:ellipsis;white-space:nowrap";t.textContent=u.code+" — "+u.name;t.title=u.name;l.appendChild(cb);l.appendChild(t);gr.appendChild(l);});
+    list.appendChild(gr);
+  });
+  const br=mk("div","brow");br.style.cssText="justify-content:flex-end;margin-top:12px";
+  const bc=mk("button","btn bx");bc.textContent="Болих";bc.onclick=()=>ov.remove();
+  const bs=mk("button","btn bp");bs.textContent="Хадгалах";bs.onclick=()=>{if(!cur.size){toast("Ядаж 1 нэгж сонгоно уу","te");return;}const arr=[...cur];ov.remove();onSave(arr.length>=a.length?null:arr);};
+  br.appendChild(bc);br.appendChild(bs);bx.appendChild(br);
+  document.body.appendChild(ov);sync();
+}
 const PLAN_COLORS=["#14B8A6","#3B82F6","#F59E0B","#8B5CF6","#F97316","#10B981","#EC4899","#64748B"];
 function planFreq(pl){if(S.planFreqs&&S.planFreqs[pl])return S.planFreqs[pl];const i=S.inds.find(x=>(x.plans||[]).includes(pl));return i?i.freq:"month";}
 function fillLanding(){
@@ -1277,7 +1323,7 @@ function computeProgress(entries){
   const plans=(S.activePlans||[]).slice();
   const rows=plans.map((pl,i)=>{
     const f=planFreq(pl),ps=per[f]||per.month;
-    const elig=distMode(pl)?units.filter(u=>DIST_MAP[u.code]):units;
+    const elig=(distMode(pl)?units.filter(u=>DIST_MAP[u.code]):units).filter(u=>unitInPlan(u.code,pl));
     const sent=new Set();
     entries.forEach(e=>{if(e.freq===f&&ps.includes(e.period)&&(e.plans||[]).includes(pl)&&e.values&&Object.values(e.values).some(v=>v!==""&&v!=null))sent.add(e.unit);});
     const done=elig.filter(u=>sent.has(u.code)).length;
@@ -1487,7 +1533,8 @@ function planCollapse(sub,pl,headerCount,nq){
   sub.appendChild(head);sub.appendChild(body);
 }
 function tData(c){
-  if(!dFreqInit){dFreqInit=true;const act=S.activePlans||[];const has=f=>S.inds.some(i=>i.freq===f&&(i.plans||[]).some(p=>act.includes(p)));if(!has(dFreq)){const f=["week","month","quarter","year"].find(has);if(f){dFreq=f;dPer="";}}}
+  const AP=myActivePlans();
+  if(!dFreqInit){dFreqInit=true;const act=AP||[];const has=f=>S.inds.some(i=>i.freq===f&&(i.plans||[]).some(p=>act.includes(p)));if(!has(dFreq)){const f=["week","month","quarter","year"].find(has);if(f){dFreq=f;dPer="";}}}
   const P=getPer();if(!dPer)dPer=smartDefaultPeriod(dFreq);
   const ps=dFreq==="week"?P.w:dFreq==="month"?P.mn:dFreq==="quarter"?P.q:P.yr;
   const inds=S.inds.filter(i=>i.freq===dFreq);
@@ -1509,6 +1556,7 @@ function tData(c){
   card.appendChild(fr);
   // Яаралтай судалгааны мэдэгдэл — олон судалгаа зэрэг харуулна
   Object.values(S.activeSurveys||{}).forEach(sv=>{
+    if(!svForMe(sv))return;
     if(S.user.isAdmin)return;
     const svResp=S.surveyResps[sv.id]||{};
     const svDone=svResp[S.user.code];
@@ -1601,10 +1649,10 @@ function tData(c){
     card.appendChild(svBanner);
   }); // end activeSurveys.forEach
   // Зөвхөн идэвхтэй төлөвлөгөөний үзүүлэлтүүдийг харуулна
-  const filteredInds=S.activePlans.length>0?inds.filter(i=>(i.plans||[]).some(p=>S.activePlans.includes(p))):[];
+  const filteredInds=AP.length>0?inds.filter(i=>(i.plans||[]).some(p=>AP.includes(p))):[];
   if(!filteredInds.length){
-    const d=mk("div","empty");d.textContent=S.activePlans.length===0?"Идэвхтэй төлөвлөгөө сонгогдоогүй байна":"⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
-    if(S.activePlans.length>0)setTimeout(()=>{if(S.tab==="data")renderTab("data");},2000);
+    const d=mk("div","empty");d.textContent=AP.length===0?"Идэвхтэй төлөвлөгөө сонгогдоогүй байна":"⏳ Үзүүлэлт ачаалж байна...";card.appendChild(d);
+    if(AP.length>0)setTimeout(()=>{if(S.tab==="data")renderTab("data");},2000);
   } else {
   const groups={};filteredInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
   const entryCache={};
@@ -1872,8 +1920,9 @@ async function subDataForPlan(plan,period){
 }
 
 async function subData(){
+  const AP=myActivePlans();
   const inds=S.inds.filter(i=>i.freq===dFreq);
-  const filteredInds=S.activePlans.length>0?inds.filter(i=>(i.plans||[]).some(p=>S.activePlans.includes(p))):[];
+  const filteredInds=AP.length>0?inds.filter(i=>(i.plans||[]).some(p=>AP.includes(p))):[];
   const groups={};filteredInds.forEach(i=>{const pl=(i.plans&&i.plans[0])||"Бусад";if(!groups[pl])groups[pl]=[];groups[pl].push(i);});
   // Хэсэг (төлөвлөгөө) бүрийг өөрийн хаалттай/нээлттэй period-т нь ангилж, period тус бүрээр тусад нь хадгална.
   // Аль ТӨЛӨВЛӨГӨӨ энэ period-т орсныг бас тэмдэглэнэ (entry.plans) — "хуваалцсан үзүүлэлт"-ээс болж
@@ -2338,6 +2387,7 @@ function lSum(){
   if(grp==="niislel")active=active.filter(u=>NIIS.includes(u.code));
   else if(grp==="bank")active=active.filter(u=>u.name.includes("Банк")||u.name.toLowerCase().includes("bank"));
   else if(grp==="aimag")active=active.filter(u=>!NIIS.includes(u.code)&&!u.name.includes("Банк")&&!u.name.toLowerCase().includes("bank"));
+  if(plan!=="all")active=active.filter(u=>unitInPlan(u.code,plan));
   // Нэгж бүрийн сонгосон мужид байгаа БҮХ entry-г (period тус бүрээр) болон хамгийн сүүлийнхийг олно.
   // "Хамгийн сүүлийнх"-ийг зөвхөн огноо харуулахад ашиглана — "бөглөсөн эсэх"-ийг ШАЛГАХДАА
   // мужийн БҮХ entry-г үзнэ, учир нь нэгж эрт (жишээ нь 07.24) нэг төлөвлөгөөгөө бөглөөд,
@@ -2763,8 +2813,8 @@ async function loadFileList(){
 function tSurvey(c){
   const card=mk("div","card");card.innerHTML="<h2>📋 Яаралтай судалгаа</h2>";
   Object.values(S.activeSurveys||{}).forEach(sv=>{
-    const sub=mk("div","sub");sub.innerHTML="<h3 style='color:var(--or)'>🟡 Идэвхтэй: "+sv.title+"</h3>";
-    const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+    const sub=mk("div","sub");sub.innerHTML="<h3 style='color:var(--or)'>🟡 Идэвхтэй: "+sv.title+" <span style='font-size:12px;font-weight:600;color:#64748B'>· 🎯 "+esc(targetLabel(sv.units))+"</span></h3>";
+    const units=svUnits(sv);
     const resp=S.surveyResps[sv.id]||{};
     const done=units.filter(u=>resp[u.code]);
     const miss=units.filter(u=>!resp[u.code]);
@@ -2948,6 +2998,11 @@ function tSurvey(c){
   const tmplInp=mk("input");tmplInp.type="file";tmplInp.id="svTemplate";tmplInp.accept=".xlsx,.xls,.docx,.doc,.pdf,.jpg,.png,.zip,.csv";tmplInp.style.cssText="width:100%;padding:4px 0";
   const tmplHint=mk("div");tmplHint.style.cssText="font-size:11px;color:var(--tx3);margin-top:2px";tmplHint.textContent="Дээд хэмжээ: 5MB";
   tmplDiv.appendChild(tmplInp);tmplDiv.appendChild(tmplHint);sub2.appendChild(tmplDiv);
+  let svTarget=null;
+  const tgRow=mk("div");tgRow.style.cssText="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px";
+  const tgLbl=mk("span");tgLbl.style.cssText="font-size:13px;font-weight:600";tgLbl.textContent="🎯 Хамрах нэгж: Бүх нэгж";
+  const tgBtn=mk("button","btn bx");tgBtn.type="button";tgBtn.textContent="Сонгох";tgBtn.onclick=()=>pickUnits("Судалгаа авах нэгжүүд",svTarget,arr=>{svTarget=arr;tgLbl.textContent="🎯 Хамрах нэгж: "+targetLabel(arr);});
+  tgRow.appendChild(tgLbl);tgRow.appendChild(tgBtn);sub2.appendChild(tgRow);
   const bCreate=mk("button","btn bs");bCreate.textContent="🚀 Судалгаа эхлүүлэх";bCreate.style.cssText="margin-left:0;margin-bottom:10px";
   bCreate.onclick=async()=>{
     const title=document.getElementById("svTitle")?.value.trim();
@@ -2970,6 +3025,7 @@ function tSurvey(c){
     }
     const survey={id:"sv_"+Date.now(),title,questions,createdAt:new Date().toLocaleString("mn-MN"),createdBy:S.user?.name||"admin"};
     if(templateFile)survey.templateFile=templateFile;
+    if(svTarget&&svTarget.length)survey.units=svTarget;
     if(fbDB&&window._set){
       try{
         await window._set(window._r(fbDB,"survey/active/"+survey.id),survey);
@@ -3455,6 +3511,9 @@ function buildCfg(c){
       savePlanModes();toast("✅ '"+plan+"' — "+(v==="off"?"нэгжээр авна":v==="all"?"тойргоор авна (бүгд заавал)":"тойргоор авна (1+ тойрог)"),"ts");
     };})(p);
     row.appendChild(dmSel);
+    const bTg=mk("button","btn bx");bTg.style.cssText="white-space:nowrap";bTg.textContent="🎯 "+targetLabel(planTarget(p));bTg.title="Хамрах нэгжүүд";
+    bTg.onclick=(function(plan){return function(){pickUnits("«"+plan+"» — хамрах нэгжүүд",planTarget(plan),async arr=>{S.planTargets=S.planTargets||{};if(arr)S.planTargets[plan]=arr;else delete S.planTargets[plan];try{await savePlanTargets();toast("✅ «"+plan+"» — "+targetLabel(arr),"ts");}catch{toast("❌ Хадгалж чадсангүй","te");}buildCfg(document.getElementById("MC"));});};})(p);
+    row.appendChild(bTg);
     const badge=mk("span","badge "+(S.activePlans.includes(p)?"bok":""));
     badge.textContent=S.activePlans.includes(p)?"✅ Идэвхтэй":"";
     badge.style.minWidth="80px";row.appendChild(badge);
