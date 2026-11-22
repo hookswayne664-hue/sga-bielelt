@@ -293,7 +293,7 @@ tr:hover td{background:#F8FAFC}
   <div class="appbg" aria-hidden="true"><i style="width:600px;height:600px;left:10%;top:-300px;background:rgba(45,212,191,.18)"></i><i style="width:560px;height:560px;right:-180px;top:50%;background:rgba(96,165,250,.16)"></i></div>
   <div class="nav">
     <div class="navbrand"><span class="blogo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 7h14M5 7l-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0zM8 21h8"/></svg></span>ШГА · БИЕЛЭЛТ</div>
-    <div class="navr"><span id="nU"></span><button class="obtn" id="btnRefresh" style="display:none" onclick="manualRefresh()">🔄</button><button class="obtn" onclick="doLogout()">Гарах</button></div>
+    <div class="navr"><span id="nU"></span><button class="obtn" id="btnRefresh" style="display:none" onclick="manualRefresh()">🔄</button><button class="obtn" id="btnMyPw" style="display:none" onclick="myPwModal()" title="Нууц үг солих">🔑</button><button class="obtn" onclick="doLogout()">Гарах</button></div>
   </div>
   <div class="tabs" id="TB"></div>
   <div class="con" id="MC"></div>
@@ -571,6 +571,19 @@ async function initLogin(){
   // Firebase-аар нэвтрэх
   await initFB();
   if(fbDB&&window._get){
+    S._openDB=await bootLoad();
+  } else {
+    try{const r=await api("getPasswords");if(r&&r.passwords){Object.entries(r.passwords).forEach(([k,v])=>{if(v!==0&&v!==null&&v!=="")S.pwds[k]=String(v);});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
+  }
+  fillLanding();document.getElementById("lB").textContent="Нэвтрэх →";
+  document.getElementById("lB").disabled=false;
+  pf.value="";
+}
+
+// Сангаас тохиргоо, төлөвлөгөө ачаална. Сан түгжигдсэн үед нэвтрэхээс өмнө уншигдахгүй тул нэвтэрсний дараа дахин дуудна.
+async function bootLoad(){
+  if(!(fbDB&&window._get))return false;
+  try{await window._get(window._r(fbDB,"config/plans"));}catch(e){return false;}
     try{
       const si=await window._get(window._r(fbDB,"config/indicators"));
       if(si&&si.exists&&si.exists()){const v=si.val();if(v&&v.length){
@@ -655,14 +668,8 @@ async function initLogin(){
       const spa=await window._get(window._r(fbDB,"planActivatedAt"));
       if(spa&&spa.exists&&spa.exists()&&spa.val()){S.planActivatedAt=spa.val();try{localStorage.setItem("sga_planActivatedAt",JSON.stringify(S.planActivatedAt));}catch{}}
     }catch{}
-  } else {
-    try{const r=await api("getPasswords");if(r&&r.passwords){Object.entries(r.passwords).forEach(([k,v])=>{if(v!==0&&v!==null&&v!=="")S.pwds[k]=String(v);});try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}}}catch{}
-  }
-  fillLanding();document.getElementById("lB").textContent="Нэвтрэх →";
-  document.getElementById("lB").disabled=false;
-  pf.value="";
+  return true;
 }
-
 function loadConfig(){return Promise.resolve();}
 
 async function loadAllData(){
@@ -705,7 +712,7 @@ async function loadAllData(){
   }catch{}
 }
 
-function doLogin(){
+async function doLogin(){
   if(LMODE==="person")return doPersonLogin();
   const code=document.getElementById("lC").value,pwd=document.getElementById("lP").value;
   const err=document.getElementById("lE");err.textContent="";
@@ -713,8 +720,18 @@ function doLogin(){
   if(!pwd){err.textContent="Нууц үг оруулна уу!";return;}
   const u=S.units.find(x=>x.code===code);
   if(!u||u.disabled){err.textContent="Нэгж олдсонгүй!";return;}
-  const correctPwd=S.pwds.hasOwnProperty(code)&&S.pwds[code]!==0&&S.pwds[code]!==""?S.pwds[code]:u.pwd;
-  if(pwd!==String(correctPwd)){err.textContent="Нууц үг буруу!";return;}
+  const btn=document.getElementById("lB"),old=btn.textContent;btn.disabled=true;btn.textContent="⏳ Шалгаж байна...";
+  try{
+    const r=await unitSignIn(code,pwd);
+    if(r==="many"){err.textContent="Олон удаа буруу оруулсан тул түр хүлээгээд дахин оролдоно уу.";return;}
+    if(r===false){err.textContent="Нууц үг буруу!";return;}
+    if(r===null){
+      if(!S._openDB){err.textContent="Сервертэй холбогдож чадсангүй. Хуудсаа дахин ачаална уу.";return;}
+      const correctPwd=S.pwds.hasOwnProperty(code)&&S.pwds[code]!==0&&S.pwds[code]!==""?S.pwds[code]:u.pwd;
+      if(pwd!==String(correctPwd)){err.textContent="Нууц үг буруу!";return;}
+    }
+    if(!S._openDB){S._openDB=await bootLoad();}
+  }finally{btn.disabled=false;btn.textContent=old;}
   enterApp(u);
 }
 function enterApp(u){
@@ -754,6 +771,7 @@ function enterApp(u){
     },1500);
   }
   renderTab("home");
+  updPwBtn();
 }
 
 function doLogout(){
@@ -805,14 +823,15 @@ async function doPersonLogin(){
   if(!fbDB||!window._get){err.textContent="Сервертэй холбогдож чадсангүй. Хуудсаа дахин ачаална уу.";return;}
   const old=btn.textContent;btn.disabled=true;btn.textContent="⏳ Шалгаж байна...";
   try{
-    const s=await window._get(window._r(fbDB,"config/people/"+code+"/"+no));
-    const p=s&&s.exists&&s.exists()?s.val():null;
+    let p=null;try{p=await dbGet("config/login/"+code+"/"+no);}catch{}
+    if(!p&&S._openDB){try{p=await dbGet("config/people/"+code+"/"+no);}catch{}}
     if(!p||!p.email){err.textContent="Энэ тойрогт эрх нээгээгүй байна. Ахлахдаа хандана уу.";return;}
     if(p.active===false){err.textContent="Энэ тойргийн эрх хаалттай байна. Ахлахдаа хандана уу.";return;}
     const A=await authMod();let cr;
     try{cr=await A.signIn(A.auth,p.email,pwd);}catch(e){err.textContent=/too-many/.test(e&&e.code||"")?"Олон удаа буруу оруулсан тул түр хүлээгээд дахин оролдоно уу.":"Нууц үг буруу!";return;}
     const base="config/people/"+code+"/"+no;
-    if(p.uid!==cr.user.uid){try{await window._set(window._r(fbDB,base+"/uid"),cr.user.uid);}catch{}}
+    if(!S._openDB){S._openDB=await bootLoad();}
+    try{const full=await dbGet(base);if(full)p=Object.assign({},full,{active:p.active!==false&&full.active!==false});}catch{}
     if(p.mustChange){
       const ok=await pwChangeModal(A);
       if(!ok){try{await A.signOut(A.auth);}catch{}err.textContent="Шинэ нууц үгээ сонгосны дараа нэвтэрнэ.";return;}
@@ -859,6 +878,9 @@ async function issuePerson(unit,name,no){
   }
   if(!cr)throw new Error("Эрх үүсгэж чадсангүй");
   try{await A.signOut(A.sec);}catch{}
+  await dbSet("config/accounts/"+cr.user.uid,{unit,role:"exec",no:String(no)});
+  if(prev.uid&&prev.uid!==cr.user.uid){try{await dbSet("config/accounts/"+prev.uid,null);}catch{}}
+  await dbSet("config/login/"+unit+"/"+no,{email,active:true});
   const now=new Date().toISOString();
   const rec=Object.assign({},prev,{name:name||prev.name,role:"exec",email,rev,uid:cr.user.uid,active:true,mustChange:false,issued:now,updated:now,by:S.user.code});
   delete rec.lastLogin;
@@ -925,11 +947,199 @@ async function tStaff(c){
         ok.onclick=()=>{const nm=inp.value.trim();if(nm.length<2){toast("Нэрийг оруулна уу","te");return;}run(ok,nm,no,false);};inp.onkeydown=e=>{if(e.key==="Enter")ok.click();};
         cn.onclick=()=>renderTab("staff");act.appendChild(ok);act.appendChild(cn);};
       const ba=mk("button","btn bx");ba.style.marginLeft="6px";ba.textContent=p.active===false?"▶ Нээх":"⏸ Хаах";ba.title=p.active===false?"Эрхийг дахин нээх":"Эрхийг түр хаах";
-      ba.onclick=async()=>{ba.disabled=true;try{await window._set(window._r(fbDB,"config/people/"+unit+"/"+no+"/active"),p.active===false);renderTab("staff");}catch{toast("❌ Хадгалж чадсангүй","te");ba.disabled=false;}};
+      ba.onclick=async()=>{ba.disabled=true;try{await window._set(window._r(fbDB,"config/people/"+unit+"/"+no+"/active"),p.active===false);await dbSet("config/login/"+unit+"/"+no+"/active",p.active===false);renderTab("staff");}catch{toast("❌ Хадгалж чадсангүй","te");ba.disabled=false;}};
       act.appendChild(br);act.appendChild(bc);act.appendChild(ba);
     }
     tb.appendChild(tr);});
   t.appendChild(tb);wrap.appendChild(t);card.appendChild(wrap);
+}
+
+// ===== ХАМГААЛАЛТТАЙ НЭВТРЭЛТ (нэгж, админ — Firebase Authentication) =====
+// config/login/<нэгж>/_unit = {email,rev,uid} (нэвтрэхээс өмнө уншигдана), config/accounts/<uid> = {unit, role: admin|unit|exec}
+// Нэгжийн нууц үг 4 оронтой ч байж болох тул Firebase-д "sga-u:" угтвартайгаар хадгална.
+function uPw(p){return "sga-u:"+String(p);}
+function uEmail(code,rev){return "sga"+(String(code).replace(/\D/g,"")||"00")+"-u"+(rev?"-r"+rev:"")+"@shga-bilelt.firebaseapp.com";}
+async function dbGet(path){const s=await window._get(window._r(fbDB,path));return s&&s.exists&&s.exists()?s.val():null;}
+async function dbSet(path,v){await window._set(window._r(fbDB,path),v);}
+function effPwd(u){return S.pwds.hasOwnProperty(u.code)&&S.pwds[u.code]!==0&&S.pwds[u.code]!==""?String(S.pwds[u.code]):String(u.pwd||"");}
+async function createUnitAuth(u,pwd){
+  const A=await authMod();const prev=(await dbGet("config/login/"+u.code+"/_unit"))||{};
+  let rev=prev.email?(prev.rev||0)+1:0,cr=null,email="";
+  for(let t=0;t<6&&!cr;t++){email=uEmail(u.code,rev);try{cr=await A.create(A.sec,email,uPw(pwd));}catch(e){if(/email-already-in-use/.test(e&&e.code||""))rev++;else throw e;}}
+  if(!cr)throw new Error("Эрх үүсгэж чадсангүй");
+  try{await A.signOut(A.sec);}catch{}
+  await dbSet("config/accounts/"+cr.user.uid,{unit:u.code,role:u.isAdmin?"admin":"unit"});
+  if(prev.uid&&prev.uid!==cr.user.uid){try{await dbSet("config/accounts/"+prev.uid,null);}catch{}}
+  await dbSet("config/login/"+u.code+"/_unit",{email,rev,uid:cr.user.uid,at:new Date().toISOString()});
+  return email;
+}
+async function unitSignIn(code,pwd){
+  if(!fbDB||!window._get)return null;
+  let m=null;try{m=await dbGet("config/login/"+code+"/_unit");}catch{return null;}
+  if(!m||!m.email)return null;
+  const A=await authMod();
+  try{await A.signIn(A.auth,m.email,uPw(pwd));return true;}catch(e){return /too-many/.test(e&&e.code||"")?"many":false;}
+}
+function myPwModal(){
+  if(!_authMod||!_authMod.auth.currentUser){toast("Энэ эрхээр нууц үг солих боломжгүй","te");return;}
+  const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.width="420px";ov.appendChild(bx);
+  bx.innerHTML="<h3>🔑 Нууц үг солих</h3>"
+    +"<div class='mfi'><label>Шинэ нууц үг (6-аас доошгүй тэмдэгт)</label><input type='password' id='mp1' autocomplete='new-password'></div>"
+    +"<div class='mfi'><label>Шинэ нууц үгээ давтан оруулна уу</label><input type='password' id='mp2' autocomplete='new-password'></div>"
+    +"<div id='mpE' style='color:#B91C1C;font-size:13px;min-height:18px'></div>"
+    +"<div class='brow' style='justify-content:flex-end'><button class='btn bx' id='mpC'>Болих</button><button class='btn bp' id='mpS'>Хадгалах</button></div>";
+  document.body.appendChild(ov);
+  bx.querySelector("#mpC").onclick=()=>ov.remove();
+  bx.querySelector("#mpS").onclick=async()=>{
+    const a=bx.querySelector("#mp1").value,b=bx.querySelector("#mp2").value,e=bx.querySelector("#mpE");e.textContent="";
+    if(a.length<6){e.textContent="6-аас доошгүй тэмдэгт оруулна уу.";return;}
+    if(a!==b){e.textContent="Хоёр нууц үг таарахгүй байна.";return;}
+    try{await _authMod.updatePassword(_authMod.auth.currentUser,S.user&&S.user.person?a:uPw(a));ov.remove();toast("✅ Нууц үг солигдлоо","ts");}
+    catch(x){e.textContent=/recent-login/.test(x&&x.code||"")?"Аюулгүй байдлын үүднээс гараад дахин нэвтэрсний дараа солино уу.":"Хадгалж чадсангүй: "+(x&&x.code||x);}
+  };
+}
+function updPwBtn(){const b=document.getElementById("btnMyPw");if(b)b.style.display=(_authMod&&_authMod.auth.currentUser)?"inline-block":"none";}
+async function secCard(c){
+  const card=mk("div","card");card.innerHTML="<h2>🛡️ Сангийн хамгаалалт</h2><div style='color:#64748B;font-size:13.5px'>⏳ Шалгаж байна...</div>";c.appendChild(card);
+  let lg={};try{lg=(await dbGet("config/login"))||{};}catch{}
+  const all=S.units.filter(u=>!u.disabled);
+  const done=all.filter(u=>lg[u.code]&&lg[u.code]._unit&&lg[u.code]._unit.email);
+  const left=all.filter(u=>!done.includes(u));
+  card.innerHTML="<h2>🛡️ Сангийн хамгаалалт</h2><p style='font-size:13.5px;color:#475569;line-height:1.6;margin:0 0 10px'>Нэгж бүрийн нэвтрэлтийг Firebase-ийн хамгаалалттай нэвтрэлт рүү шилжүүлнэ. Нэгжүүдийн одоогийн нууц үг хэвээр үлдэнэ. Бүх нэгж шилжсэний дараа санг түгжиж, зөвхөн нэвтэрсэн хүн мэдээ уншиж, бичдэг болгоно.</p>"
+    +"<div style='font-size:15px;margin-bottom:10px'>Шилжсэн: <b>"+done.length+" / "+all.length+"</b>"+(left.length?" · Үлдсэн: "+left.map(u=>esc(u.code)).join(", "):" ✅")+"</div>";
+  if(left.length){
+    const b=mk("button","btn bp");b.textContent="🔐 Үлдсэн "+left.length+" нэгжийг шилжүүлэх";card.appendChild(b);
+    const log=mk("div");log.style.cssText="font-size:12.5px;color:#475569;margin-top:8px";card.appendChild(log);
+    b.onclick=async()=>{b.disabled=true;let ok=0,bad=[];
+      for(const u of left){log.textContent="⏳ "+u.code+" ("+(ok+bad.length+1)+"/"+left.length+")";try{await createUnitAuth(u,effPwd(u));ok++;}catch(e){bad.push(u.code+": "+(e&&e.code||e&&e.message||e));}}
+      if(S.user.isAdmin&&!(_authMod&&_authMod.auth.currentUser)){try{await unitSignIn(S.user.code,effPwd(S.user));}catch{}}
+      updPwBtn();toast("✅ "+ok+" нэгж шилжлээ"+(bad.length?" · "+bad.length+" алдаа":""),bad.length?"te":"ts");
+      if(bad.length)console.error("[SGA migrate]",bad);
+      buildCfg(document.getElementById("MC"));};
+  }
+}
+// Админ нэгжийн нууц үгийг солиход: шилжсэн нэгжид шинэ хамгаалалттай эрх үүсгэнэ (хуучин нь хүчингүй болно)
+async function setUnitPwd(code,pwd){
+  const u=S.units.find(x=>x.code===code);if(!u)return false;
+  let m=null;try{m=await dbGet("config/login/"+code+"/_unit");}catch{}
+  if(m&&m.email){await createUnitAuth(u,pwd);return true;}
+  return false;
+}
+
+// ===== МЭДЭЭ ХҮРГҮҮЛЭХ ХУАНЛИ =====
+// config/calendar/<id> = {plan, freq, period, asOf:"YYYY-MM-DD" (мэдээний огноо), due:"YYYY-MM-DD" (хүргүүлэх хугацаа), note}
+const CAL_WD=["Да","Мя","Лх","Пү","Ба","Бя","Ня"];
+function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function ymdMn(s){if(!s)return "";const p=s.split("-");return p[0]+"."+p[1]+"."+p[2];}
+function calPeriods(freq){
+  const y=new Date().getFullYear(),out=[];
+  for(let yy=y-1;yy<=y+1;yy++){
+    if(freq==="month")for(let m=1;m<=12;m++)out.push(yy+" оны "+m+"-р сар");
+    else if(freq==="quarter")for(let q=1;q<=4;q++)out.push(yy+" оны "+q+"-р улирал");
+    else if(freq==="year")out.push(yy+" оны жилийн эцэс");
+  }
+  return out;
+}
+function calSubmitted(it,unit,entries){
+  return entries.some(e=>e&&e.unit===unit&&e.freq===it.freq&&e.period===it.period&&(Array.isArray(e.plans)?e.plans.some(p=>p&&p.trim()===it.plan.trim()):entryMatchesPlan(e,it.plan)));
+}
+function daysLeft(due){const t=new Date();t.setHours(0,0,0,0);const d=new Date(due+"T00:00:00");return Math.round((d-t)/86400000);}
+async function loadCalendar(){try{const v=await dbGet("config/calendar");S.calendar=v||{};}catch{}return S.calendar||{};}
+async function tCalendar(c){
+  const isA=!!S.user.isAdmin;
+  const head=mk("div","card");
+  head.innerHTML="<div style='display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between'><div style='min-width:0'><h3 style='margin:0 0 4px'>🗓️ Мэдээ хүргүүлэх хуанли</h3><div style='font-size:13.5px;color:#475569'>Төлөвлөгөө бүрийн мэдээний огноо, хүргүүлэх хугацаа. Хугацаандаа хүргүүлээгүй нь улаанаар харагдана.</div></div></div>";
+  c.appendChild(head);
+  if(isA){const b=mk("button","btn bp");b.textContent="➕ Хугацаа нэмэх";b.onclick=()=>calForm(null);head.firstChild.appendChild(b);}
+  const box=mk("div");c.appendChild(box);box.innerHTML="<div class='card' style='color:#64748B'>⏳ Ачаалж байна...</div>";
+  const cal=await loadCalendar();
+  let entries=S.data||[];if(isA){try{entries=await getAllEntries();}catch{}}
+  const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
+  const items=Object.entries(cal).map(([id,it])=>Object.assign({id},it)).filter(it=>it&&it.plan&&it.due).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:0);
+  box.innerHTML="";
+  // Сарын хүснэгт
+  const now=new Date();if(S._calM==null){S._calY=now.getFullYear();S._calM=now.getMonth();}
+  const gc=mk("div","card");box.appendChild(gc);
+  const nav=mk("div");nav.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px";
+  const pv=mk("button","btn bx");pv.textContent="‹";const nx=mk("button","btn bx");nx.textContent="›";
+  const ttl=mk("b");ttl.style.fontSize="16px";ttl.textContent=S._calY+" оны "+(S._calM+1)+"-р сар";
+  pv.onclick=()=>{S._calM--;if(S._calM<0){S._calM=11;S._calY--;}renderTab("calendar");};
+  nx.onclick=()=>{S._calM++;if(S._calM>11){S._calM=0;S._calY++;}renderTab("calendar");};
+  nav.appendChild(pv);nav.appendChild(ttl);nav.appendChild(nx);gc.appendChild(nav);
+  const gw=mk("div");gw.style.overflowX="auto";gc.appendChild(gw);
+  const g=mk("div");g.style.cssText="display:grid;grid-template-columns:repeat(7,minmax(70px,1fr));gap:4px;min-width:520px";gw.appendChild(g);
+  CAL_WD.forEach(w=>{const h=mk("div");h.style.cssText="font-size:12px;font-weight:600;color:#64748B;text-align:center;padding:4px 0";h.textContent=w;g.appendChild(h);});
+  const first=new Date(S._calY,S._calM,1),off=(first.getDay()+6)%7,dim=new Date(S._calY,S._calM+1,0).getDate(),today=ymd(now);
+  for(let i=0;i<off;i++)g.appendChild(mk("div"));
+  for(let d=1;d<=dim;d++){
+    const key=ymd(new Date(S._calY,S._calM,d));const cell=mk("div");
+    cell.style.cssText="min-height:74px;border:1px solid #E2E8F0;border-radius:10px;padding:5px;background:"+(key===today?"#ECFEFF":"#fff")+";display:flex;flex-direction:column;gap:3px;min-width:0";
+    const dn=mk("div");dn.style.cssText="font-size:12px;font-weight:"+(key===today?"700;color:#0E7490":"600;color:#334155");dn.textContent=d;cell.appendChild(dn);
+    items.forEach(it=>{
+      const ci=S.plans.indexOf(it.plan),col=PLAN_COLORS[(ci<0?0:ci)%PLAN_COLORS.length];
+      if(it.due===key){const ch=mk("div");ch.title=it.plan+" — "+it.period+" (хүргүүлэх хугацаа)";ch.style.cssText="font-size:11px;line-height:1.3;padding:2px 5px;border-radius:6px;color:#fff;background:"+col+";white-space:nowrap;overflow:hidden;text-overflow:ellipsis";ch.textContent="📮 "+it.plan;cell.appendChild(ch);}
+      if(it.asOf===key){const ch=mk("div");ch.title=it.plan+" — мэдээний огноо";ch.style.cssText="font-size:11px;line-height:1.3;padding:1px 5px;border-radius:6px;border:1px dashed "+col+";color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";ch.textContent="📌 "+it.plan;cell.appendChild(ch);}
+    });
+    g.appendChild(cell);
+  }
+  const lg=mk("div");lg.style.cssText="font-size:12px;color:#64748B;margin-top:8px";lg.textContent="📮 Хүргүүлэх хугацаа · 📌 Мэдээний огноо";gc.appendChild(lg);
+  // Жагсаалт
+  const lc=mk("div","card");box.appendChild(lc);
+  lc.innerHTML="<h4 style='margin:0 0 10px'>Хугацааны жагсаалт</h4>";
+  if(!items.length){const e=mk("div");e.style.cssText="color:#64748B;font-size:13.5px";e.textContent="Одоогоор хуваарь оруулаагүй байна."+(isA?" «➕ Хугацаа нэмэх» товчоор нэмнэ.":"");lc.appendChild(e);return;}
+  items.forEach(it=>{
+    const row=mk("div");row.style.cssText="border:1px solid #E2E8F0;border-radius:12px;padding:12px;margin-bottom:8px";
+    const dl=daysLeft(it.due);
+    let st="";
+    if(isA){
+      const sub=units.filter(u=>calSubmitted(it,u.code,entries));const miss=units.filter(u=>!sub.includes(u));
+      const cls=miss.length===0?"stok":dl<0?"stoff' style='background:#FEE2E2;color:#991B1B":"stnew";
+      st="<span class='stbadge "+cls+"'>"+sub.length+" / "+units.length+" нэгж хүргүүлсэн</span>";
+      row.innerHTML="<div style='display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between'><div style='min-width:0'><b>"+esc(it.plan)+"</b> · "+esc(it.period)+"<div style='font-size:12.5px;color:#64748B;margin-top:3px'>📌 Мэдээний огноо: "+(ymdMn(it.asOf)||"—")+" · 📮 Хүргүүлэх: <b>"+ymdMn(it.due)+"</b>"+(dl>=0?" ("+dl+" хоног үлдсэн)":" (хугацаа дууссан)")+(it.note?" · "+esc(it.note):"")+"</div></div><div style='display:flex;gap:6px;align-items:center'>"+st+"</div></div>";
+      const acts=row.firstChild.lastChild;
+      const be=mk("button","btn bx");be.textContent="✏️";be.title="Засах";be.onclick=()=>calForm(it);acts.appendChild(be);
+      const bd=mk("button","btn bx");bd.textContent="🗑️";bd.title="Хуваарийг хасах";bd.onclick=async()=>{if(!confirm("«"+it.plan+" — "+it.period+"» хуваарийг хасах уу? (Ирүүлсэн мэдээнд нөлөөлөхгүй)"))return;try{await dbSet("config/calendar/"+it.id,null);renderTab("calendar");}catch{toast("❌ Хадгалж чадсангүй","te");}};acts.appendChild(bd);
+      if(miss.length&&miss.length<units.length){const ml=mk("div");ml.style.cssText="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px";ml.innerHTML="<span style='font-size:12px;color:#64748B;margin-right:4px'>Хүргүүлээгүй:</span>"+miss.map(u=>"<span class='stbadge' style='background:"+(dl<0?"#FEE2E2;color:#991B1B":"#FEF3C7;color:#92400E")+"' title='"+esc(u.name)+"'>"+esc(u.code)+"</span>").join("");row.appendChild(ml);}
+    }else{
+      const done=calSubmitted(it,S.user.code,entries);
+      st=done?"<span class='stbadge stok'>✓ Хүргүүлсэн</span>":dl<0?"<span class='stbadge' style='background:#FEE2E2;color:#991B1B'>Хугацаа хэтэрсэн</span>":"<span class='stbadge stnew'>Хүргүүлээгүй · "+dl+" хоног үлдсэн</span>";
+      row.innerHTML="<div style='display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between'><div style='min-width:0'><b>"+esc(it.plan)+"</b> · "+esc(it.period)+"<div style='font-size:12.5px;color:#64748B;margin-top:3px'>📌 Мэдээний огноо: "+(ymdMn(it.asOf)||"—")+" · 📮 Хүргүүлэх: <b>"+ymdMn(it.due)+"</b>"+(it.note?" · "+esc(it.note):"")+"</div></div>"+st+"</div>";
+    }
+    lc.appendChild(row);
+  });
+}
+function calForm(it){
+  const ov=mk("div","modal-overlay");const bx=mk("div","modal-box");bx.style.width="480px";ov.appendChild(bx);
+  const plans=S.plans||[];
+  bx.innerHTML="<h3>"+(it?"✏️ Хуваарь засах":"➕ Хүргүүлэх хугацаа нэмэх")+"</h3>"
+    +"<div class='mfi'><label>Төлөвлөгөө</label><select id='cfP'>"+plans.map(p=>"<option"+(it&&it.plan===p?" selected":"")+">"+esc(p)+"</option>").join("")+"</select></div>"
+    +"<div class='mfi'><label>Хугацаа (тайлант үе)</label><select id='cfR'></select></div>"
+    +"<div class='mfi'><label>📌 Мэдээний огноо</label><input type='date' id='cfA' value='"+esc(it&&it.asOf||"")+"'></div>"
+    +"<div class='mfi'><label>📮 Хүргүүлэх хугацаа</label><input type='date' id='cfD' value='"+esc(it&&it.due||"")+"'></div>"
+    +"<div class='mfi'><label>Тайлбар (заавал биш)</label><input id='cfN' value='"+esc(it&&it.note||"")+"'></div>"
+    +"<div id='cfE' style='color:#B91C1C;font-size:13px;min-height:18px'></div>"
+    +"<div class='brow' style='justify-content:flex-end'><button class='btn bx' id='cfC'>Болих</button><button class='btn bp' id='cfS'>Хадгалах</button></div>";
+  document.body.appendChild(ov);
+  const pSel=bx.querySelector("#cfP"),rSel=bx.querySelector("#cfR"),aIn=bx.querySelector("#cfA");
+  const fillR=()=>{const f=planFreq(pSel.value);rSel.innerHTML="";
+    if(f==="week"){const o=mk("option");o.value="";o.textContent="Мэдээний огноогоор тодорхойлогдоно";rSel.appendChild(o);rSel.disabled=true;return;}
+    rSel.disabled=false;const cur=it&&it.plan===pSel.value?it.period:"";const now=new Date();
+    const def=f==="quarter"?now.getFullYear()+" оны "+Math.ceil((now.getMonth()+1)/3)+"-р улирал":f==="year"?now.getFullYear()+" оны жилийн эцэс":now.getFullYear()+" оны "+(now.getMonth()+1)+"-р сар";
+    calPeriods(f).forEach(p=>{const o=mk("option");o.value=p;o.textContent=p;if(p===(cur||def))o.selected=true;rSel.appendChild(o);});};
+  pSel.onchange=fillR;fillR();
+  bx.querySelector("#cfC").onclick=()=>ov.remove();
+  bx.querySelector("#cfS").onclick=async()=>{
+    const e=bx.querySelector("#cfE");e.textContent="";
+    const plan=pSel.value,freq=planFreq(plan),asOf=aIn.value,due=bx.querySelector("#cfD").value,note=bx.querySelector("#cfN").value.trim();
+    if(!plan){e.textContent="Төлөвлөгөөгөө сонгоно уу.";return;}
+    if(!due){e.textContent="Хүргүүлэх хугацааг оруулна уу.";return;}
+    if(freq==="week"&&!asOf){e.textContent="7 хоногийн мэдээнд мэдээний огноог заавал оруулна.";return;}
+    if(asOf&&due<asOf){e.textContent="Хүргүүлэх хугацаа мэдээний огнооноос өмнө байж болохгүй.";return;}
+    const period=freq==="week"?ymdMn(asOf)+" 7 хоног":rSel.value;
+    const id=it&&it.id||("c"+Date.now().toString(36));
+    try{await dbSet("config/calendar/"+id,{plan,freq,period,asOf:asOf||"",due,note,by:S.user.code,updated:new Date().toISOString()});ov.remove();toast("✅ Хадгалагдлаа","ts");renderTab("calendar");}
+    catch(x){e.textContent="Хадгалж чадсангүй: "+(x&&x.message||x);}
+  };
 }
 
 function manualRefresh(){window._distTick=0;loadAllData();}
@@ -1188,7 +1398,7 @@ function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];tabs.push({id:"home",l:"🏠 Нүүр"});
   if(isExec()){tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
   else if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
-  if(!isExec()){tabs.push({id:"chat",l:"💬 Чат"});tabs.push({id:"staff",l:"👥 Гүйцэтгэгчид"});}
+  if(!isExec()){tabs.push({id:"calendar",l:"🗓️ Хуанли"});tabs.push({id:"chat",l:"💬 Чат"});tabs.push({id:"staff",l:"👥 Гүйцэтгэгчид"});}
   if(isA){tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"survey",l:"📋 Судалгаа"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"gsheets",l:"🔗 Хэргийн бүртгэл"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
   const tb=document.getElementById("TB");tb.innerHTML="";
   tabs.forEach(t=>{
@@ -1215,6 +1425,7 @@ function renderTab(id){
   else if(id==="gsheets")tGSheets(c);
   else if(id==="config")tConfig(c);
   else if(id==="staff")tStaff(c);
+  else if(id==="calendar")tCalendar(c);
 }
 
 // Нэгж "Мэдээ оруулах" руу ороход аль period-г анхны утгаар харуулахыг тодорхойлно.
@@ -3296,6 +3507,8 @@ function buildCfg(c){
   };
   sub2.appendChild(b2);c2.appendChild(sub2);c.appendChild(collapseCard(c2,true));
 
+  // Сангийн хамгаалалт (нэвтрэлт шилжүүлэх)
+  secCard(c);
   // Нууц үгийн удирдлага
   const c3=mk("div","card");c3.innerHTML="<h2>🔐 Нууц үгийн удирдлага</h2>";
   const frp=mk("div","fr");
@@ -3313,6 +3526,7 @@ function buildCfg(c){
       const el=document.getElementById("pw_"+code);if(!el)return;
       const pwd=el.value.trim();if(!pwd)return toast("Хоосон","te");
       S.pwds[code]=pwd;try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
+      try{if(await setUnitPwd(code,pwd)){toast("✅ "+code+" шинэ нууц үг идэвхжлээ","ts");return;}}catch(e){toast("❌ "+(e&&e.code||e),"te");return;}
       if(fbDB&&window._set){await window._set(window._r(fbDB,"passwords/"+code),pwd);}
     toast("✅ "+code+" нууц үг хадгалагдлаа","ts");
     };})(u.code);row.appendChild(bs);pwList.appendChild(row);
@@ -3470,6 +3684,7 @@ async function sAllPW(){
     try{
       const all={};S.units.filter(u=>!u.isAdmin).forEach(u=>{all[u.code]=pwd;});
       await window._set(window._r(fbDB,"passwords"),all);
+      for(const u of S.units.filter(u=>!u.isAdmin)){try{await setUnitPwd(u.code,pwd);}catch(e){console.error("[SGA pw]",u.code,e);}}
       toast("✅ Бүгдийн нууц үг Firebase-д хадгалагдлаа: "+pwd,"ts");
     }catch{toast("✅ Солигдлоо (локал): "+pwd,"ts");}
   } else {
