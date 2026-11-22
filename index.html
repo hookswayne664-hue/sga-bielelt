@@ -66,22 +66,27 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 .mdet{border:1px solid #E2E8F0;border-radius:14px;margin-bottom:10px;background:#fff;overflow:hidden}.mdet>summary{list-style:none;cursor:pointer;padding:13px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-weight:600;font-size:14.5px}.mdet>summary::-webkit-details-marker{display:none}.mdet>summary .mmeta{font-weight:500;font-size:12.5px;color:#64748B}.mdet>summary .mchev{margin-left:auto;color:#94A3B8;transition:transform .2s}.mdet[open]>summary .mchev{transform:rotate(180deg)}.mdet[open]>summary{border-bottom:1px solid #EEF2F6;background:#F8FAFC}.mdet .mbody{padding:12px 16px}
 #intro{position:fixed;inset:0;z-index:5000;background:radial-gradient(120% 100% at 50% 45%,#0A1424 0%,#02050A 72%);overflow:hidden;cursor:pointer;transition:opacity .9s ease,transform 1s cubic-bezier(.5,0,.75,0)}
 #intro.out{opacity:0;transform:scale(1.06);pointer-events:none}
-#intro canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#intro canvas,#intro video{position:absolute;inset:0;width:100%;height:100%;display:block}
+#intro video{object-fit:cover}#intro.vid.go video{filter:brightness(.6);transition:filter 1.4s 2.1s}
+#intro .in-txtbg{position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(to top,rgba(2,5,10,.92),rgba(2,5,10,0));opacity:0;pointer-events:none;z-index:1}#intro.vid.go .in-txtbg{animation:inFade 1.2s 2.5s forwards}
+#intro:not(.go) .in-emb,#intro:not(.go) .in-emb::before,#intro:not(.go) .in-shine,#intro:not(.go) .in-txt *{animation-play-state:paused}
+#intro.vid .in-emb{animation-name:inEmbV}#intro.vid .in-t2{display:none}
 #intro .in-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 45%,rgba(2,5,10,0) 40%,rgba(2,5,10,.78) 100%)}
 #intro .in-bar{position:absolute;left:0;right:0;height:0;background:#000;z-index:3}
 @media (min-aspect-ratio:16/10){#intro .in-bar{height:max(0px,calc((100vh - 45.5vw)/2))}}
 #intro .in-bar.t{top:0}#intro .in-bar.b{bottom:0}
-#intro .in-emb{position:absolute;left:50%;top:42%;width:min(210px,40vw,28vh);aspect-ratio:446/559;transform:translate(-50%,-50%) scale(1.14);opacity:0;filter:blur(10px) brightness(.5);animation:inEmb 1.5s 2.35s cubic-bezier(.2,.7,.2,1) forwards;z-index:2}
+#intro .in-emb{position:absolute;left:50%;top:var(--ey,42%);width:min(210px,40vw,28vh);aspect-ratio:446/559;transform:translate(-50%,-50%) scale(1.14);opacity:0;filter:blur(10px) brightness(.5);animation:inEmb 1.5s 2.35s cubic-bezier(.2,.7,.2,1) forwards;z-index:2}
 #intro .in-emb::before{content:"";position:absolute;inset:-45%;border-radius:50%;background:radial-gradient(closest-side,rgba(245,205,120,.34),rgba(245,205,120,.1) 55%,rgba(245,205,120,0));z-index:-1;opacity:0;animation:inFade 1.6s 2.6s ease forwards}
 #intro .in-emb img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 18px 34px rgba(0,0,0,.7))}
 #intro .in-shine{position:absolute;inset:0;pointer-events:none;-webkit-mask:url(emblem.webp) center/contain no-repeat;mask:url(emblem.webp) center/contain no-repeat;background:linear-gradient(105deg,rgba(255,246,220,0) 42%,rgba(255,246,220,.85) 50%,rgba(255,246,220,0) 58%);background-size:300% 100%;background-position:100% 0;mix-blend-mode:screen;animation:inShine 1.3s 3.5s ease-in-out forwards}
-#intro .in-txt{position:absolute;left:0;right:0;top:calc(42% + min(132px,25.1vw,17.6vh) + 26px);display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 16px;z-index:2}
+#intro .in-txt{position:absolute;left:0;right:0;top:calc(var(--ey,42%) + min(132px,25.1vw,17.6vh) + 26px);display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 16px;z-index:2}
 #intro .in-t0{font:600 clamp(10px,2.4vw,13px)/1.4 Montserrat,Inter,system-ui,sans-serif;letter-spacing:.3em;color:rgba(236,218,168,.88);text-align:center;opacity:0;animation:inFade 1s 3s ease forwards}
 #intro .in-rule{height:1px;width:0;background:linear-gradient(90deg,rgba(233,199,102,0),#E9C766,rgba(233,199,102,0));animation:inRule 1.2s 3.05s cubic-bezier(.2,.8,.2,1) forwards}
 #intro .in-t1{display:flex;justify-content:center;white-space:nowrap;font:700 clamp(19px,4.6vw,38px)/1.15 Montserrat,Inter,system-ui,sans-serif;color:#F6EDD5;letter-spacing:.55em;text-shadow:0 2px 26px rgba(0,0,0,.7);opacity:0;filter:blur(6px);animation:inTitle 1.8s 3.15s cubic-bezier(.2,.75,.2,1) forwards}
 #intro .in-t2{font:800 clamp(14px,3.2vw,22px)/1.1 Montserrat,Inter,system-ui,sans-serif;letter-spacing:.3em;background:linear-gradient(90deg,#A9802A,#FFF1C2 50%,#A9802A);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;animation:inFade 1s 4s ease forwards,inGold 2.6s 4s linear infinite}
 #intro .in-skip{position:absolute;left:0;right:0;text-align:center;bottom:calc(14px + env(safe-area-inset-bottom,0px));font:500 12px Inter,system-ui,sans-serif;color:rgba(233,208,138,.45);letter-spacing:.08em;z-index:4;opacity:0;animation:inFade 1s 1s forwards}
 @media (max-width:480px){#intro .in-t0{letter-spacing:.14em}#intro .in-t1{letter-spacing:.3em}}
+@keyframes inEmbV{0%{opacity:0;transform:translate(-50%,-50%) scale(.2);filter:blur(6px) brightness(3)}40%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:blur(0) brightness(1)}}
 @keyframes inEmb{to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:blur(0) brightness(1)}}
 @keyframes inTitle{to{opacity:1;filter:blur(0);letter-spacing:.1em}}
 @keyframes inRule{to{width:min(360px,64vw)}}
@@ -243,8 +248,9 @@ tr:hover td{background:#F8FAFC}
 </head>
 <body>
 <div id="intro" aria-hidden="true">
+  <video id="inVid" muted playsinline preload="auto" disableremoteplayback></video>
   <canvas id="inCv"></canvas>
-  <div class="in-vig"></div>
+  <div class="in-vig"></div><div class="in-txtbg"></div>
   <div class="in-emb"><img src="emblem.webp" alt=""><div class="in-shine"></div></div>
   <div class="in-txt">
     <div class="in-t0">ШҮҮХИЙН ШИЙДВЭР ГҮЙЦЭТГЭХ ЕРӨНХИЙ ГАЗАР</div>
@@ -256,16 +262,27 @@ tr:hover td{background:#F8FAFC}
   <div class="in-skip">Дарж алгасах</div>
 </div>
 <script>
-// Нээлтийн оршил: 3D даавуун төрийн далбаа гэрэл сүүдэртэйгээ удаан намирч, гэрэл бүдгэрэхэд байгууллагын сүлд тодорно (WebGL, нэг цонхонд нэг удаа)
+// Нээлтийн оршил: Gemini бичлэг + сүлд (нөөц хувилбар нь 3D даавуун төрийн далбаа гэрэл сүүдэртэйгээ удаан намирч, гэрэл бүдгэрэхэд байгууллагын сүлд тодорно (WebGL, нэг цонхонд нэг удаа)
 (function(){
   var el=document.getElementById("intro");if(!el)return;
   var seen=false;try{seen=sessionStorage.getItem("sga_intro3")==="1";}catch(e){}
   if(seen){el.remove();return;}try{sessionStorage.setItem("sga_intro3","1");}catch(e){}
   var reduce=false;try{reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
-  var cv=document.getElementById("inCv"),gl=null,raf=0,done=false,t0=performance.now();
-  function end(){if(done)return;done=true;el.classList.add("out");setTimeout(function(){cancelAnimationFrame(raf);el.remove();},950);}
+  var cv=document.getElementById("inCv"),vid=document.getElementById("inVid"),gl=null,raf=0,done=false,t0=performance.now(),mode="";
+  function end(){if(done)return;done=true;el.classList.add("out");setTimeout(function(){cancelAnimationFrame(raf);try{vid.pause();}catch(e){}el.remove();},950);}
   el.addEventListener("click",end);document.addEventListener("keydown",function(e){if(e.key==="Escape"||e.key==="Enter")end();},{once:true});
-  setTimeout(end,reduce?1500:6200);
+  // Сүлдийг бичлэгийн голын гэрлийн бөмбөлөгтэй давхцуулна (object-fit: cover)
+  function place(){var W=innerWidth,H=innerHeight,k=Math.max(W/1280,H/720);el.style.setProperty("--ey",Math.round(H/2-.02*720*k)+"px");}
+  // 1-р хувилбар: Gemini бичлэг (чимээгүй). Ачаалагдахгүй, удаан сүлжээ бол 3D далбаа.
+  function startFlag(){if(mode)return;mode="flag";try{vid.pause();vid.removeAttribute("src");}catch(e){}vid.remove();el.classList.add("go");setTimeout(end,reduce?1500:6200);initGL();}
+  function startVid(){if(mode||done)return;mode="vid";cv.remove();el.classList.add("vid");place();addEventListener("resize",place);
+    (function chk(){if(done)return;if(vid.currentTime>=.85)el.classList.add("go");else requestAnimationFrame(chk);})();
+    vid.addEventListener("ended",function(){setTimeout(end,600);});setTimeout(end,9000);}
+  var slow=false;try{var nc=navigator.connection;slow=!!(nc&&(nc.saveData||/2g/.test(nc.effectiveType||"")));}catch(e){}
+  if(reduce||slow||!vid.canPlayType||!vid.canPlayType("video/mp4"))startFlag();
+  else{vid.muted=true;vid.addEventListener("playing",startVid,{once:true});vid.addEventListener("error",startFlag);vid.src="intro.mp4";
+    try{var pp=vid.play();if(pp&&pp.catch)pp.catch(startFlag);}catch(e){startFlag();}setTimeout(startFlag,1600);}
+  function initGL(){t0=performance.now();
   try{gl=cv.getContext("webgl",{antialias:true,alpha:true})||cv.getContext("experimental-webgl");}catch(e){}
   if(!gl||reduce){cv.style.cssText+="background:url(flag-mn.svg) center/cover;filter:brightness(.42)";return;}
   var VS="attribute vec2 p;uniform mat4 M,P;uniform float t,A;varying vec2 uv;varying vec3 n,wp;varying float z;"+
@@ -321,6 +338,7 @@ tr:hover td{background:#F8FAFC}
     if(!done)raf=requestAnimationFrame(frame);
   }
   raf=requestAnimationFrame(frame);
+  }
 })();
 </script>
 <div class="lpage" id="LP">
