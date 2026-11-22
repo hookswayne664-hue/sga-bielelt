@@ -255,9 +255,9 @@ tr:hover td{background:#F8FAFC}
         </div>
         <div class="lbox">
           <div class="logo"><h1>Нэвтрэх</h1><p>Нэгжээ сонгоод нууц үгээ оруулна уу</p></div>
-          <div class="lmode"><button type="button" id="lmU" class="on" onclick="setLMode('unit')">Нэгжээр</button><button type="button" id="lmP" onclick="setLMode('person')">Хувийн эрхээр</button></div>
+          <div class="lmode"><button type="button" id="lmU" class="on" onclick="setLMode('unit')">Нэгжээр (ахлах)</button><button type="button" id="lmP" onclick="setLMode('person')">Шийдвэр гүйцэтгэгч</button></div>
           <div class="fg"><label for="lC">Нэгж</label><select id="lC"><option value="">— Нэгжээ сонгоно уу —</option></select></div>
-          <div class="fg" id="lNg" hidden><label for="lN">Нэвтрэх дугаар</label><input id="lN" inputmode="numeric" autocomplete="off" placeholder="Жишээ нь: 3" onkeydown="if(event.key==='Enter')doLogin()"></div>
+          <div class="fg" id="lNg" hidden><label for="lN">Тойрог</label><select id="lN"><option value="">— Эхлээд нэгжээ сонгоно уу —</option></select></div>
           <div class="fg"><label for="lP">Нууц үг</label><input type="password" id="lP" autocomplete="new-password" placeholder="Нууц үг" onkeydown="if(event.key==='Enter')doLogin()"></div>
           <button class="lbtn" id="lB" onclick="doLogin()">⏳ Ачаалж байна...</button>
           <div class="lerr" id="lE"></div>
@@ -765,10 +765,9 @@ function doLogout(){
 }
 
 // ===== ХУВИЙН НЭВТРЭХ ЭРХ (Firebase Authentication) =====
-// Эрхийн бүртгэл: config/people/<нэгж>/<дугаар> = {name, role, email, rev, uid, active, mustChange}
-// Нэвтрэх: нэгж + дугаар + нууц үг. Имэйл нь дотоод (sgaNN-дугаар@...) — хэрэглэгч мэдэх шаардлагагүй.
+// Шийдвэр гүйцэтгэгчийн эрх тойргоор: config/people/<нэгж>/<тойрог> = {name, email, rev, uid, active, history}
+// Нэвтрэх: нэгж + тойрог + нууц үг. Эрхийг ахлах (нэгжийн нэвтрэлт) нээж, нууц үгийг олгоно. Имэйл нь дотоод (sgaNN-тойрог@...).
 let LMODE="unit";
-const ROLE_MN={ahlah:"Ахлах шийдвэр гүйцэтгэгч",exec:"Шийдвэр гүйцэтгэгч"};
 function isExec(){return !!(S.user&&S.user.person&&S.user.person.role==="exec");}
 function setLMode(m){
   LMODE=m;
@@ -776,6 +775,13 @@ function setLMode(m){
   document.getElementById("lmP").classList.toggle("on",m==="person");
   document.getElementById("lNg").hidden=m!=="person";
   document.getElementById("lE").textContent="";
+  const lc=document.getElementById("lC");if(!lc._tj){lc._tj=1;lc.addEventListener("change",fillToirog);}
+  fillToirog();
+}
+function fillToirog(){
+  const sel=document.getElementById("lN");if(!sel)return;const code=document.getElementById("lC").value;const ds=code?unitDists(code):[];
+  sel.innerHTML="";const o0=mk("option");o0.value="";o0.textContent=!code?"— Эхлээд нэгжээ сонгоно уу —":ds.length?"— Тойргоо сонгоно уу —":"Энэ нэгжид тойрог алга";sel.appendChild(o0);
+  ds.forEach(n=>{const o=mk("option");o.value=String(n);o.textContent=n+"-р тойрог";sel.appendChild(o);});
 }
 function pEmail(code,no,rev){return "sga"+String(code).replace(/\D/g,"")+"-"+no+(rev?"-r"+rev:"")+"@shga-bilelt.firebaseapp.com";}
 let _authMod=null;
@@ -792,7 +798,7 @@ async function doPersonLogin(){
   const code=document.getElementById("lC").value,no=String(document.getElementById("lN").value||"").trim(),pwd=document.getElementById("lP").value;
   const err=document.getElementById("lE"),btn=document.getElementById("lB");err.textContent="";
   if(!code){err.textContent="Нэгжээ сонгоно уу!";return;}
-  if(!/^\d{1,3}$/.test(no)){err.textContent="Нэвтрэх дугаараа оруулна уу!";return;}
+  if(!/^\d{1,3}$/.test(no)){err.textContent="Тойргоо сонгоно уу!";return;}
   if(!pwd){err.textContent="Нууц үг оруулна уу!";return;}
   const u=S.units.find(x=>x.code===code&&!x.isAdmin&&!x.disabled);
   if(!u){err.textContent="Нэгж олдсонгүй!";return;}
@@ -801,8 +807,8 @@ async function doPersonLogin(){
   try{
     const s=await window._get(window._r(fbDB,"config/people/"+code+"/"+no));
     const p=s&&s.exists&&s.exists()?s.val():null;
-    if(!p||!p.email){err.textContent="Энэ нэгжид ийм дугаартай эрх алга.";return;}
-    if(p.active===false){err.textContent="Энэ эрх идэвхгүй болсон байна. Ахлахдаа хандана уу.";return;}
+    if(!p||!p.email){err.textContent="Энэ тойрогт эрх нээгээгүй байна. Ахлахдаа хандана уу.";return;}
+    if(p.active===false){err.textContent="Энэ тойргийн эрх хаалттай байна. Ахлахдаа хандана уу.";return;}
     const A=await authMod();let cr;
     try{cr=await A.signIn(A.auth,p.email,pwd);}catch(e){err.textContent=/too-many/.test(e&&e.code||"")?"Олон удаа буруу оруулсан тул түр хүлээгээд дахин оролдоно уу.":"Нууц үг буруу!";return;}
     const base="config/people/"+code+"/"+no;
@@ -841,12 +847,10 @@ async function loadPeople(unit){
   const s=await window._get(window._r(fbDB,"config/people"+(unit?"/"+unit:"")));
   return s&&s.exists&&s.exists()?(s.val()||{}):{};
 }
-async function issuePerson(unit,name,role,no){
+async function issuePerson(unit,name,no){
   const A=await authMod();
   const all=await loadPeople(unit)||{};
-  const isNew=!no;
-  if(isNew){const nums=Object.keys(all).map(Number).filter(n=>n>0);no=String((nums.length?Math.max(...nums):0)+1);}
-  const prev=all[no]||{};
+  const prev=all[no]||{};const isNew=!prev.email;
   let rev=isNew?0:(prev.rev||0)+1,cr=null,email="";const pw=tmpPwd();
   for(let t=0;t<6&&!cr;t++){
     email=pEmail(unit,no,rev);
@@ -856,16 +860,18 @@ async function issuePerson(unit,name,role,no){
   if(!cr)throw new Error("Эрх үүсгэж чадсангүй");
   try{await A.signOut(A.sec);}catch{}
   const now=new Date().toISOString();
-  const rec=Object.assign({},prev,{name:name||prev.name,role:role||prev.role||"exec",email,rev,uid:cr.user.uid,active:true,mustChange:true,updated:now,by:S.user.code});
+  const rec=Object.assign({},prev,{name:name||prev.name,role:"exec",email,rev,uid:cr.user.uid,active:true,mustChange:false,issued:now,updated:now,by:S.user.code});
+  delete rec.lastLogin;
+  if(prev.name&&name&&prev.name!==name){rec.history=(prev.history||[]).concat([{name:prev.name,until:now}]);}
   if(isNew)rec.created=now;
   await window._set(window._r(fbDB,"config/people/"+unit+"/"+no),rec);
   return{no,pw,name:rec.name};
 }
 function staffResult(box,unit,r,reset){
   const un=(S.units.find(x=>x.code===unit)||{}).name||unit;
-  const txt="ШГА Биелэлт — "+(reset?"нууц үг шинэчлэгдлээ":"нэвтрэх эрх")+"\n"+r.name+"\nНэгж: "+unit+" · "+un+"\nНэвтрэх дугаар: "+r.no+"\nТүр нууц үг: "+r.pw+"\nСайтын «Хувийн эрхээр» хэсгээр нэвтэрч, өөрийн нууц үгийг сонгоно.";
-  box.innerHTML="<div class='stres'>✅ <b>"+esc(r.name)+"</b>-д "+(reset?"шинэ түр нууц үг":"эрх")+" үүслээ<br>Нэгж: <b>"+esc(unit)+"</b> · Нэвтрэх дугаар: <b>"+esc(r.no)+"</b> · Түр нууц үг: <b>"+esc(r.pw)+"</b>"
-    +"<div style='font-size:12.5px;color:#475569;margin-top:6px'>Энэ түр нууц үгийг дахин харах боломжгүй тул одоо хуулж тухайн хүнд өгнө үү. Эхний удаа нэвтрэхэд өөрийн нууц үгийг сонгоно.</div></div>";
+  const txt="ШГА Биелэлт — "+(reset?"нууц үг шинэчлэгдлээ":"нэвтрэх эрх")+"\n"+r.name+"\nНэгж: "+unit+" · "+un+"\nТойрог: "+r.no+"\nНууц үг: "+r.pw+"\nСайтын «Шийдвэр гүйцэтгэгч» хэсгээр нэвтэрнэ.";
+  box.innerHTML="<div class='stres'>✅ <b>"+esc(r.name)+"</b>-д "+(reset?"шинэ нууц үг олголоо":"эрх нээгдлээ")+"<br>Нэгж: <b>"+esc(unit)+"</b> · Тойрог: <b>"+esc(r.no)+"</b> · Нууц үг: <b>"+esc(r.pw)+"</b>"
+    +"<div style='font-size:12.5px;color:#475569;margin-top:6px'>Энэ нууц үгийг дахин харах боломжгүй тул одоо хуулж тухайн гүйцэтгэгчид өгнө үү. Мартвал «🔑 Нууц үг» товчоор шинийг олгоно.</div></div>";
   const b=mk("button","btn bp");b.style.marginTop="10px";b.textContent="📋 Заавар хуулах";
   b.onclick=()=>{const done=()=>toast("✅ Хуулагдлаа","ts");try{navigator.clipboard.writeText(txt).then(done,()=>prompt("Хуулна уу:",txt));}catch{prompt("Хуулна уу:",txt);}};
   box.firstChild.appendChild(b);
@@ -873,10 +879,10 @@ function staffResult(box,unit,r,reset){
 async function tStaff(c){
   const isA=!!S.user.isAdmin;
   const head=mk("div","card");
-  head.innerHTML="<h3 style='margin:0 0 6px'>👥 Алба хаагчдын нэвтрэх эрх</h3><p style='margin:0;font-size:13.5px;color:#475569;line-height:1.6'>Шийдвэр гүйцэтгэгч, ахлах бүрт өөрийн нэвтрэх эрх үүсгэнэ. Нэвтрэх дугаар, түр нууц үгийг тухайн хүнд өгөхөд тэр «Хувийн эрхээр» хэсгээр нэвтэрч, өөрийн нууц үгийг сонгоно. Эрхийг устгадаггүй, зөвхөн идэвхгүй болгоно.</p>";
+  head.innerHTML="<h3 style='margin:0 0 6px'>👥 Шийдвэр гүйцэтгэгчдийн эрх</h3><p style='margin:0;font-size:13.5px;color:#475569;line-height:1.6'>Тойрог бүрт ажиллаж буй шийдвэр гүйцэтгэгчийн нэрийг бүртгээд «Эрх нээх» дарна. Гарсан нууц үгийг тухайн гүйцэтгэгчид өгөхөд тэр «Шийдвэр гүйцэтгэгч» хэсгээр нэвтэрнэ. Нууц үгээ мартвал «🔑 Нууц үг», тойрогт өөр хүн томилогдвол «✏️ Хүн солих» товчийг дарна.</p>";
   c.appendChild(head);
   const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
-  let unit=isA?(S._staffUnit||units[0].code):S.user.code;
+  let unit=isA?(S._staffUnit||(units.find(u=>unitDists(u.code).length)||units[0]).code):S.user.code;
   const card=mk("div","card");c.appendChild(card);
   card.innerHTML="<div style='color:#64748B'>⏳ Ачаалж байна...</div>";
   let all;try{all=await loadPeople(isA?"":unit);}catch{all=null;}
@@ -886,45 +892,44 @@ async function tStaff(c){
   if(isA){
     const row=mk("div","brow");row.style.marginBottom="12px";
     const sel=mk("select");sel.style.cssText="padding:9px 12px;border:1px solid #CBD5E1;border-radius:10px;font-family:inherit;min-width:260px;max-width:100%";
-    units.forEach(u=>{const o=mk("option");o.value=u.code;const n=Object.values(all[u.code]||{}).filter(p=>p.active!==false).length;o.textContent=u.code+" — "+u.name+(n?" ("+n+")":"");if(u.code===unit)o.selected=true;sel.appendChild(o);});
+    units.forEach(u=>{const ds=unitDists(u.code);if(!ds.length)return;const o=mk("option");o.value=u.code;const n=Object.values(all[u.code]||{}).filter(p=>p&&p.email&&p.active!==false).length;o.textContent=u.code+" — "+u.name+" ("+n+"/"+ds.length+")";if(u.code===unit)o.selected=true;sel.appendChild(o);});
     sel.onchange=()=>{S._staffUnit=sel.value;renderTab("staff");};
-    const tot=Object.values(all).reduce((s,o)=>s+Object.values(o||{}).filter(p=>p.active!==false).length,0);
-    const info=mk("span");info.style.cssText="font-size:13px;color:#64748B";info.textContent="Нийт идэвхтэй эрх: "+tot;
+    const tot=Object.values(all).reduce((s,o)=>s+Object.values(o||{}).filter(p=>p&&p.email&&p.active!==false).length,0);
+    const info=mk("span");info.style.cssText="font-size:13px;color:#64748B";info.textContent="Нийт нээгдсэн эрх: "+tot+" / 304 тойрог";
     row.appendChild(sel);row.appendChild(info);card.appendChild(row);
   }
-  const keys=Object.keys(people).sort((a,b)=>Number(a)-Number(b));
+  const res=mk("div");res.id="stRes";res.style.marginBottom="10px";card.appendChild(res);
+  if(S._staffMsg&&S._staffMsg.unit===unit){staffResult(res,unit,S._staffMsg.r,S._staffMsg.reset);S._staffMsg=null;}
+  const ds=unitDists(unit);
+  if(!ds.length){const m=mk("div");m.style.cssText="color:#64748B;font-size:13.5px";m.textContent="Энэ нэгжид тойрог бүртгэгдээгүй байна.";card.appendChild(m);return;}
   const wrap=mk("div");wrap.style.overflowX="auto";
-  if(keys.length){
-    const t=mk("table","sttbl");t.innerHTML="<thead><tr><th>Дугаар</th><th>Овог нэр</th><th>Үүрэг</th><th>Төлөв</th><th></th></tr></thead>";
-    const tb=mk("tbody");
-    keys.forEach(no=>{const p=people[no]||{};const tr=mk("tr");
-      const st=p.active===false?"<span class='stbadge stoff'>Идэвхгүй</span>":p.mustChange?"<span class='stbadge stnew'>Нэвтрээгүй</span>":"<span class='stbadge stok'>Идэвхтэй</span>";
-      tr.innerHTML="<td><b>"+esc(no)+"</b></td><td>"+esc(p.name||"")+"</td><td>"+esc(ROLE_MN[p.role]||p.role||"")+"</td><td>"+st+"</td><td style='white-space:nowrap;text-align:right'></td>";
-      const act=tr.lastElementChild;
-      const br=mk("button","btn bx");br.textContent="🔑 Нууц үг";br.title="Шинэ түр нууц үг олгох";
-      br.onclick=async()=>{br.disabled=true;br.textContent="⏳";try{const r=await issuePerson(unit,p.name,p.role,no);S._staffMsg={unit,r,reset:true};renderTab("staff");}catch(e){toast("❌ "+(e&&e.message||e),"te");br.disabled=false;br.textContent="🔑 Нууц үг";}};
-      const ba=mk("button","btn bx");ba.style.marginLeft="6px";ba.textContent=p.active===false?"▶ Идэвхжүүлэх":"⏸ Идэвхгүй";
+  const t=mk("table","sttbl");t.innerHTML="<thead><tr><th>Тойрог</th><th>Шийдвэр гүйцэтгэгч</th><th>Төлөв</th><th></th></tr></thead>";
+  const tb=mk("tbody");
+  const inS="padding:8px 10px;border:1px solid #CBD5E1;border-radius:9px;font-family:inherit;width:100%;min-width:160px;box-sizing:border-box";
+  const run=async(btn,name,no,reset)=>{btn.disabled=true;const o=btn.textContent;btn.textContent="⏳";try{const r=await issuePerson(unit,name,String(no));S._staffMsg={unit,r,reset};renderTab("staff");}catch(e){toast("❌ "+(e&&e.message||e),"te");btn.disabled=false;btn.textContent=o;}};
+  ds.forEach(no=>{const p=people[no]||{};const tr=mk("tr");const has=!!p.email;
+    const st=!has?"<span class='stbadge stoff'>Эрх нээгээгүй</span>":p.active===false?"<span class='stbadge stoff'>Хаалттай</span>":!p.lastLogin?"<span class='stbadge stnew'>Нэвтрээгүй</span>":"<span class='stbadge stok'>Идэвхтэй</span>";
+    tr.innerHTML="<td><b>"+no+"</b></td><td></td><td>"+st+"</td><td style='white-space:nowrap;text-align:right'></td>";
+    const nameTd=tr.children[1],act=tr.children[3];
+    if(!has){
+      const inp=mk("input");inp.placeholder="Овог нэр";inp.style.cssText=inS;nameTd.appendChild(inp);
+      const b=mk("button","btn bp");b.textContent="Эрх нээх";
+      b.onclick=()=>{const nm=inp.value.trim();if(nm.length<2){toast("Гүйцэтгэгчийн нэрийг оруулна уу","te");inp.focus();return;}run(b,nm,no,false);};
+      inp.onkeydown=e=>{if(e.key==="Enter")b.click();};act.appendChild(b);
+    }else{
+      nameTd.textContent=p.name||"";
+      const br=mk("button","btn bx");br.textContent="🔑 Нууц үг";br.title="Шинэ нууц үг олгох";br.onclick=()=>run(br,p.name,no,true);
+      const bc=mk("button","btn bx");bc.style.marginLeft="6px";bc.textContent="✏️ Хүн солих";
+      bc.onclick=()=>{nameTd.innerHTML="";const inp=mk("input");inp.placeholder="Шинэ гүйцэтгэгчийн овог нэр";inp.style.cssText=inS;nameTd.appendChild(inp);inp.focus();
+        act.innerHTML="";const ok=mk("button","btn bp");ok.textContent="Солих";const cn=mk("button","btn bx");cn.style.marginLeft="6px";cn.textContent="Болих";
+        ok.onclick=()=>{const nm=inp.value.trim();if(nm.length<2){toast("Нэрийг оруулна уу","te");return;}run(ok,nm,no,false);};inp.onkeydown=e=>{if(e.key==="Enter")ok.click();};
+        cn.onclick=()=>renderTab("staff");act.appendChild(ok);act.appendChild(cn);};
+      const ba=mk("button","btn bx");ba.style.marginLeft="6px";ba.textContent=p.active===false?"▶ Нээх":"⏸ Хаах";ba.title=p.active===false?"Эрхийг дахин нээх":"Эрхийг түр хаах";
       ba.onclick=async()=>{ba.disabled=true;try{await window._set(window._r(fbDB,"config/people/"+unit+"/"+no+"/active"),p.active===false);renderTab("staff");}catch{toast("❌ Хадгалж чадсангүй","te");ba.disabled=false;}};
-      act.appendChild(br);act.appendChild(ba);tb.appendChild(tr);});
-    t.appendChild(tb);wrap.appendChild(t);
-  }else{wrap.innerHTML="<div style='color:#64748B;font-size:13.5px;padding:6px 0 4px'>Одоогоор эрх үүсгээгүй байна.</div>";}
-  card.appendChild(wrap);
-  const res=mk("div");res.id="stRes";
-  const add=mk("div","card");
-  add.innerHTML="<h4 style='margin:0 0 10px'>➕ Шинэ эрх үүсгэх"+(isA?" — "+esc(unit):"")+"</h4><div style='display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end'>"
-    +"<div style='flex:2 1 220px;min-width:0'><label style='display:block;font-size:12.5px;font-weight:600;margin-bottom:6px'>Овог нэр</label><input id='stN' placeholder='Жишээ нь: Б.Бат' style='width:100%;padding:9px 12px;border:1px solid #CBD5E1;border-radius:10px;font-family:inherit;box-sizing:border-box'></div>"
-    +"<div style='flex:1 1 200px;min-width:0'><label style='display:block;font-size:12.5px;font-weight:600;margin-bottom:6px'>Үүрэг</label><select id='stR' style='width:100%;padding:9px 12px;border:1px solid #CBD5E1;border-radius:10px;font-family:inherit'><option value='exec'>Шийдвэр гүйцэтгэгч</option><option value='ahlah'>Ахлах шийдвэр гүйцэтгэгч</option></select></div>"
-    +"<button class='btn bp' id='stAdd'>Эрх үүсгэх</button></div>";
-  add.appendChild(res);c.appendChild(add);
-  if(S._staffMsg&&S._staffMsg.unit===unit){staffResult(res,unit,S._staffMsg.r,S._staffMsg.reset);S._staffMsg=null;setTimeout(()=>res.scrollIntoView({behavior:"smooth",block:"center"}),50);}
-  add.querySelector("#stAdd").onclick=async()=>{
-    const nm=add.querySelector("#stN").value.trim(),rl=add.querySelector("#stR").value,b=add.querySelector("#stAdd");
-    if(nm.length<2){toast("Овог нэрээ оруулна уу","te");return;}
-    if(Object.values(people).some(p=>p&&p.active!==false&&String(p.name||"").trim().toLowerCase()===nm.toLowerCase())&&!confirm(nm+" нэртэй эрх аль хэдийн байна. Дахин үүсгэх үү?"))return;
-    b.disabled=true;b.textContent="⏳ Үүсгэж байна...";
-    try{const r=await issuePerson(unit,nm,rl,null);S._staffMsg={unit,r,reset:false};renderTab("staff");}
-    catch(e){toast("❌ "+(e&&e.message||e),"te");b.disabled=false;b.textContent="Эрх үүсгэх";}
-  };
+      act.appendChild(br);act.appendChild(bc);act.appendChild(ba);
+    }
+    tb.appendChild(tr);});
+  t.appendChild(tb);wrap.appendChild(t);card.appendChild(wrap);
 }
 
 function manualRefresh(){window._distTick=0;loadAllData();}
@@ -1183,7 +1188,7 @@ function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];tabs.push({id:"home",l:"🏠 Нүүр"});
   if(isExec()){tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
   else if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
-  if(!isExec()){tabs.push({id:"chat",l:"💬 Чат"});tabs.push({id:"staff",l:"👥 Алба хаагчид"});}
+  if(!isExec()){tabs.push({id:"chat",l:"💬 Чат"});tabs.push({id:"staff",l:"👥 Гүйцэтгэгчид"});}
   if(isA){tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"survey",l:"📋 Судалгаа"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"gsheets",l:"🔗 Хэргийн бүртгэл"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
   const tb=document.getElementById("TB");tb.innerHTML="";
   tabs.forEach(t=>{
