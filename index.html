@@ -291,14 +291,14 @@ tr:hover td{background:#F8FAFC}
   function place(){var W=innerWidth,H=innerHeight,k=Math.max(W/1280,H/720);el.style.setProperty("--ey",Math.round(H/2+(CV.y-.5)*720*k)+"px");el.style.setProperty("--vd",CV.d);}
   // 1-р хувилбар: Gemini бичлэг (чимээгүй). Ачаалагдахгүй, удаан сүлжээ бол 3D далбаа.
   function startFlag(){if(mode)return;mode="flag";try{vid.pause();vid.removeAttribute("src");}catch(e){}vid.remove();muted=false;snd.hidden=true;el.classList.add("go");setTimeout(end,reduce?1500:6200);initGL();
-    if(!reduce){try{aud=new Audio("intro5.m4a");play(aud,function(){});}catch(e){}}}
+    if(!reduce){try{aud=new Audio("intro5.m4a?v=3");play(aud,function(){});}catch(e){}}}
   function startVid(){if(mode||done)return;mode="vid";cv.remove();el.classList.add("vid");place();addEventListener("resize",place);
     (function chk(){if(done)return;if(vid.currentTime>=CV.g)el.classList.add("go");else requestAnimationFrame(chk);})();
     vid.addEventListener("ended",function(){setTimeout(end,600);});setTimeout(end,9000);}
   var slow=false;try{var nc=navigator.connection;slow=!!(nc&&(nc.saveData||/2g/.test(nc.effectiveType||"")));}catch(e){}
   if(!CV||reduce||slow||!vid.canPlayType||!vid.canPlayType("video/mp4"))startFlag();
-  else{vid.addEventListener("playing",startVid,{once:true});vid.addEventListener("error",startFlag);vid.src=CV.s;
-    play(vid,startFlag);setTimeout(startFlag,1600);}
+  else{vid.addEventListener("playing",startVid,{once:true});vid.addEventListener("error",startFlag);vid.src=CV.s+"?v=3"; // ?v= — шинэ хувилбарыг хөтөчийн кэшээс биш серверээс авахуулна
+    play(vid,startFlag);setTimeout(startFlag,2600);}
   function initGL(){t0=performance.now();
   try{gl=cv.getContext("webgl",{antialias:true,alpha:true})||cv.getContext("experimental-webgl");}catch(e){}
   if(!gl||reduce){cv.style.cssText+="background:url(flag-mn.svg) center/cover;filter:brightness(.42)";return;}
