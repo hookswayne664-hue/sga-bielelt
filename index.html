@@ -85,6 +85,9 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 #intro .in-t1{display:flex;justify-content:center;white-space:nowrap;font:700 clamp(19px,4.6vw,38px)/1.15 Montserrat,Inter,system-ui,sans-serif;color:#F6EDD5;letter-spacing:.55em;text-shadow:0 2px 26px rgba(0,0,0,.7);opacity:0;filter:blur(6px);animation:inTitle 1.8s 3.15s cubic-bezier(.2,.75,.2,1) forwards}
 #intro .in-t2{font:800 clamp(14px,3.2vw,22px)/1.1 Montserrat,Inter,system-ui,sans-serif;letter-spacing:.3em;background:linear-gradient(90deg,#A9802A,#FFF1C2 50%,#A9802A);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;animation:inFade 1s 4s ease forwards,inGold 2.6s 4s linear infinite}
 #intro .in-skip{position:absolute;left:0;right:0;text-align:center;bottom:calc(14px + env(safe-area-inset-bottom,0px));font:500 12px Inter,system-ui,sans-serif;color:rgba(233,208,138,.45);letter-spacing:.08em;z-index:4;opacity:0;animation:inFade 1s 1s forwards}
+#intro .in-skip{cursor:pointer}
+#intro .in-snd{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5;border:1px solid rgba(233,199,102,.6);background:rgba(4,10,22,.6);color:#F3DFA2;font:600 13px Inter,system-ui,sans-serif;padding:9px 15px;border-radius:999px;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:inPulse 1.6s ease-in-out infinite}
+@keyframes inPulse{50%{box-shadow:0 0 0 7px rgba(233,199,102,.16)}}
 @media (max-width:480px){#intro .in-t0{letter-spacing:.14em}#intro .in-t1{letter-spacing:.3em}}
 @keyframes inEmbV{0%{opacity:0;transform:translate(-50%,-50%) scale(.2);filter:blur(6px) brightness(3)}40%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:blur(0) brightness(1)}}
 @keyframes inEmb{to{opacity:1;transform:translate(-50%,-50%) scale(1);filter:blur(0) brightness(1)}}
@@ -260,6 +263,7 @@ tr:hover td{background:#F8FAFC}
   </div>
   <div class="in-bar t"></div><div class="in-bar b"></div>
   <div class="in-skip">Дарж алгасах</div>
+  <button type="button" class="in-snd" hidden>🔊 Дуу асаах</button>
 </div>
 <script>
 // Нээлтийн оршил: Gemini бичлэг + сүлд (нөөц хувилбар нь 3D даавуун төрийн далбаа гэрэл сүүдэртэйгээ удаан намирч, гэрэл бүдгэрэхэд байгууллагын сүлд тодорно (WebGL, нэг цонхонд нэг удаа)
@@ -269,8 +273,16 @@ tr:hover td{background:#F8FAFC}
   if(seen){el.remove();return;}try{sessionStorage.setItem("sga_intro3","1");}catch(e){}
   var reduce=false;try{reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
   var cv=document.getElementById("inCv"),vid=document.getElementById("inVid"),gl=null,raf=0,done=false,t0=performance.now(),mode="";
-  function end(){if(done)return;done=true;el.classList.add("out");setTimeout(function(){cancelAnimationFrame(raf);try{vid.pause();}catch(e){}el.remove();},950);}
-  el.addEventListener("click",end);document.addEventListener("keydown",function(e){if(e.key==="Escape"||e.key==="Enter")end();},{once:true});
+  var snd=el.querySelector(".in-snd"),aud=null,muted=false;
+  function fadeOut(m){if(!m)return;var v=1,iv=setInterval(function(){v-=.09;if(v<=0){clearInterval(iv);try{m.pause();}catch(e){}}else try{m.volume=v;}catch(e){}},70);}
+  function end(){if(done)return;done=true;el.classList.add("out");fadeOut(mode==="vid"?vid:null);fadeOut(aud);setTimeout(function(){cancelAnimationFrame(raf);try{vid.pause();if(aud)aud.pause();}catch(e){}el.remove();},950);}
+  // Дуу: хөтөч зөвшөөрвөл шууд дуугарна; хаавал чимээгүй эхэлж, «Дуу асаах» эсвэл эхний товшилтоор дуу асна
+  function unmute(){muted=false;snd.hidden=true;if(mode==="vid")vid.muted=false;else if(aud){try{aud.play();}catch(e){}}}
+  function play(m,onFail){m.muted=false;var p;try{p=m.play();}catch(e){p=null;}
+    if(p&&p.then)p.then(null,function(){if(done)return;muted=true;snd.hidden=false;if(m===vid){m.muted=true;var q=m.play();if(q&&q.catch)q.catch(onFail);}});}
+  snd.addEventListener("click",function(e){e.stopPropagation();unmute();});
+  el.querySelector(".in-skip").addEventListener("click",function(e){e.stopPropagation();end();});
+  el.addEventListener("click",function(){if(muted)unmute();else end();});document.addEventListener("keydown",function(e){if(e.key==="Escape"||e.key==="Enter")end();},{once:true});
   // Сүлдийг бичлэгийн голын гэрлийн бөмбөлөгтэй давхцуулна (object-fit: cover)
   // 5 янзын нээлт ээлжлэн гарна: Gemini-ийн 4 бичлэг (s: файл, g: сүлд гарах эхлэл, y: гэрлийн өндөр, d: бүдгэрэлт) + 3D далбаа
   var VS=[{s:"intro.mp4",g:.85,y:.48,d:.6},{s:"intro2.mp4",g:1.1,y:.383,d:.6},{s:"intro3.mp4",g:.6,y:.5,d:.55},{s:"intro4.mp4",g:1.45,y:.418,d:.5},null];
@@ -278,14 +290,15 @@ tr:hover td{background:#F8FAFC}
   var CV=VS[ix];
   function place(){var W=innerWidth,H=innerHeight,k=Math.max(W/1280,H/720);el.style.setProperty("--ey",Math.round(H/2+(CV.y-.5)*720*k)+"px");el.style.setProperty("--vd",CV.d);}
   // 1-р хувилбар: Gemini бичлэг (чимээгүй). Ачаалагдахгүй, удаан сүлжээ бол 3D далбаа.
-  function startFlag(){if(mode)return;mode="flag";try{vid.pause();vid.removeAttribute("src");}catch(e){}vid.remove();el.classList.add("go");setTimeout(end,reduce?1500:6200);initGL();}
+  function startFlag(){if(mode)return;mode="flag";try{vid.pause();vid.removeAttribute("src");}catch(e){}vid.remove();muted=false;snd.hidden=true;el.classList.add("go");setTimeout(end,reduce?1500:6200);initGL();
+    if(!reduce){try{aud=new Audio("intro5.m4a");play(aud,function(){});}catch(e){}}}
   function startVid(){if(mode||done)return;mode="vid";cv.remove();el.classList.add("vid");place();addEventListener("resize",place);
     (function chk(){if(done)return;if(vid.currentTime>=CV.g)el.classList.add("go");else requestAnimationFrame(chk);})();
     vid.addEventListener("ended",function(){setTimeout(end,600);});setTimeout(end,9000);}
   var slow=false;try{var nc=navigator.connection;slow=!!(nc&&(nc.saveData||/2g/.test(nc.effectiveType||"")));}catch(e){}
   if(!CV||reduce||slow||!vid.canPlayType||!vid.canPlayType("video/mp4"))startFlag();
-  else{vid.muted=true;vid.addEventListener("playing",startVid,{once:true});vid.addEventListener("error",startFlag);vid.src=CV.s;
-    try{var pp=vid.play();if(pp&&pp.catch)pp.catch(startFlag);}catch(e){startFlag();}setTimeout(startFlag,1600);}
+  else{vid.addEventListener("playing",startVid,{once:true});vid.addEventListener("error",startFlag);vid.src=CV.s;
+    play(vid,startFlag);setTimeout(startFlag,1600);}
   function initGL(){t0=performance.now();
   try{gl=cv.getContext("webgl",{antialias:true,alpha:true})||cv.getContext("experimental-webgl");}catch(e){}
   if(!gl||reduce){cv.style.cssText+="background:url(flag-mn.svg) center/cover;filter:brightness(.42)";return;}
