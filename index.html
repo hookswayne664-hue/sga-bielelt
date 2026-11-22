@@ -1600,16 +1600,6 @@ function tMyData(c){
           showPrintModal(S.user.name,ent.period,rows);
         };})(e,plan);
         tr.lastElementChild.appendChild(bp);
-        const bd=mk("button","btn bd_");bd.textContent="🗑️";
-        bd.onclick=(function(idx){return function(){
-          if(!confirm("Устгах уу?"))return;
-          const ent=mine[idx];
-          const si=S.data.findIndex(d=>d.unit===ent.unit&&d.period===ent.period&&d.freq===ent.freq);
-          if(si>=0){S.data.splice(si,1);try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
-          api("deleteData",{unit:ent.unit,period:ent.period,freq:ent.freq});
-          toast("✅ Устгагдлаа","ts");renderTab("mydata");}
-        }})(i);
-        tr.lastElementChild.appendChild(bd);
         tbl.appendChild(tr);
       });
       tw.appendChild(tbl);sub.appendChild(tw);card.appendChild(sub);
