@@ -34,7 +34,7 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 .lflow{position:absolute;left:0;top:260px;width:100%;height:900px;opacity:.45}
 .lflow path{stroke-dasharray:4 16;animation:flow 9s linear infinite;fill:none}
 .lflow path.s{animation-duration:15s}
-.bok{position:absolute;border-radius:50%;animation:bob 7s ease-in-out infinite}
+.lbok{position:absolute;border-radius:50%;animation:bob 7s ease-in-out infinite}
 .lwrap{position:relative;max-width:1240px;width:100%;margin:0 auto;padding:0 max(20px,env(safe-area-inset-left,0px))}
 .lhead{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:12px;color:var(--tx);text-decoration:none}
@@ -159,6 +159,16 @@ tr:hover td{background:#F8FAFC}
 .mfi{margin-bottom:14px}
 .mfi label{display:block;font-size:12px;color:#334155;font-weight:600;margin-bottom:6px}
 .mfi input{width:100%;padding:9px 12px;background:var(--bg3);border:1px solid #CBD5E1;border-radius:10px;color:var(--tx);font-size:13px;font-family:inherit}
+/* Төлөвлөгөө нээж хаадаг карт */
+.pcol{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:0;margin-bottom:12px;box-shadow:var(--sh);transition:border-color .2s,box-shadow .2s;overflow:hidden}
+.pcol:hover{border-color:#5EEAD4}
+.pcol>.phead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:16px 18px;cursor:pointer;user-select:none}
+.pcol>.phead .pn{font-family:Montserrat,Inter,sans-serif;font-size:15.5px;font-weight:800;color:var(--tx)}
+.pcol>.phead .pm{font-size:12.5px;color:var(--tx2)}
+.pcol>.phead .chev{margin-left:auto;width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#F1F5F9;color:#475569;transition:transform .25s,background .2s}
+.pcol.open>.phead .chev{transform:rotate(180deg);background:#E6FAF7;color:var(--bl)}
+.pcol>.pbody{padding:0 18px 16px;border-top:1px solid #EEF2F6;padding-top:14px}
+.pcol>.pbody[hidden]{display:none}
 /* ===== Нүүр (нэвтэрсний дараа) ===== */
 .hm{display:flex;flex-direction:column;gap:30px}
 .hm-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
@@ -210,11 +220,11 @@ tr:hover td{background:#F8FAFC}
       <path class="s" d="M0 700 C 300 620, 520 780, 820 640 S 1220 560, 1440 640" stroke="#3B82F6" stroke-width="1.3"/>
       <path d="M0 540 C 200 470, 460 610, 760 480 S 1180 360, 1440 430" stroke="#F59E0B" stroke-width="1.1"/>
     </svg>
-    <div class="bok" style="left:8%;top:220px;width:14px;height:14px;background:rgba(20,184,166,.45)"></div>
-    <div class="bok" style="left:26%;top:120px;width:10px;height:10px;background:rgba(59,130,246,.45);animation-delay:1.2s"></div>
-    <div class="bok" style="left:46%;top:300px;width:8px;height:8px;background:rgba(245,158,11,.5);animation-delay:2.1s"></div>
-    <div class="bok" style="left:63%;top:100px;width:12px;height:12px;background:rgba(236,72,153,.32);animation-delay:.6s"></div>
-    <div class="bok" style="left:90%;top:330px;width:10px;height:10px;background:rgba(139,92,246,.35);animation-delay:1.7s"></div>
+    <div class="lbok" style="left:8%;top:220px;width:14px;height:14px;background:rgba(20,184,166,.45)"></div>
+    <div class="lbok" style="left:26%;top:120px;width:10px;height:10px;background:rgba(59,130,246,.45);animation-delay:1.2s"></div>
+    <div class="lbok" style="left:46%;top:300px;width:8px;height:8px;background:rgba(245,158,11,.5);animation-delay:2.1s"></div>
+    <div class="lbok" style="left:63%;top:100px;width:12px;height:12px;background:rgba(236,72,153,.32);animation-delay:.6s"></div>
+    <div class="lbok" style="left:90%;top:330px;width:10px;height:10px;background:rgba(139,92,246,.35);animation-delay:1.7s"></div>
   </div>
   <div class="lwrap">
     <header class="lhead">
@@ -852,11 +862,23 @@ function fillLanding(){
     countUp(document.getElementById("LP"));
   }catch(e){}
 }
+// Нэгжийн өөрийн серверт байгаа мэдээг энэ төхөөрөмжийн санах ойтой нэгтгэнэ (компьютер сольсон ч харагдана)
+function mergeOwn(arr){
+  let ch=false;
+  arr.filter(e=>e.unit===S.user.code).forEach(e=>{
+    const i=S.data.findIndex(x=>x.unit===e.unit&&x.period===e.period&&x.freq===e.freq);
+    if(i<0){S.data.push(e);ch=true;}
+    else{const l=S.data[i];const m=Object.assign({},l,{values:Object.assign({},l.values||{},e.values||{}),plans:Array.from(new Set([...(l.plans||[]),...(e.plans||[])]))});if(JSON.stringify(m)!==JSON.stringify(l)){S.data[i]=m;ch=true;}}
+  });
+  if(ch){try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}}
+  S._ownMerged=true;return ch;
+}
 async function getAllEntries(){
   if(S._allTs&&Date.now()-S._allTs<60000&&S._all)return S._all;
   let arr=null;
   if(fbDB&&window._get){try{const s=await window._get(window._r(fbDB,"data"));if(s&&s.exists&&s.exists()){arr=Object.values(s.val()||{}).filter(e=>e&&e.unit);}}catch(e){}}
   if(!arr)arr=S.data||[];
+  else if(S.user&&!S.user.isAdmin)mergeOwn(arr);
   S._all=arr;S._allTs=Date.now();return arr;
 }
 function curPeriods(){const P=getPer();return{month:[P.mn[0]],quarter:[P.q[0]],year:[P.yr[0]],week:P.w.slice(0,7)};}
@@ -1053,6 +1075,24 @@ function smartDefaultPeriod(freq){
 
 // ===== DATA ENTRY =====
 let dFreqInit=false;
+// Төлөвлөгөөг эхлээд нэрээр нь жагсааж, дээр нь дарахад асуултууд нээгдэнэ
+function planCollapse(sub,pl,headerCount,nq){
+  S.openPlans=S.openPlans||{};
+  const key=dFreq+"|"+pl;
+  const h3=sub.querySelector("h3");
+  const head=mk("div","phead");head.setAttribute("role","button");head.tabIndex=0;
+  head.innerHTML="<span class='pn'></span>"+(h3?h3.innerHTML.replace(esc(pl),"").replace(pl,""):"")+"<span class='pm'>· "+nq+" асуулт</span><span class='chev' aria-hidden='true'>▾</span>";
+  head.querySelector(".pn").textContent=pl;
+  const body=mk("div","pbody");
+  const kids=Array.from(sub.childNodes);
+  kids.forEach((n,i)=>{if(n===h3)return;body.appendChild(n);});
+  sub.innerHTML="";sub.className="pcol"+(S.openPlans[key]?" open":"");
+  body.hidden=!S.openPlans[key];
+  head.setAttribute("aria-expanded",S.openPlans[key]?"true":"false");
+  const tog=()=>{S.openPlans[key]=!S.openPlans[key];sub.classList.toggle("open",!!S.openPlans[key]);body.hidden=!S.openPlans[key];head.setAttribute("aria-expanded",S.openPlans[key]?"true":"false");};
+  head.onclick=tog;head.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tog();}};
+  sub.appendChild(head);sub.appendChild(body);
+}
 function tData(c){
   if(!dFreqInit){dFreqInit=true;const act=S.activePlans||[];const has=f=>S.inds.some(i=>i.freq===f&&(i.plans||[]).some(p=>act.includes(p)));if(!has(dFreq)){const f=["week","month","quarter","year"].find(has);if(f){dFreq=f;dPer="";}}}
   const P=getPer();if(!dPer)dPer=smartDefaultPeriod(dFreq);
@@ -1206,7 +1246,7 @@ function tData(c){
     // Тойргоор авдаг төлөвлөгөө (зөвхөн тойрогтой нэгжид) — тойрог сонгож бөглөнө
     if(!S.user.isAdmin&&distMode(pl)&&unitDists(S.user.code).length){
       renderDistPanel(sub,pl,pInds,grpPeriod,distMode(pl),isLocked,mkIndInput);
-      card.appendChild(sub);return;
+      planCollapse(sub,pl,0,pInds.length);card.appendChild(sub);return;
     }
 
     if(hasSubgroup){
@@ -1230,6 +1270,7 @@ function tData(c){
       gb.onclick=(function(plan,period){return function(){subDataForPlan(plan,period);};})(pl,grpPeriod);
       gbr.appendChild(gb);sub.appendChild(gbr);
     }
+    planCollapse(sub,pl,0,pInds.length);
     card.appendChild(sub);
   });
   const br=mk("div","brow");
@@ -1503,6 +1544,23 @@ function tMyData(c){
   }
   tgCard.appendChild(tgBr);
   c.appendChild(tgCard);
+  if(!S._ownMerged){getAllEntries().then(()=>{if(S.tab==="mydata")renderTab("mydata");});}
+  // ===== Илгээсэн судалгаа =====
+  const svIds=Object.keys(S.activeSurveys||{}).filter(sid=>S.surveyResps[sid]&&S.surveyResps[sid][S.user.code]);
+  if(svIds.length){
+    const svc=mk("div","card");svc.innerHTML="<h2>📎 Илгээсэн судалгаа</h2>";
+    svIds.forEach(sid=>{
+      const sv=S.activeSurveys[sid],r=S.surveyResps[sid][S.user.code]||{},vals=r.values||{};
+      const box=mk("div","sub");
+      let h="<h3>"+esc(sv.title||"Судалгаа")+" <span style='font-weight:500;color:var(--tx2);text-transform:none;letter-spacing:0'>· "+esc(r.date||"")+"</span></h3>";
+      (sv.questions||[]).forEach(q=>{const v=vals[q.id];let shown;
+        if(v&&typeof v==="object"&&v.data){shown="<a href='"+v.data+"' download='"+esc(v.name||"file")+"' class='btn bi' style='text-decoration:none;display:inline-block;padding:5px 12px'>⬇ "+esc(v.name||"Файл")+"</a>";}
+        else shown=esc(v==null||v===""?"—":v);
+        h+="<div style='display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #EEF2F6;font-size:13.5px'><span style='color:#334155'>"+esc(q.text||"")+"</span><span style='text-align:right'>"+shown+"</span></div>";});
+      box.innerHTML=h;svc.appendChild(box);
+    });
+    c.appendChild(svc);
+  }
   const mine=S.data.filter(d=>d.unit===S.user.code).sort((a,b)=>b.date>a.date?1:-1);
   const card=mk("div","card");card.innerHTML="<h2>📂 Миний мэдээ</h2>";
   if(!mine.length){card.innerHTML+="<div class='empty'>Мэдээ байхгүй</div>";}
