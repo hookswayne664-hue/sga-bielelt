@@ -6,7 +6,7 @@
 <title>ШГА · БИЕЛЭЛТ</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html.th-soft{filter:brightness(.88) sepia(.12) contrast(.96)}html.th-dark{filter:invert(.9) hue-rotate(180deg);background:#0b0b0b}html.th-dark img,html.th-dark video,html.th-dark canvas,html.th-dark .in-emb{filter:invert(1) hue-rotate(180deg)}
+html.th-soft body::after{content:'';position:fixed;inset:0;background:#E6EAEF;mix-blend-mode:multiply;pointer-events:none;z-index:2147483647}html.th-dark,html.th-navy{filter:invert(.9) hue-rotate(180deg);background:#0b0b0b}html.th-dark img,html.th-dark video,html.th-dark canvas,html.th-dark .in-emb,html.th-navy img,html.th-navy video,html.th-navy canvas,html.th-navy .in-emb{filter:invert(1) hue-rotate(180deg)}html.th-navy body::after{content:'';position:fixed;inset:0;background:#D2DBE8;mix-blend-mode:multiply;pointer-events:none;z-index:2147483647}
 :root{--bg:#F4F7FB;--bg2:#FFFFFF;--bg3:#F8FAFC;--bg4:#E2E8F0;--bd:#E2E8F0;--tx:#0F1E36;--tx2:#5B6B84;--tx3:#94A3B8;--bl:#0F766E;--bl2:#0F766E;--gr:#047857;--gn:#047857;--rd:#BE123C;--or:#B45309;--ac:#14B8A6;--sh:0 8px 24px rgba(15,30,54,.06)}
 body{font-family:Inter,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px}
 h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
@@ -273,8 +273,8 @@ tr:hover td{background:#F8FAFC}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-const THEMES=[["","☀️ Цагаан"],["th-soft","🌤 Зөөлөн"],["th-dark","🌙 Харанхуй"]];
-function applyTheme(t){const e=document.documentElement;e.classList.remove("th-soft","th-dark");if(t)e.classList.add(t);}
+const THEMES=[["","☀️ Цагаан"],["th-soft","🌤 Зөөлөн саарал"],["th-navy","🌌 Бараан хөх"],["th-dark","🌙 Хар"]];
+function applyTheme(t){const e=document.documentElement;e.classList.remove("th-soft","th-dark","th-navy");if(t)e.classList.add(t);}
 try{applyTheme(localStorage.getItem("sga_theme")||"");}catch{}
 function cycleTheme(){let t="";try{t=localStorage.getItem("sga_theme")||"";}catch{}const i=(THEMES.findIndex(x=>x[0]===t)+1)%THEMES.length;try{localStorage.setItem("sga_theme",THEMES[i][0]);}catch{}applyTheme(THEMES[i][0]);try{toast("Дэлгэц: "+THEMES[i][1],"ts");}catch{}}
 </script>
@@ -469,7 +469,7 @@ function cycleTheme(){let t="";try{t=localStorage.getItem("sga_theme")||"";}catc
   <div class="appbg" aria-hidden="true"><i style="width:600px;height:600px;left:10%;top:-300px;background:rgba(45,212,191,.18)"></i><i style="width:560px;height:560px;right:-180px;top:50%;background:rgba(96,165,250,.16)"></i></div>
   <div class="nav">
     <div class="navbrand"><span class="blogo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 7h14M5 7l-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0zM8 21h8"/></svg></span>ШГА · БИЕЛЭЛТ</div>
-    <div class="navr"><span id="nU"></span><button class="obtn" id="btnRefresh" style="display:none" onclick="manualRefresh()">🔄</button><button class="obtn" id="btnMyPw" style="display:none" onclick="myPwModal()" title="Нууц үг солих">🔑</button><button class="obtn" id="btnTheme" onclick="cycleTheme()" title="Дэлгэцийн өнгө: Цагаан / Зөөлөн / Харанхуй">🎨</button><button class="obtn" onclick="doLogout()">Гарах</button></div>
+    <div class="navr"><span id="nU"></span><button class="obtn" id="btnRefresh" style="display:none" onclick="manualRefresh()">🔄</button><button class="obtn" id="btnMyPw" style="display:none" onclick="myPwModal()" title="Нууц үг солих">🔑</button><button class="obtn" id="btnTheme" onclick="cycleTheme()" title="Дэлгэцийн өнгө: Цагаан / Зөөлөн / Бараан хөх / Хар">🎨</button><button class="obtn" onclick="doLogout()">Гарах</button></div>
   </div>
   <div class="tabs" id="TB"></div>
   <div class="con" id="MC"></div>
@@ -4445,6 +4445,30 @@ function aCqCard(w,ctx,ppl){
       const id=Date.now().toString(36);try{await dbSet("dreg/"+ctx.u+"/cq/"+id,{t,c,to:bx.querySelector("#qto").value,on:true,ts:Date.now()});await sync();ov.remove();toast("✅ Асуулт нэмэгдлээ","ts");ctx.re();}catch(e){toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}};};
 }
 
+// ---------- Туршилтын мэдээ цэвэрлэх (зөвхөн админ, 2027.01.31 хүртэл харагдана) ----------
+// Зөвхөн daily/ (гүйцэтгэгчийн өдрийн мэдээ) ба dreg/ (ахлахын 1–4 бүлэг, ажиллаагүй, сул тойрог, нэмэлт асуулт)-ийг устгана.
+// Төлөвлөгөөний мэдээ, эрх, тохиргоонд хүрэхгүй. Устгахын өмнө JSON нөөц татна.
+function aTestReset(c){
+  const card=mk("div","card");card.style.borderLeft="4px solid #F43F5E";c.appendChild(card);
+  card.innerHTML="<h2>🧪 Туршилтын мэдээ цэвэрлэх</h2><p class='dlead' style='margin-bottom:10px'>Туршилтын үед оруулсан бүх тоог нэг дор устгана: <b>гүйцэтгэгчийн өдрийн мэдээ</b> болон <b>ахлахын 1–4 бүлгийн мэдээ</b> (7 хоногийн тоо, тохиолдлын бүртгэл, ажиллаагүй алба хаагч, сул тойрог, орон тоо, нэмэлт асуулт). Төлөвлөгөөний мэдээ, гүйцэтгэгчийн эрх, тохиргоонд хүрэхгүй. Устгахын өмнө нөөц файл автоматаар татагдана. Энэ хэсэг 2027.01.31 хүртэл харагдана.</p>"
+   +"<div class='brow'><button class='btn bd_' id='trs'>🧹 Туршилтын бүх мэдээг устгах</button></div>";
+  card.querySelector("#trs").onclick=()=>{const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(460px,94vw)";ov.appendChild(bx);ov.onclick=e=>{if(e.target===ov)ov.remove();};
+    bx.innerHTML="<h3 style='margin:0 0 12px'>🧹 Туршилтын мэдээ устгах</h3><div class='dz' id='trc'>⏳ Тоолж байна...</div><div class='fi' style='margin:12px 0'><label>Баталгаажуулахын тулд <b>УСТГАХ</b> гэж бичнэ үү</label><input id='trt' autocomplete='off'></div><div class='brow'><button class='btn bd_' id='trok' disabled>Нөөцлөөд устгах</button><button class='btn bx' id='trcl'>Болих</button></div>";
+    document.body.appendChild(ov);bx.querySelector("#trcl").onclick=()=>ov.remove();
+    let D=null,G=null;
+    (async()=>{try{[D,G]=await Promise.all([dbGet("daily"),dbGet("dreg")]);
+      let nd=0;Object.values(D||{}).forEach(u=>Object.values(u||{}).forEach(d=>{nd+=Object.keys(d||{}).length;}));
+      let ng=0;Object.values(G||{}).forEach(u=>Object.values(u||{}).forEach(k=>{ng+=Object.keys(k||{}).length;}));
+      bx.querySelector("#trc").innerHTML="Гүйцэтгэгчийн өдрийн мэдээ: <b>"+nd+"</b> бичлэг ("+Object.keys(D||{}).length+" нэгж)<br>Ахлахын мэдээ, бүртгэл: <b>"+ng+"</b> бичлэг ("+Object.keys(G||{}).length+" нэгж)";
+      bx.querySelector("#trok").disabled=false;}catch(e){bx.querySelector("#trc").textContent="Уншиж чадсангүй: "+(e&&e.message||e);}})();
+    bx.querySelector("#trok").onclick=async()=>{if(bx.querySelector("#trt").value.trim().toUpperCase()!=="УСТГАХ"){toast("«УСТГАХ» гэж бичнэ үү","te");return;}
+      const b=bx.querySelector("#trok");b.disabled=true;b.textContent="⏳ Нөөцөлж байна...";
+      try{const blob=new Blob([JSON.stringify({at:new Date().toISOString(),daily:D,dreg:G},null,1)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ШГА туршилтын мэдээ нөөц "+ymd(new Date())+".json";document.body.appendChild(a);a.click();a.remove();
+        b.textContent="⏳ Устгаж байна...";await dbSet("daily",null);await dbSet("dreg",null);
+        ov.remove();toast("🧹 Туршилтын мэдээ цэвэрлэгдлээ. Нөөц файл татагдсан.","ts");S._daUnit=null;renderTab("daily");}
+      catch(e){b.disabled=false;b.textContent="Нөөцлөөд устгах";toast("❌ Устгаж чадсангүй: "+(e&&e.message||e),"te");}};};
+}
+
 // ---------- Маршрут (1-р шатны tDaily-г орлоно) ----------
 async function tDaily(c){
   if(!fbDB||!window._get){c.innerHTML="<div class='card'>Сервертэй холбогдож чадсангүй.</div>";return;}
@@ -4455,7 +4479,7 @@ async function tDaily(c){
     const bar=mk("div","dctl"),b=mk("button","btn bx");b.textContent="← Бүх нэгж";b.onclick=()=>{S._daUnit=null;re();};bar.appendChild(b);bar.insertAdjacentHTML("beforeend","<b>"+esc(u+" · "+unitNm(u))+"</b>");w.appendChild(bar);
     const w2=mk("div");w.appendChild(w2);return aUnit(w2,u,sec,false);}
   aSecNav(c,re);const w=mk("div");c.appendChild(w);
-  if(S.user.isAdmin)return sec==="d"?dAdmin(w):aAdmin(w,sec);
+  if(S.user.isAdmin){const r=sec==="d"?dAdmin(w):aAdmin(w,sec);if(ymd(new Date())<"2027-02-01")aTestReset(c);return r;}
   return sec==="d"?dUnit(w,S.user.code,false):aUnit(w,S.user.code,sec,true);
 }
 
