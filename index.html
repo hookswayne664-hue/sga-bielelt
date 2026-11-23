@@ -716,9 +716,9 @@ async function initFB(){
     const t=new Promise((_,r)=>setTimeout(()=>r("timeout"),5000));
     const l=async()=>{
       const{initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
-      const{getDatabase,ref,get,set,onValue}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+      const{getDatabase,ref,get,set,onValue,goOffline,goOnline}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
       const app=initializeApp(FC);window._fbApp=app;fbDB=getDatabase(app);
-      window._r=ref;window._get=get;window._set=set;window._onVal=onValue;
+      window._r=ref;window._get=get;window._set=set;window._onVal=onValue;window._goOff=()=>goOffline(fbDB);window._goOn=()=>goOnline(fbDB);if(window.fbConnWrap)fbConnWrap();
     };
     await Promise.race([l(),t]);
   }catch{fbDB=null;}
@@ -4078,7 +4078,7 @@ function dRange(mode,day){const t=ymd(new Date());let a=day,b=day;
 function dLab(s){return s.slice(5).replace("-",".")+" "+DWD[dD(s).getDay()];}
 function dObj(x){const o={};if(x)Object.keys(x).forEach(k=>{if(x[k]!=null)o[k]=x[k];});return o;}
 function dAbsOn(abs,no,day){return Object.values(abs||{}).find(a=>a&&String(a.no)===String(no)&&a.from<=day&&(!a.to||a.to>=day));}
-async function dQuery(path,a,b){const M=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");const s=await M.get(M.query(M.ref(fbDB,path),M.orderByKey(),M.startAt(a),M.endAt(b)));return s.exists()?s.val():{};}
+async function dQuery(path,a,b){if(window.fbEnsure)await fbEnsure();const M=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");const s=await M.get(M.query(M.ref(fbDB,path),M.orderByKey(),M.startAt(a),M.endAt(b)));return s.exists()?s.val():{};}
 async function dLoad(u,a,b){if(a===b){const v=await dbGet("daily/"+u+"/"+a);const o={};if(v)o[a]=v;return o;}return dQuery("daily/"+u,a,b);}
 async function dXlsx(tbl,name){try{await loadSheetJS();XLSX.writeFile(XLSX.utils.table_to_book(tbl,{sheet:"Өдрийн мэдээ"}),name+".xlsx");}catch(e){toast("Excel гаргаж чадсангүй","te");}}
 function dCtl(onCh,extra){ // Өдөр / 7 хоног / Сар + огноо
@@ -4801,6 +4801,23 @@ async function tExecMine(c){
   body.innerHTML=h;
   xb.onclick=()=>dXlsx(body.querySelector("#xmt"),"Миний мэдээ "+u+" "+no+"-р тойрог "+M);
 }
+
+// ---------- Firebase холболтыг хэмнэх (Spark: нэгэн зэрэг 100 холболт) ----------
+// 1 минут үйлдэлгүй (таб далд бол 20 сек) болбол салгана; товч дарах, бичих, уншихад автоматаар дахин холбогдоно.
+let _fbOff=false,_fbLast=Date.now(),_fbBusy=0,_fbWait=null;
+function fbWaitConn(ms){return new Promise(res=>{let done=false,un=null;const fin=()=>{if(done)return;done=true;try{un&&un();}catch{}res();};
+  try{un=window._onVal(window._r(fbDB,".info/connected"),s=>{if(s.val()===true)fin();});}catch{fin();}setTimeout(fin,ms);});}
+async function fbEnsure(){_fbLast=Date.now();if(!_fbOff||!window._goOn)return;if(_fbWait)return _fbWait;
+  _fbOff=false;try{window._goOn();}catch{}_fbWait=fbWaitConn(5000);await _fbWait;_fbWait=null;}
+function fbConnWrap(){if(window._fbWrapped)return;window._fbWrapped=1;
+  const g=window._get,s=window._set;
+  window._get=async(...a)=>{await fbEnsure();_fbBusy++;try{return await g(...a);}finally{_fbBusy--;_fbLast=Date.now();}};
+  window._set=async(...a)=>{await fbEnsure();_fbBusy++;try{return await s(...a);}finally{_fbBusy--;_fbLast=Date.now();}};}
+(function(){const act=()=>{_fbLast=Date.now();if(_fbOff)fbEnsure();};
+  ["pointerdown","keydown","touchstart","wheel"].forEach(e=>addEventListener(e,act,{passive:true,capture:true}));
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)act();});
+  setInterval(()=>{if(_fbOff||_fbBusy||!window._goOff||!fbDB)return;if(S.user&&S.user.isAdmin)return; // админ холбогдсон хэвээр
+    const idle=Date.now()-_fbLast;if(idle>(document.hidden?20000:60000)){_fbOff=true;try{window._goOff();}catch{}}},5000);})();
 </script>
 </body>
 </html>
