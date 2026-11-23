@@ -6,6 +6,7 @@
 <title>ШГА · БИЕЛЭЛТ</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
+html.th-soft{filter:brightness(.88) sepia(.12) contrast(.96)}html.th-dark{filter:invert(.9) hue-rotate(180deg);background:#0b0b0b}html.th-dark img,html.th-dark video,html.th-dark canvas,html.th-dark .in-emb{filter:invert(1) hue-rotate(180deg)}
 :root{--bg:#F4F7FB;--bg2:#FFFFFF;--bg3:#F8FAFC;--bg4:#E2E8F0;--bd:#E2E8F0;--tx:#0F1E36;--tx2:#5B6B84;--tx3:#94A3B8;--bl:#0F766E;--bl2:#0F766E;--gr:#047857;--gn:#047857;--rd:#BE123C;--or:#B45309;--ac:#14B8A6;--sh:0 8px 24px rgba(15,30,54,.06)}
 body{font-family:Inter,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px}
 h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
@@ -163,7 +164,7 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 .dsec{font-size:12px;font-weight:800;color:#0E7490;letter-spacing:.06em;text-transform:uppercase;margin:18px 0 4px}
 .dctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .dctl input[type=date],.dctl select{padding:8px 10px;border:1px solid #CBD5E1;border-radius:10px;font:inherit;font-size:13.5px;background:#fff;color:var(--tx)}
-.dq{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 18px;padding:12px 0;border-bottom:1px solid #EEF2F6;align-items:center}
+.dq{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 18px;padding:12px 10px;border-bottom:1px solid #EEF2F6;align-items:start;border-radius:10px}.dq:nth-child(even){background:#F6F9FC}.dq:hover{background:#ECFDF5}.dq>div:first-child{padding-top:9px}
 .dq .dt{font-weight:600;font-size:14px;line-height:1.4}.dq .dt b{color:#0F766E;margin-right:5px}
 .dq .dh{font-size:12px;color:#64748B;margin-top:2px;line-height:1.4}.dq .db{font-size:11px;color:#94A3B8;margin-top:2px}
 .dq .din{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
@@ -271,6 +272,12 @@ tr:hover td{background:#F8FAFC}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+const THEMES=[["","☀️ Цагаан"],["th-soft","🌤 Зөөлөн"],["th-dark","🌙 Харанхуй"]];
+function applyTheme(t){const e=document.documentElement;e.classList.remove("th-soft","th-dark");if(t)e.classList.add(t);}
+try{applyTheme(localStorage.getItem("sga_theme")||"");}catch{}
+function cycleTheme(){let t="";try{t=localStorage.getItem("sga_theme")||"";}catch{}const i=(THEMES.findIndex(x=>x[0]===t)+1)%THEMES.length;try{localStorage.setItem("sga_theme",THEMES[i][0]);}catch{}applyTheme(THEMES[i][0]);try{toast("Дэлгэц: "+THEMES[i][1],"ts");}catch{}}
+</script>
 </head>
 <body>
 <div id="intro" aria-hidden="true">
@@ -462,7 +469,7 @@ tr:hover td{background:#F8FAFC}
   <div class="appbg" aria-hidden="true"><i style="width:600px;height:600px;left:10%;top:-300px;background:rgba(45,212,191,.18)"></i><i style="width:560px;height:560px;right:-180px;top:50%;background:rgba(96,165,250,.16)"></i></div>
   <div class="nav">
     <div class="navbrand"><span class="blogo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 7h14M5 7l-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0zM8 21h8"/></svg></span>ШГА · БИЕЛЭЛТ</div>
-    <div class="navr"><span id="nU"></span><button class="obtn" id="btnRefresh" style="display:none" onclick="manualRefresh()">🔄</button><button class="obtn" id="btnMyPw" style="display:none" onclick="myPwModal()" title="Нууц үг солих">🔑</button><button class="obtn" onclick="doLogout()">Гарах</button></div>
+    <div class="navr"><span id="nU"></span><button class="obtn" id="btnRefresh" style="display:none" onclick="manualRefresh()">🔄</button><button class="obtn" id="btnMyPw" style="display:none" onclick="myPwModal()" title="Нууц үг солих">🔑</button><button class="obtn" id="btnTheme" onclick="cycleTheme()" title="Дэлгэцийн өнгө: Цагаан / Зөөлөн / Харанхуй">🎨</button><button class="obtn" onclick="doLogout()">Гарах</button></div>
   </div>
   <div class="tabs" id="TB"></div>
   <div class="con" id="MC"></div>
@@ -4052,7 +4059,8 @@ const DQ=[
  {k:"q12",s:"Чөлөөлсөн",t:"Битүүмжлэл, хураалтаас чөлөөлсөн",b:"ШШГТХ 49.9"},
  {k:"q13",s:"Эрх түдгэлзүүлэх",t:"Улсын бүртгэлд эрхийг түдгэлзүүлэх хүсэлт хүргүүлсэн",b:"ШШГТХ 44.2.14"}
 ];
-const DABS=["Ээлжийн амралт","Өвчтэй","Албан томилолт","Сургалт","Цалинтай чөлөө","Цалингүй чөлөө","Жирэмсний болон амаржсаны амралт","Хүүхэд асрах чөлөө","Ажил тасалсан","Бусад"];
+const DVAC="Сул тойрог (алба хаагч томилогдоогүй)";
+const DABS=[DVAC,"Ээлжийн амралт","Өвчтэй","Албан томилолт","Сургалт","Цалинтай чөлөө","Цалингүй чөлөө","Жирэмсний болон амаржсаны амралт","Хүүхэд асрах чөлөө","Ажил тасалсан","Бусад"];
 const DWD=["Ня","Да","Мя","Лх","Пү","Ба","Бя"];
 function dqKeys(q){return q.c?q.c.map((_,i)=>q.k+"_"+i):[q.k];}
 function dqVal(r,q){if(!r||!r.v)return 0;return dqKeys(q).reduce((a,k)=>a+(+r.v[k]||0),0);}
@@ -4095,6 +4103,7 @@ async function dExec(c){
   const [m1]=dRange("month",today),wk=dRange("week",today)[0];
   const all=[...new Set([...dDays(m1,today),...days])];const R={};
   await Promise.all(all.map(async d=>{try{R[d]=await dbGet("daily/"+u+"/"+d+"/"+no);}catch{R[d]=null;}}));
+  let XQ=[];try{XQ=aCqOn(await dbGet("config/people/"+u+"/"+no+"/cq"),"exec");}catch{}
   // Түүх
   const sum=(ds,q)=>ds.reduce((a,d)=>a+(q?dqVal(R[d],q):dTotal(R[d])),0);
   const wds=all.filter(d=>d>=wk),mds=all.filter(d=>d>=m1);
@@ -4102,6 +4111,7 @@ async function dExec(c){
   h+="<tr><td class='dz'>Төлөв</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?(R[d].zero?"○":"✅"):(d===today?"⏳":"⚠️"))+"</td>").join("")+"<td></td><td></td></tr>";
   h+="<tr class='tot'><td>Нийт ажиллагаа (1–5)</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?dTotal(R[d]):"")+"</td>").join("")+"<td>"+sum(wds)+"</td><td>"+sum(mds)+"</td></tr>";
   DQ.forEach((q,i)=>{h+="<tr><td>"+(i+1)+". "+esc(q.s)+"</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?dqVal(R[d],q):"")+"</td>").join("")+"<td>"+sum(wds,q)+"</td><td>"+sum(mds,q)+"</td></tr>";});
+  XQ.forEach(q=>{h+="<tr><td>➕ "+esc(q.t)+"</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?dqVal(R[d],q):"")+"</td>").join("")+"<td>"+wds.reduce((a,d)=>a+dqVal(R[d],q),0)+"</td><td>"+mds.reduce((a,d)=>a+dqVal(R[d],q),0)+"</td></tr>";});
   h+="</tbody></table></div><p class='dz' style='margin-top:8px'>✅ бөглөсөн · ○ ажиллагаа явуулаагүй гэж баталгаажуулсан · ⚠️ бөглөөгүй. Огноон дээр дарж тухайн өдрийн мэдээг нөхөж бөглөнө.</p>";
   hist.innerHTML=h;
   hist.querySelectorAll("th.clk").forEach(th=>th.onclick=()=>{S._dxDay=th.dataset.d;c.innerHTML="";dExec(c);});
@@ -4127,6 +4137,7 @@ async function dExec(c){
     +"<div class='fi' style='margin-top:12px'><label><b>15.</b> Тэмдэглэл <span class='dz'>(заавал биш)</span></label><textarea id='dnote' placeholder='Тоонд багтаагүй тайлбар'>"+esc(r.note||"")+"</textarea></div>"
     +"<label class='dzero' id='dzw' hidden><input type='checkbox' id='dzc'"+(r.zero?" checked":"")+"> Өнөөдөр ажиллагаа явуулаагүй гэдгийг баталж байна</label>");
   form.querySelectorAll("input[name=dex]").forEach(x=>x.onchange=()=>{form.querySelector("#dexw").style.display=form.querySelector("input[name=dex]:checked").value==="1"?"":"none";});
+  if(XQ.length){const zw=form.querySelector("#dzw");const tmp=mk("div");aCqInputs(tmp,v,XQ,"data-k","В. Нэгжийн нэмэлт асуулт");zw.before(...tmp.childNodes);}
   const bar=mk("div","dsum");bar.innerHTML="<span class='dtot'>Нийт ажиллагаа: <span id='dtv'>0</span></span>";
   const sv=mk("button","btn bp");sv.textContent=r.ts?"💾 Шинэчилж хадгалах":"💾 Мэдээ хадгалах";bar.appendChild(sv);form.appendChild(bar);
   const read=()=>{const o={};form.querySelectorAll("input[data-k]").forEach(x=>{const n=Math.max(0,Math.floor(+x.value||0));if(n)o[x.dataset.k]=n;});return o;};
@@ -4157,7 +4168,7 @@ async function dUnit(c,u,back){
   card.innerHTML="<h2>📝 Өдрийн мэдээ — тойргоор"+(back?" · "+esc(u+" "+un):"")+"</h2>";card.appendChild(dCtl(re,ex));
   const body=mk("div");card.appendChild(body);body.innerHTML="<div class='dz'>⏳ Ачаалж байна...</div>";
   const [a,b]=dRange(S._dMode,S._dDay);let D={},abs={},ppl={};
-  try{[D,abs,ppl]=await Promise.all([dLoad(u,a,b),dbGet("dreg/"+u+"/abs").then(x=>x||{}),loadPeople(u).then(x=>x||{})]);}catch(e){body.innerHTML="<div class='dalert r'>Уншиж чадсангүй: "+esc(e&&e.message||e)+"</div>";return;}
+  let XQ=[];try{[D,abs,ppl]=await Promise.all([dLoad(u,a,b),dbGet("dreg/"+u+"/abs").then(x=>x||{}),loadPeople(u).then(x=>x||{})]);if(!S.user.isAdmin)XQ=aCqOn(await dbGet("dreg/"+u+"/cq"),"exec");}catch(e){body.innerHTML="<div class='dalert r'>Уншиж чадсангүй: "+esc(e&&e.message||e)+"</div>";return;}
   const wdays=dDays(a,b).filter(d=>dWork(d)||D[d]);
   const nos=[...new Set([...unitDists(u).map(String),...Object.keys(dObj(ppl))])].sort((x,y)=>+x-+y);
   const nameOf=n=>{const p=dObj(ppl)[n];return p&&p.name||"";};
@@ -4168,12 +4179,12 @@ async function dUnit(c,u,back){
   const isDay=S._dMode==="day",sentN=isDay?rows.filter(r=>r.rec).length:rows.reduce((s,r)=>s+r.sent,0),exp=rows.length*wdays.length;
   const abN=isDay?rows.filter(r=>!r.rec&&r.abNow).length:rows.reduce((s,r)=>s+r.ab,0),missN=isDay?rows.filter(r=>!r.rec&&!r.abNow).length:rows.reduce((s,r)=>s+r.miss,0);
   let h="<div class='stats'>"+dStat(rows.length,"Тойрог")+dStat(isDay?sentN:sentN+"/"+exp,isDay?"Бөглөсөн":"Бөглөсөн (тойрог×өдөр)","g")+dStat(abN,"Ажиллаагүй","o")+dStat(missN,isDay&&a===today?"Бөглөөгүй байна":"Бөглөөгүй","r")+dStat(totAll,"Нийт ажиллагаа")+"</div>";
-  h+="<div class='tw'><table class='dtbl' id='dut'><thead><tr><th>Тойрог</th><th>Гүйцэтгэгч</th><th>Төлөв</th><th>Нийт ажиллагаа</th>"+DQ.map((q,i)=>"<th title='"+esc(q.t)+"'>"+(i+1)+". "+esc(q.s)+"</th>").join("")+"</tr></thead><tbody>";
+  h+="<div class='tw'><table class='dtbl' id='dut'><thead><tr><th>Тойрог</th><th>Гүйцэтгэгч</th><th>Төлөв</th><th>Нийт ажиллагаа</th>"+DQ.map((q,i)=>"<th title='"+esc(q.t)+"'>"+(i+1)+". "+esc(q.s)+"</th>").join("")+XQ.map(q=>"<th title='Нэгжийн нэмэлт асуулт'>➕ "+esc(q.t)+"</th>").join("")+"</tr></thead><tbody>";
   rows.forEach(r=>{let st;
-    if(isDay)st=r.rec?(r.rec.zero?"○ Ажиллагаагүй":"✅ "+new Date(r.rec.ts).toTimeString().slice(0,5)):r.abNow?"🏖 "+esc(r.abNow.reason):(a===today?"⏳ Бөглөөгүй":"⚠️ Бөглөөгүй");
+    if(isDay)st=r.rec?(r.rec.zero?"○ Ажиллагаагүй":"✅ "+new Date(r.rec.ts).toTimeString().slice(0,5)):r.abNow?(r.abNow.reason===DVAC?"🚫 Сул тойрог":"🏖 "+esc(r.abNow.reason)):(a===today?"⏳ Бөглөөгүй":"⚠️ Бөглөөгүй");
     else st=r.sent+"/"+wdays.length+" өдөр"+(r.ab?" · 🏖"+r.ab:"")+(r.miss?" · ⚠️"+r.miss:"");
-    h+="<tr class='dclk' data-n='"+r.n+"'><td>"+esc(r.n)+"</td><td style='text-align:left'>"+esc(r.name)+"</td><td style='text-align:left;white-space:nowrap'>"+st+"</td><td><b>"+r.rs.reduce((x,y)=>x+dTotal(y),0)+"</b></td>"+DQ.map(q=>"<td>"+r.rs.reduce((x,y)=>x+dqVal(y,q),0)+"</td>").join("")+"</tr>";});
-  h+="<tr class='tot'><td colspan='3'>Нэгжийн дүн</td><td>"+totAll+"</td>"+DQ.map(q=>"<td>"+totQ(q)+"</td>").join("")+"</tr></tbody></table></div><p class='dz' style='margin-top:8px'>Мөр дээр дарж тухайн тойргийн өдөр бүрийн задаргааг харна. Мэдэгдлийн цахим хувь: "+(()=>{const t=totQ(DQ[0]),e=rows.reduce((s,r)=>s+r.rs.reduce((x,y)=>x+(+((y.v||{}).q1_2)||0),0),0);return t?Math.round(e*100/t)+"%":"—";})()+"</p>";
+    h+="<tr class='dclk' data-n='"+r.n+"'><td>"+esc(r.n)+"</td><td style='text-align:left'>"+esc(r.name)+"</td><td style='text-align:left;white-space:nowrap'>"+st+"</td><td><b>"+r.rs.reduce((x,y)=>x+dTotal(y),0)+"</b></td>"+DQ.map(q=>"<td>"+r.rs.reduce((x,y)=>x+dqVal(y,q),0)+"</td>").join("")+XQ.map(q=>"<td>"+r.rs.reduce((x,y)=>x+dqVal(y,q),0)+"</td>").join("")+"</tr>";});
+  h+="<tr class='tot'><td colspan='3'>Нэгжийн дүн</td><td>"+totAll+"</td>"+DQ.map(q=>"<td>"+totQ(q)+"</td>").join("")+XQ.map(q=>"<td>"+totQ(q)+"</td>").join("")+"</tr></tbody></table></div><p class='dz' style='margin-top:8px'>Мөр дээр дарж тухайн тойргийн өдөр бүрийн задаргааг харна. Мэдэгдлийн цахим хувь: "+(()=>{const t=totQ(DQ[0]),e=rows.reduce((s,r)=>s+r.rs.reduce((x,y)=>x+(+((y.v||{}).q1_2)||0),0),0);return t?Math.round(e*100/t)+"%":"—";})()+"</p>";
   // Анхааруулга
   const al=[];
   rows.forEach(r=>r.rs.forEach(x=>{if(x.ex)al.push("<div class='dalert r'>🚨 <b>"+esc(r.n)+"-р тойрог</b> "+esc(r.name)+": "+esc(x.ext||"онцгой тохиолдол")+"</div>");}));
@@ -4191,7 +4202,7 @@ function dDetail(n,r,wdays,D,abs){
   const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(980px,96vw)";ov.appendChild(bx);ov.onclick=e=>{if(e.target===ov)ov.remove();};
   let h="<h3 style='margin:0 0 12px'>"+esc(n)+"-р тойрог · "+esc(r&&r.name||"")+"</h3><div class='tw' style='max-height:70vh'><table class='dtbl'><thead><tr><th>Огноо</th><th>Нийт</th>"+DQ.map((q,i)=>"<th title='"+esc(q.t)+"'>"+(i+1)+"</th>").join("")+"<th>Тэмдэглэл</th></tr></thead><tbody>";
   wdays.slice().reverse().forEach(d=>{const x=dObj(D[d])[n],ab=dAbsOn(abs,n,d);
-    h+="<tr><td>"+dLab(d)+"</td>"+(x?"<td><b>"+dTotal(x)+"</b></td>"+DQ.map(q=>"<td>"+(dqVal(x,q)||"")+"</td>").join("")+"<td style='text-align:left;white-space:normal;min-width:160px'>"+(x.ex?"🚨 "+esc(x.ext)+" ":"")+esc(x.note||"")+(x.zero?"○ ажиллагаагүй":"")+"</td>":"<td colspan='"+(DQ.length+2)+"' style='text-align:left'>"+(ab?"🏖 "+esc(ab.reason):"⚠️ Бөглөөгүй")+"</td>")+"</tr>";});
+    h+="<tr><td>"+dLab(d)+"</td>"+(x?"<td><b>"+dTotal(x)+"</b></td>"+DQ.map(q=>"<td>"+(dqVal(x,q)||"")+"</td>").join("")+"<td style='text-align:left;white-space:normal;min-width:160px'>"+(x.ex?"🚨 "+esc(x.ext)+" ":"")+esc(x.note||"")+(x.zero?"○ ажиллагаагүй":"")+"</td>":"<td colspan='"+(DQ.length+2)+"' style='text-align:left'>"+(ab?(ab.reason===DVAC?"🚫 Сул тойрог":"🏖 "+esc(ab.reason)):"⚠️ Бөглөөгүй")+"</td>")+"</tr>";});
   h+="</tbody></table></div><div class='brow'><button class='btn bx' id='dcl'>Хаах</button></div>";
   bx.innerHTML=h;bx.querySelector("#dcl").onclick=()=>ov.remove();document.body.appendChild(ov);
 }
@@ -4264,7 +4275,6 @@ async function dAdmin(c){
 // dreg/<нэгж>/staff/<YYYY-MM> = {v:{..},ts} — 4.2 орон тоо
 const ASEC=[["d","📝 Өдрийн мэдээ"],["1","1. ШГ ажиллагаа"],["2","2. Сахилга, хариуцлага"],["3","3. Өргөдөл, гомдол"],["4","4. Хүний нөөц"]];
 const AW11=[
- {k:"a1",s:"Шүүх хуралдаан",t:"Шүүх хуралдаанд оролцсон",c:["Шийдвэр гүйцэтгэгчийн үйлдэлд гаргасан гомдлоор","Бусад"]},
  {k:"a2",s:"Төлөөлөх эрх",t:"Шүүх, цагдаа, АТГ-д төлөөлөх эрхээ хэрэгжүүлсэн",c:["Шүүх","Цагдаа","АТГ"]},
  {k:"a3",s:"Тайлбарлуулсан",t:"Шийдвэрийг тайлбарлуулахаар шүүхэд хандсан"},
  {k:"a4",s:"Материал шилжүүлсэн",t:"Шийдвэр биелүүлээгүй, саад учруулсан тухай материал шилжүүлсэн",c:["Эрүүгийн хэрэг","Зөрчил"]},
@@ -4349,8 +4359,10 @@ const AREG={
   stats:(L,M)=>{const a=aCompMonth(L,M);return [[a.nw,"Энэ сард ирсэн"],[a.done,"Шийдвэрлэсэн","g"],[a.open,"Хянагдаж буй","o"],[a.base+(a.done?" ("+Math.round(a.base*100/a.done)+"%)":""),"Үндэслэлтэй","r"],[a.rep,"Давтан"]];}},
  appt:{id:"appt",n:"4.3",icon:"🪪",t:"Томилгоо, чөлөөлөлт",h:"Тухай бүр бүртгэнэ. Томилсон, тойрог өөрчилсөн бол «👥 Гүйцэтгэгчид» цэсээр тойргийн нэвтрэх эрхийг шинэчилнэ.",
   f:[{k:"name",l:"Алба хаагч",t:"text",req:1,h:"Овог, нэр, албан тушаал"},{k:"type",l:"Төрөл",t:"sel",req:1,o:["Томилсон","Чөлөөлсөн","Шилжүүлсэн","Тойрог өөрчилсөн"]},
+   {k:"no",l:"Тойрог",t:"toj",show:v=>!!v.type,h:"Шийдвэр гүйцэтгэгч бол тойргийг сонгоно. Томилсон, тойрог өөрчилсөн бол тухайн тойргийн «Сул тойрог» бүртгэл автоматаар хаагдана; чөлөөлсөн, шилжүүлсэн бол тойрог сул гэж автоматаар бүртгэгдэнэ."},
    {k:"ord",l:"Тушаалын дугаар",t:"text",req:1},{k:"d",l:"Тушаалын огноо",t:"date",req:1,def:1}],
-  cols:[["Огноо",r=>ymdMn(r.d)],["Алба хаагч",r=>esc(r.name||""),1],["Төрөл",r=>esc(r.type||"")],["Тушаал",r=>esc(r.ord||"")]],
+  after:async(o,old,ctx)=>{if(!o.no||(old.no===o.no&&old.type===o.type))return;await aVacSync(ctx,o.no,o.type,o.d);},
+  cols:[["Огноо",r=>ymdMn(r.d)],["Алба хаагч",r=>esc(r.name||""),1],["Төрөл",r=>esc(r.type||"")],["Тойрог",r=>r.no?esc(r.no)+"-р тойрог":""],["Тушаал",r=>esc(r.ord||"")]],
   grp:"type",stats:(L,M)=>{const m=L.filter(r=>(r.d||"").slice(0,7)===M);return [[m.filter(r=>r.type==="Томилсон").length,"Энэ сард томилсон","g"],[m.filter(r=>r.type==="Чөлөөлсөн").length,"Чөлөөлсөн","r"],[m.length,"Нийт бүртгэл"]];}},
  trn:{id:"trn",n:"4.4",icon:"🎓",t:"Сургалт",h:"Тухай бүр бүртгэнэ. Хамрагдсан хүний тоо, сургалтын цаг автоматаар тооцогдоно.",w:600,
   f:[{k:"name",l:"Сургалтын нэр",t:"text",req:1},{k:"org",l:"Зохион байгуулсан",t:"sel",req:1,o:["Нэгж","ШГА","ШШГЕГ","Бусад"]},
@@ -4383,6 +4395,50 @@ function aWkSel(re){const w=mk("div","dctl"),sel=mk("select"),cur=aMon(ymd(new D
   sel.onchange=()=>{S._aWk=sel.value;re();};w.insertAdjacentHTML("beforeend","<span class='dz'>7 хоног:</span>");w.appendChild(sel);return w;}
 function aSecNav(c,re){const w=mk("div","ptabs");ASEC.forEach(([k,l])=>{const b=mk("button","pt"+((S._aSec||"d")===k?" on":""));b.type="button";b.textContent=l;b.onclick=()=>{S._aSec=k;re();};w.appendChild(b);});c.appendChild(w);}
 
+function aVacOn(abs,no,day){return Object.entries(dObj(abs)).find(([,a])=>a&&a.reason===DVAC&&String(a.no)===String(no)&&a.from<=day&&(!a.to||a.to>=day));}
+function aVacList(abs,nos,day){return nos.filter(n=>aVacOn(abs,n,day));}
+async function aVacSync(ctx,no,type,d){const abs=dObj(ctx.R.abs),cur=aVacOn(abs,no,d)||aVacOn(abs,no,ymd(new Date()));
+  if(type==="Томилсон"||type==="Тойрог өөрчилсөн"){if(cur){const x=dD(d);x.setDate(x.getDate()-1);const to=ymd(x)<cur[1].from?cur[1].from:ymd(x);await dbSet("dreg/"+ctx.u+"/abs/"+cur[0]+"/to",to);toast("✅ "+no+"-р тойргийн «Сул тойрог» бүртгэл хаагдлаа","ts");}}
+  else if(!cur){await dbSet("dreg/"+ctx.u+"/abs/"+Date.now().toString(36),{no:String(no),name:"",reason:DVAC,from:d,to:"",sub:"",ts:Date.now()});toast("ℹ️ "+no+"-р тойрог сул гэж бүртгэгдлээ","ts");}}
+
+// ---------- Нэгжийн нэмэлт асуулт (ахлах өөрөө нэмнэ; зөвхөн тухайн нэгжид харагдана) ----------
+// dreg/<нэгж>/cq/<id> = {t, c:[задаргаа], to:"exec"|"wk", on, ts}; "exec" асуултыг config/people/<нэгж>/<тойрог>/cq руу хуулна (гүйцэтгэгч зөвхөн өөрийн бүртгэлийг уншдаг)
+function aCqOn(cq,to){return Object.entries(dObj(cq)).filter(([,q])=>q&&q.on!==false&&q.to===to).sort((a,b)=>(a[1].ts||0)-(b[1].ts||0)).map(([id,q])=>({k:"x_"+id,t:q.t,s:q.t,c:q.c&&q.c.length?q.c:undefined}));}
+function aCqInputs(form,v,qs,attr,title){
+  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>"+esc(title)+"</h3>");
+  qs.forEach(q=>{const row=mk("div","dq");row.innerHTML="<div><div class='dt'><b>➕</b>"+esc(q.t)+"</div><div class='db'>Нэгжийн ахлахын нэмсэн асуулт</div></div>";
+    const box=mk("div","din");dqKeys(q).forEach((k,j)=>{const lb=mk("label"),inp=mk("input");inp.type="number";inp.min="0";inp.step="1";inp.inputMode="numeric";inp.setAttribute(attr,k);inp.value=v[k]?v[k]:"";inp.placeholder="0";
+      if(q.c){lb.appendChild(inp);lb.appendChild(document.createTextNode(q.c[j]));box.appendChild(lb);}else box.appendChild(inp);});
+    row.appendChild(box);form.appendChild(row);});
+}
+async function aCqSync(ctx,ppl){ // гүйцэтгэгчийн бүртгэл рүү хуулна (өөрчлөгдсөн үед л)
+  const qs={};Object.entries(dObj(ctx.R.cq)).forEach(([id,q])=>{if(q&&q.to==="exec"&&q.on!==false)qs[id]={t:q.t,c:q.c||[],to:"exec",ts:q.ts||0};});
+  const js=JSON.stringify(qs);
+  for(const [no,pr] of Object.entries(dObj(ppl))){if(!pr||!pr.email)continue;const cur=JSON.stringify(pr.cq||{});
+    const norm=JSON.stringify(Object.fromEntries(Object.entries(pr.cq||{}).map(([i,q])=>[i,{t:q.t,c:q.c||[],to:"exec",ts:q.ts||0}])));
+    if(norm!==js){try{await dbSet("config/people/"+ctx.u+"/"+no+"/cq",Object.keys(qs).length?qs:null);}catch(e){console.warn("[SGA] cq sync",no,e);}}}
+}
+function aCqCard(w,ctx,ppl){
+  const card=mk("div","card");w.appendChild(card);
+  const L=Object.entries(dObj(ctx.R.cq)).map(([id,q])=>Object.assign({id},q)).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const TO={exec:"Шийдвэр гүйцэтгэгчийн өдрийн мэдээнд",wk:"Ахлахын 7 хоногийн мэдээнд"};
+  card.innerHTML="<h2>➕ Нэгжийн нэмэлт асуулт</h2><p class='dlead' style='margin-bottom:12px'>Нэгжийнхээ ажилд хэрэгтэй тоон асуултыг өөрөө нэмнэ. Зөвхөн танай нэгжид харагдах бөгөөд ШГА-ны нэгдсэн мэдээнд орохгүй. Нэмсэн асуултыг шийдвэр гүйцэтгэгчид дараагийн удаа «Өдрийн мэдээ»-гээ нээхэд харна.</p>"
+   +(L.length?"<div class='tw'><table class='dtbl'><thead><tr><th>Асуулт</th><th>Задаргаа</th><th>Хаана</th><th>Төлөв</th><th></th></tr></thead><tbody>"+L.map(q=>"<tr><td style='white-space:normal'>"+esc(q.t)+"</td><td style='text-align:left'>"+esc((q.c||[]).join(" / ")||"—")+"</td><td style='text-align:left'>"+TO[q.to]+"</td><td>"+(q.on===false?"<span class='badge bwarn'>Түр зогсоосон</span>":"<span class='badge bok'>Идэвхтэй</span>")+"</td><td style='white-space:nowrap'><button class='btn bs' data-tg='"+q.id+"' style='padding:5px 10px'>"+(q.on===false?"Идэвхжүүлэх":"Түр зогсоох")+"</button> <button class='btn bd_' data-dl='"+q.id+"' style='padding:5px 10px'>✕</button></td></tr>").join("")+"</tbody></table></div>":"<div class='dz'>Нэмэлт асуулт алга.</div>")
+   +"<div class='brow'><button class='btn bp' id='cqa'>＋ Асуулт нэмэх</button></div><p class='dz' style='margin-top:6px'>«Түр зогсоох» дарвал асуулт маягтаас нуугдана, өмнө бөглөсөн тоо хадгалагдаж үлдэнэ. «✕» дарвал асуултыг бүр мөсөн устгана.</p>";
+  const sync=async()=>{const R2=(await dbGet("dreg/"+ctx.u+"/cq"))||{};await aCqSync({u:ctx.u,R:{cq:R2}},ppl);};
+  card.querySelectorAll("[data-tg]").forEach(b=>b.onclick=async()=>{const q=ctx.R.cq[b.dataset.tg];try{await dbSet("dreg/"+ctx.u+"/cq/"+b.dataset.tg+"/on",q.on===false);await sync();ctx.re();}catch(e){toast("Алдаа: "+(e&&e.message||e),"te");}});
+  card.querySelectorAll("[data-dl]").forEach(b=>b.onclick=async()=>{if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Устгах уу?";return;}try{await dbSet("dreg/"+ctx.u+"/cq/"+b.dataset.dl,null);await sync();toast("Устгалаа","ts");ctx.re();}catch(e){toast("Алдаа: "+(e&&e.message||e),"te");}});
+  card.querySelector("#cqa").onclick=()=>{const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(480px,94vw)";ov.appendChild(bx);ov.onclick=e=>{if(e.target===ov)ov.remove();};
+    bx.innerHTML="<h3 style='margin:0 0 14px'>➕ Нэгжийн нэмэлт асуулт</h3><div class='fi' style='margin-bottom:10px'><label>Асуулт (тоогоор хариулна)</label><input id='qt' placeholder='Жишээ: Шүүх хуралдаанд оролцсон'></div>"
+     +"<div class='fi' style='margin-bottom:10px'><label>Задаргаа <span class='dz'>(заавал биш — таслалаар, 4 хүртэл)</span></label><input id='qc' placeholder='Жишээ: Иргэний, Эрүүгийн'></div>"
+     +"<div class='fi' style='margin-bottom:10px'><label>Хаана асуух</label><select id='qto'><option value='exec'>"+TO.exec+"</option><option value='wk'>"+TO.wk+"</option></select></div>"
+     +"<div class='brow'><button class='btn bp' id='qok'>Нэмэх</button><button class='btn bx' id='qcl'>Болих</button></div>";
+    document.body.appendChild(ov);bx.querySelector("#qcl").onclick=()=>ov.remove();
+    bx.querySelector("#qok").onclick=async()=>{const t=bx.querySelector("#qt").value.trim(),c=bx.querySelector("#qc").value.split(",").map(x=>x.trim()).filter(Boolean);
+      if(!t){toast("Асуултаа бичнэ үү","te");return;}if(c.length>4){toast("Задаргаа 4 хүртэл байна","te");return;}if(c.length===1){toast("Задаргаа нэг бол хоосон үлдээнэ үү","te");return;}
+      const id=Date.now().toString(36);try{await dbSet("dreg/"+ctx.u+"/cq/"+id,{t,c,to:bx.querySelector("#qto").value,on:true,ts:Date.now()});await sync();ov.remove();toast("✅ Асуулт нэмэгдлээ","ts");ctx.re();}catch(e){toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}};};
+}
+
 // ---------- Маршрут (1-р шатны tDaily-г орлоно) ----------
 async function tDaily(c){
   if(!fbDB||!window._get){c.innerHTML="<div class='card'>Сервертэй холбогдож чадсангүй.</div>";return;}
@@ -4407,7 +4463,7 @@ async function aUnit(w,u,sec,canEdit){
   const nos=[...new Set([...unitDists(u).map(String),...Object.keys(dObj(ppl))])].sort((x,y)=>+x-+y);
   const nameOf=n=>{const p=dObj(ppl)[n];return p&&p.name||"";};
   const ctx={u,R,nos,nameOf,canEdit,re};
-  if(sec==="1"){await aWeekCard(w,ctx);await aExecEx(w,ctx);aRegCard(w,AREG.spec,ctx);}
+  if(sec==="1"){await aWeekCard(w,ctx);await aExecEx(w,ctx);aRegCard(w,AREG.spec,ctx);if(canEdit){aCqCard(w,ctx,ppl);aCqSync(ctx,ppl);}}
   else if(sec==="2"){aRegCard(w,AREG.disc,ctx);aPenList(w,ctx);aRegCard(w,AREG.eth,ctx);aRegCard(w,AREG.crim,ctx);}
   else if(sec==="3"){aRegCard(w,AREG.comp,ctx);aComp33(w,ctx);}
   else if(sec==="4"){const ac=mk("div","card");w.appendChild(ac);dAbsCard(ac,u,dObj(R.abs),nos,nameOf,canEdit,re);aStaffCard(w,ctx);aRegCard(w,AREG.appt,ctx);aRegCard(w,AREG.trn,ctx);}
@@ -4525,7 +4581,8 @@ async function aWeekCard(w,ctx){
   // түүх
   const hw=Object.keys(wk).sort().slice(-8);
   if(hw.length){let h="<details"+(ctx.canEdit?"":" open")+" style='margin-bottom:12px'><summary class='dz' style='cursor:pointer'>Сүүлийн 7 хоногуудын мэдээ ("+hw.length+")</summary><div class='tw'><table class='dtbl' id='awh'><thead><tr><th>Үзүүлэлт</th>"+hw.map(x=>"<th class='clk"+(x===m?" cur":"")+"' data-m='"+x+"'>"+aWkLab(x)+"</th>").join("")+"</tr></thead><tbody>";
-    AW11.slice(0,4).forEach((q,i)=>{h+="<tr><td>1.1."+(i+1)+" "+esc(q.s)+"</td>"+hw.map(x=>"<td>"+dqVal(wk[x],q)+"</td>").join("")+"</tr>";});
+    AW11.filter(q=>!q.m).forEach((q,i)=>{h+="<tr><td>1.1."+(i+1)+" "+esc(q.s)+"</td>"+hw.map(x=>"<td>"+dqVal(wk[x],q)+"</td>").join("")+"</tr>";});
+    if(ctx.canEdit)aCqOn(ctx.R.cq,"wk").forEach(q=>{h+="<tr><td>➕ "+esc(q.t)+"</td>"+hw.map(x=>"<td>"+dqVal(wk[x],q)+"</td>").join("")+"</tr>";});
     ABAL.forEach(B=>{h+="<tr><td>"+B.n+" үлдэгдэл (тоо)</td>"+hw.map(x=>"<td>"+CH[x][B.k].bn+"</td>").join("")+"</tr><tr><td>"+B.n+" үлдэгдэл (төгрөг)</td>"+hw.map(x=>"<td>"+aFm(CH[x][B.k].ba)+"</td>").join("")+"</tr>";});
     h+="</tbody></table></div></details>";card.insertAdjacentHTML("beforeend",h);
     card.querySelectorAll("#awh th.clk").forEach(th=>th.onclick=()=>{S._aWk=th.dataset.m;ctx.re();});}
@@ -4539,6 +4596,7 @@ async function aWeekCard(w,ctx){
     const box=mk("div","din");dqKeys(q).forEach((k,j)=>{const lb=mk("label"),inp=mk("input");inp.type="number";inp.min="0";inp.inputMode="numeric";inp.dataset.w=k;inp.value=v[k]!=null&&(v[k]!==0||q.m)?v[k]:"";inp.placeholder="0";
       if(q.c){lb.appendChild(inp);lb.appendChild(document.createTextNode(q.c[j]));box.appendChild(lb);}else box.appendChild(inp);});
     row.appendChild(box);form.appendChild(row);});
+  if(ctx.canEdit){const XW=aCqOn(ctx.R.cq,"wk");if(XW.length)aCqInputs(form,v,XW,"data-w","Нэгжийн нэмэлт асуулт");}
   ABAL.forEach(B=>{const p=prevBal(B);
     let h="<h3 class='dsec'>"+B.n+". "+esc(B.t)+"</h3><div class='dz' style='margin-bottom:6px'>"+esc(B.h)+"</div><div class='tw'><table class='dtbl'><thead><tr><th>Үзүүлэлт</th><th>Тоо</th><th>Дүн (төгрөг)</th></tr></thead><tbody>";
     h+="<tr><td>Өмнөх 7 хоногийн үлдэгдэл"+(p?" <span class='dz'>(автомат)</span>":" <span class='dz'>(эхний мэдээ — гараар)</span>")+"</td>"+(p?"<td>"+p.bn+"</td><td>"+aFm(p.ba)+"</td>":"<td><input type='number' min='0' data-w='"+B.k+"_p_n' value='"+(v[B.k+"_p_n"]||"")+"' placeholder='0' style='width:90px'></td><td><input type='number' min='0' data-w='"+B.k+"_p_a' value='"+(v[B.k+"_p_a"]||"")+"' placeholder='0' style='width:150px'></td>")+"</tr>";
@@ -4560,7 +4618,7 @@ async function aWeekCard(w,ctx){
       if(x.bn<0||x.ba<0){toast(B.n+": үлдэгдэл сөрөг гарч байна. Тоо, дүнг шалгана уу.","te");return;}
       if(x.act>x.tn){toast(B.n+": ажиллагаа явуулсан тоо ("+x.act+") үлдэгдэл, шинээр ирснээс ("+x.tn+") их байна.","te");return;}
       if(B.k==="pl"&&(+o.pl_seal_n||0)+(+o.pl_seize_n||0)>x.tn){toast("1.4: битүүмжилсэн, хураасан тоо нийт баримт бичгээс их байна.","te");return;}}
-    if(me&&dqKeys(AW11[4]).some(k=>o[k]==null)){toast("Сарын сүүлийн 7 хоног тул 1.1.5 хадгалалтад байгаа хөрөнгийн тоог бөглөнө үү (байхгүй бол 0).","te");return;}
+    if(me&&dqKeys(AW11.find(q=>q.m)).some(k=>o[k]==null)){toast("Сарын сүүлийн 7 хоног тул 1.1.5 хадгалалтад байгаа хөрөнгийн тоог бөглөнө үү (байхгүй бол 0).","te");return;}
     sv.disabled=true;sv.textContent="⏳ Хадгалж байна...";
     try{await dbSet("dreg/"+ctx.u+"/wk/"+m,{v:o,ts:Date.now()});toast("✅ "+aWkLab(m)+" 7 хоногийн мэдээ хадгалагдлаа","ts");try{SND.play("send");}catch{}ctx.re();}
     catch(e){sv.disabled=false;sv.textContent="💾 Хадгалах";toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}};
@@ -4612,26 +4670,35 @@ function aComp33(w,ctx){
 // ---------- 4.2. Орон тоо (сар бүр) ----------
 function aStaffCard(w,ctx){
   const st=dObj(ctx.R.staff),M=S._aMon=S._aMon||ymd(new Date()).slice(0,7),rec=st[M],ks=Object.keys(st).filter(k=>k<=M).sort(),base=rec||(ks.length?st[ks[ks.length-1]]:null),v=(base&&base.v)||{};
+  const t=ymd(new Date()),day=aMonEnd(M)<t?aMonEnd(M):t,abs=dObj(ctx.R.abs),vac=aVacList(abs,ctx.nos,day),wkS=ctx.nos.length-vac.length;
   const card=mk("div","card");w.appendChild(card);
-  card.innerHTML="<h2>🏢 4.2. Орон тоо</h2><p class='dlead' style='margin-bottom:12px'>Сар бүр баталгаажуулна. Өмнөх сарын тоо урьдчилан бөглөгдөнө — өөрчлөгдсөн үед л засна. Сул орон тоо автоматаар тооцогдоно.</p>";
+  card.innerHTML="<h2>🏢 4.2. Орон тоо</h2><p class='dlead' style='margin-bottom:12px'>Ажиллаж буй шийдвэр гүйцэтгэгчийн тоо тойргоос автоматаар бодогдоно: нэгжийн тойргийн тоо − сул тойрог. Сул тойргийг доор тэмдэглэх эсвэл 4.3-т томилгоо, чөлөөлөлтийг тойрогтой нь бүртгэхэд автоматаар шинэчлэгдэнэ. Батлагдсан орон тоог өөрчлөгдсөн үед л засна.</p>";
   card.appendChild(aMonCtl(ctx.re));
-  const F=[["ap_s","Батлагдсан орон тоо — шийдвэр гүйцэтгэгч"],["ap_o","Батлагдсан орон тоо — бусад"],["wk_s","Ажиллаж буй — шийдвэр гүйцэтгэгч"],["wk_o","Ажиллаж буй — бусад"]];
   const body=mk("div");card.appendChild(body);
   body.innerHTML=(rec?"<div class='dz' style='margin-bottom:8px'>"+M.replace("-",".")+" сарын мэдээ хадгалагдсан: "+new Date(rec.ts).toLocaleString("mn-MN")+"</div>":"<div class='dalert'>"+M.replace("-",".")+" сарын орон тооны мэдээ баталгаажаагүй"+(base?" — өмнөх сарын тоог харуулж байна":"")+".</div>")
    +"<div class='tw'><table class='dtbl'><thead><tr><th></th><th>Шийдвэр гүйцэтгэгч</th><th>Бусад</th><th>Нийт</th></tr></thead><tbody>"
    +"<tr><td>Батлагдсан орон тоо</td><td><input data-s='ap_s'></td><td><input data-s='ap_o'></td><td id='st_ap'></td></tr>"
-   +"<tr><td>Ажиллаж буй</td><td><input data-s='wk_s'></td><td><input data-s='wk_o'></td><td id='st_wk'></td></tr>"
-   +"<tr class='tot'><td>Сул орон тоо (автомат)</td><td id='st_vs'></td><td id='st_vo'></td><td id='st_v'></td></tr></tbody></table></div>";
-  body.querySelectorAll("[data-s]").forEach(i=>{i.type="number";i.min="0";i.value=v[i.dataset.s]!=null?v[i.dataset.s]:"";i.style.cssText="width:90px;padding:7px;border:1px solid #CBD5E1;border-radius:8px;font:inherit;text-align:center";if(!ctx.canEdit)i.disabled=true;});
-  const rd=()=>{const o={};body.querySelectorAll("[data-s]").forEach(i=>o[i.dataset.s]=i.value===""?null:Math.max(0,Math.floor(+i.value||0)));return o;};
+   +"<tr><td>Ажиллаж буй</td><td><b>"+wkS+"</b> <span class='dz'>(автомат)</span></td><td><input data-s='wk_o'></td><td id='st_wk'></td></tr>"
+   +"<tr class='tot'><td>Сул орон тоо (автомат)</td><td id='st_vs'></td><td id='st_vo'></td><td id='st_v'></td></tr></tbody></table></div>"
+   +"<div style='margin-top:10px'><b>Сул тойрог ("+ymdMn(day)+"):</b> "+(vac.length?vac.map(n=>"<span class='badge bwarn' style='margin-right:4px'>"+n+"-р тойрог</span>").join(""):"<span class='dz'>алга</span>")+"</div>";
+  body.querySelectorAll("[data-s]").forEach(i=>{i.type="number";i.min="0";const k=i.dataset.s;i.value=v[k]!=null?v[k]:(k==="ap_s"?ctx.nos.length:"");i.style.cssText="width:90px;padding:7px;border:1px solid #CBD5E1;border-radius:8px;font:inherit;text-align:center";if(!ctx.canEdit)i.disabled=true;});
+  const rd=()=>{const o={wk_s:wkS};body.querySelectorAll("[data-s]").forEach(i=>o[i.dataset.s]=i.value===""?null:Math.max(0,Math.floor(+i.value||0)));return o;};
   const upd=()=>{const o=rd(),n=k=>o[k]||0;body.querySelector("#st_ap").textContent=n("ap_s")+n("ap_o");body.querySelector("#st_wk").textContent=n("wk_s")+n("wk_o");
     body.querySelector("#st_vs").textContent=n("ap_s")-n("wk_s");body.querySelector("#st_vo").textContent=n("ap_o")-n("wk_o");body.querySelector("#st_v").textContent=n("ap_s")+n("ap_o")-n("wk_s")-n("wk_o");};
   body.querySelectorAll("[data-s]").forEach(i=>i.oninput=upd);upd();
   if(!ctx.canEdit)return;
-  const sv=mk("button","btn bp");sv.textContent=rec?"💾 Шинэчилж хадгалах":"💾 "+M.replace("-",".")+" сарын орон тоог баталгаажуулах";const br=mk("div","brow");br.appendChild(sv);card.appendChild(br);
-  sv.onclick=async()=>{const o=rd();if(F.some(([k])=>o[k]==null)){toast("Бүх нүдийг бөглөнө үү (байхгүй бол 0).","te");return;}
+  const br=mk("div","brow");card.appendChild(br);
+  const sv=mk("button","btn bp");sv.textContent=rec?"💾 Шинэчилж хадгалах":"💾 "+M.replace("-",".")+" сарын орон тоог баталгаажуулах";br.appendChild(sv);
+  const vb=mk("button","btn bx");vb.textContent="🚫 Сул тойрог тэмдэглэх";br.appendChild(vb);
+  vb.onclick=()=>{const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(420px,94vw)";ov.appendChild(bx);ov.onclick=e=>{if(e.target===ov)ov.remove();};
+    const free=ctx.nos.filter(n=>!aVacOn(abs,n,t));
+    bx.innerHTML="<h3 style='margin:0 0 14px'>🚫 Сул тойрог тэмдэглэх</h3><div class='fi' style='margin-bottom:10px'><label>Тойрог</label><select id='vn'>"+free.map(n=>"<option value='"+n+"'>"+n+"-р тойрог"+(ctx.nameOf(n)?" — "+esc(ctx.nameOf(n)):"")+"</option>").join("")+"</select></div><div class='fi' style='margin-bottom:10px'><label>Хэдний өдрөөс сул байгаа</label><input type='date' id='vf' value='"+t+"' max='"+t+"'></div><div class='fi' style='margin-bottom:10px'><label>Тойргийг орлон гүйцэтгэх алба хаагч <span class='dz'>(заавал биш)</span></label><select id='vs'><option value=''>—</option>"+ctx.nos.map(n=>"<option value='"+n+"'>"+n+"-р тойрог"+(ctx.nameOf(n)?" — "+esc(ctx.nameOf(n)):"")+"</option>").join("")+"</select></div><p class='dz'>Алба хаагч томилогдоход 4.3-т томилгоог тойрогтой нь бүртгэвэл, эсвэл «Ажиллаагүй алба хаагчийн бүртгэл»-д «Дуусгах» дарвал сул тойрог хаагдана.</p><div class='brow'><button class='btn bp' id='vok'>Тэмдэглэх</button><button class='btn bx' id='vcl'>Болих</button></div>";
+    document.body.appendChild(ov);bx.querySelector("#vcl").onclick=()=>ov.remove();
+    bx.querySelector("#vok").onclick=async()=>{const no=bx.querySelector("#vn").value,from=bx.querySelector("#vf").value;if(!no||!from){toast("Тойрог, огноог сонгоно уу","te");return;}
+      try{await dbSet("dreg/"+ctx.u+"/abs/"+Date.now().toString(36),{no,name:"",reason:DVAC,from,to:"",sub:bx.querySelector("#vs").value||"",ts:Date.now()});ov.remove();toast("✅ "+no+"-р тойрог сул гэж тэмдэглэгдлээ","ts");ctx.re();}catch(e){toast("Алдаа: "+(e&&e.message||e),"te");}};};
+  sv.onclick=async()=>{const o=rd();if(["ap_s","ap_o","wk_o"].some(k=>o[k]==null)){toast("Бүх нүдийг бөглөнө үү (байхгүй бол 0).","te");return;}
     if((o.wk_s>o.ap_s||o.wk_o>o.ap_o)&&sv.dataset.ok!=="1"){sv.dataset.ok="1";toast("Ажиллаж буй тоо батлагдсан орон тооноос их байна. Зөв бол дахин дарна уу.","te");return;}
-    try{await dbSet("dreg/"+ctx.u+"/staff/"+M,{v:o,ts:Date.now()});toast("✅ Орон тоо хадгалагдлаа","ts");ctx.re();}catch(e){toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}};
+    o.vac=vac;try{await dbSet("dreg/"+ctx.u+"/staff/"+M,{v:o,ts:Date.now()});toast("✅ Орон тоо хадгалагдлаа","ts");ctx.re();}catch(e){toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}};
 }
 
 // ---------- Админ: улсын нэгтгэл ----------
@@ -4648,17 +4715,17 @@ async function aAdmin(w,sec){
   const M=S._aMon=S._aMon||today.slice(0,7),inM=(s)=>(s||"").slice(0,7)===M;
   let cols,rowF;
   if(sec==="1"){const m=S._aWk=S._aWk||aMon(today),me=ymd((()=>{const d=dD(m);d.setDate(d.getDate()+6);return d;})());
-    cols=["7 хоногийн мэдээ","Шүүх хуралдаан","Төлөөлөх эрх","Тайлбарлуулсан","Материал шилжүүлсэн","Онцгой ажиллагаа","Яаралтай","1.3 үлдэгдэл (тоо)","1.3 үлдэгдэл (төгрөг)","1.3 дуусгавар","1.4 үлдэгдэл (тоо)","1.4 үлдэгдэл (төгрөг)","1.4 дуусгавар"];
+    cols=["7 хоногийн мэдээ","Төлөөлөх эрх","Тайлбарлуулсан","Материал шилжүүлсэн","Онцгой ажиллагаа","Яаралтай","1.3 үлдэгдэл (тоо)","1.3 үлдэгдэл (төгрөг)","1.3 дуусгавар","1.4 үлдэгдэл (тоо)","1.4 үлдэгдэл (төгрөг)","1.4 дуусгавар"];
     rowF=R=>{const wk=dObj(R.wk),r=wk[m],CH=aChain(wk),ks=Object.keys(wk).filter(k=>k<=m).sort(),lk=ks[ks.length-1],c=lk?CH[lk]:null,sp=aList(R,"spec").filter(x=>x.d>=m&&x.d<=me),v=(r&&r.v)||{};
-      return [r?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>Ирээгүй</span>"].concat(AW11.slice(0,4).map(q=>r?dqVal(r,q):""),[sp.length,sp.filter(x=>x.urg==1).length,c?c.hi.bn:"",c?aFm(c.hi.ba):"",r?(+v.hi_done_n||0):"",c?c.pl.bn:"",c?aFm(c.pl.ba):"",r?(+v.pl_done_n||0):""]);};}
+      return [r?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>Ирээгүй</span>"].concat(AW11.filter(q=>!q.m).map(q=>r?dqVal(r,q):""),[sp.length,sp.filter(x=>x.urg==1).length,c?c.hi.bn:"",c?aFm(c.hi.ba):"",r?(+v.hi_done_n||0):"",c?c.pl.bn:"",c?aFm(c.pl.ba):"",r?(+v.pl_done_n||0):""]);};}
   else if(sec==="2"){cols=["Шалгаж байгаа","Энэ сард бүртгэсэн","Шийтгэл ногдуулсан (сард)","Шийтгэлтэй алба хаагч","Ёс зүй — хэлэлцэж байгаа","Ёс зүй (сард)","Гэмт хэрэгт (сард)","Зөрчилд (сард)"];
     rowF=R=>{const D=aList(R,"disc"),E=aList(R,"eth"),C=aList(R,"crim");return [D.filter(r=>r.st!=="Шийдвэрлэсэн").length,D.filter(r=>inM(r.d)).length,D.filter(r=>r.out==="Шийтгэл ногдуулсан"&&inM(r.ordd)).length,D.filter(aActive).length,E.filter(r=>r.con==="Хэлэлцэж байгаа").length,E.filter(r=>inM(r.d)).length,C.filter(r=>inM(r.d)&&r.type==="Гэмт хэрэгт холбогдсон").length,C.filter(r=>inM(r.d)&&r.type==="Зөрчилд холбогдсон").length];};}
   else if(sec==="3"){cols=["Шинээр ирсэн","Үүнээс гомдол","Шийдвэрлэсэн","Хянагдаж буй","Үндэслэлтэй","Давтан","Талархал"];
     rowF=R=>{const L=aList(R,"comp"),a=aCompMonth(L,M);return [a.nw,a.m.filter(r=>/гомдол/i.test(r.form||"")).length,a.done,a.open,a.base,a.rep,a.m.filter(r=>r.form==="Талархал").length];};}
-  else {cols=["Батлагдсан (ШГ)","Ажиллаж буй (ШГ)","Сул (ШГ)","Батлагдсан (бусад)","Ажиллаж буй (бусад)","Сул (бусад)","Өнөөдөр ажиллаагүй","Томилсон (сард)","Чөлөөлсөн (сард)","Сургалт (сард)","Хамрагдсан (хүн)"];
+  else {cols=["Сул тойрог (өнөөдөр)","Батлагдсан (ШГ)","Ажиллаж буй (ШГ)","Сул (ШГ)","Батлагдсан (бусад)","Ажиллаж буй (бусад)","Сул (бусад)","Өнөөдөр ажиллаагүй","Томилсон (сард)","Чөлөөлсөн (сард)","Сургалт (сард)","Хамрагдсан (хүн)"];
     rowF=R=>{const st=dObj(R.staff),ks=Object.keys(st).filter(k=>k<=M).sort(),s=ks.length?(st[ks[ks.length-1]].v||{}):null,n=k=>s?(+s[k]||0):"",A=aList(R,"appt").filter(r=>inM(r.d)),Tr=aList(R,"trn").filter(r=>inM(r.d));
-      const ab=Object.values(dObj(R.abs)).filter(a=>a&&a.from<=today&&(!a.to||a.to>=today)).length;
-      return [n("ap_s"),n("wk_s"),s?n("ap_s")-n("wk_s"):"",n("ap_o"),n("wk_o"),s?n("ap_o")-n("wk_o"):"",ab,A.filter(r=>r.type==="Томилсон").length,A.filter(r=>r.type==="Чөлөөлсөн").length,Tr.length,Tr.reduce((x,r)=>x+aPplN(r),0)];};}
+      const act=Object.values(dObj(R.abs)).filter(a=>a&&a.from<=today&&(!a.to||a.to>=today)),ab=act.filter(a=>a.reason!==DVAC).length,vc=act.filter(a=>a.reason===DVAC).length;
+      return [vc,n("ap_s"),n("wk_s"),s?n("ap_s")-n("wk_s"):"",n("ap_o"),n("wk_o"),s?n("ap_o")-n("wk_o"):"",ab,A.filter(r=>r.type==="Томилсон").length,A.filter(r=>r.type==="Чөлөөлсөн").length,Tr.length,Tr.reduce((x,r)=>x+aPplN(r),0)];};}
   const rows=res.map(({x,R,err})=>({x,err,v:rowF(R)})),tot=cols.map((_,i)=>rows.reduce((s,r)=>{const n=+String(r.v[i]).replace(/,/g,"");return s+(isNaN(n)?0:n);},0));
   let h="<div class='tw'><table class='dtbl' id='aat'><thead><tr><th>Нэгж</th>"+cols.map(c=>"<th>"+c+"</th>").join("")+"</tr></thead><tbody>";
   rows.forEach(r=>{h+="<tr class='dclk' data-u='"+r.x.code+"'><td style='text-align:left'><b>"+esc(r.x.code)+"</b> "+esc(unitNm(r.x.code))+(r.err?" ⚠️":"")+"</td>"+r.v.map(c=>"<td>"+c+"</td>").join("")+"</tr>";});
