@@ -1138,7 +1138,10 @@ async function tStaff(c){
         cn.onclick=()=>re();act.appendChild(ok);act.appendChild(cn);};
       const ba=mk("button","btn bx");ba.style.marginLeft="6px";ba.textContent=p.active===false?"▶ Нээх":"⏸ Хаах";ba.title=p.active===false?"Эрхийг дахин нээх":"Эрхийг түр хаах";
       ba.onclick=async()=>{ba.disabled=true;try{await window._set(window._r(fbDB,"config/people/"+unit+"/"+no+"/active"),p.active===false);await dbSet("config/login/"+unit+"/"+no+"/active",p.active===false);re();}catch{toast("❌ Хадгалж чадсангүй","te");ba.disabled=false;}};
-      act.appendChild(br);act.appendChild(bc);act.appendChild(ba);
+      const bd=mk("button","btn bd_");bd.style.marginLeft="6px";bd.textContent="🗑";bd.title="Эрхийг бүр мөсөн устгах (тест эрх цэвэрлэх)";
+      bd.onclick=async()=>{if(bd.dataset.ok!=="1"){bd.dataset.ok="1";bd.textContent="Устгах уу?";toast("Энэ тойргийн эрх устаж, «Эрх нээгээгүй» болно. Өдрийн мэдээ нь хадгалагдаж үлдэнэ. Дахин дарж баталгаажуулна уу.","te");return;}
+        bd.disabled=true;try{await dbSet("config/login/"+unit+"/"+no,null);await window._set(window._r(fbDB,"config/people/"+unit+"/"+no),null);toast("🗑 "+no+"-р тойргийн эрх устгагдлаа","ts");re();}catch(e){toast("❌ Устгаж чадсангүй: "+(e&&e.message||e),"te");bd.disabled=false;}};
+      act.appendChild(br);act.appendChild(bc);act.appendChild(ba);act.appendChild(bd);
     }
     tb.appendChild(tr);});
   t.appendChild(tb);wrap.appendChild(t);card.appendChild(wrap);
@@ -4616,6 +4619,9 @@ async function aWeekCard(w,ctx){
   form.querySelectorAll("input[data-w]").forEach(x=>x.oninput=upd);upd();
   if(!ctx.canEdit){form.querySelectorAll("input").forEach(e=>e.disabled=true);return;}
   const sv=mk("button","btn bp");sv.textContent=rec.ts?"💾 Шинэчилж хадгалах":"💾 7 хоногийн мэдээ хадгалах";bar.appendChild(sv);
+  if(rec.ts){const dl=mk("button","btn bd_");dl.textContent="🗑 Энэ 7 хоногийн мэдээг устгах";bar.appendChild(dl);
+    dl.onclick=async()=>{if(dl.dataset.ok!=="1"){dl.dataset.ok="1";dl.textContent="Устгах уу? Дахин дарна уу";return;}
+      try{await dbSet("dreg/"+ctx.u+"/wk/"+m,null);toast("🗑 "+aWkLab(m)+" 7 хоногийн мэдээ устгагдлаа","ts");ctx.re();}catch(e){toast("Устгаж чадсангүй: "+(e&&e.message||e),"te");}};}
   sv.onclick=async()=>{const o=read(),r=calc(o);
     for(const B of ABAL){const x=r[B.k];
       if(x.bn<0||x.ba<0){toast(B.n+": үлдэгдэл сөрөг гарч байна. Тоо, дүнг шалгана уу.","te");return;}
@@ -4693,6 +4699,9 @@ function aStaffCard(w,ctx){
   const br=mk("div","brow");card.appendChild(br);
   const sv=mk("button","btn bp");sv.textContent=rec?"💾 Шинэчилж хадгалах":"💾 "+M.replace("-",".")+" сарын орон тоог баталгаажуулах";br.appendChild(sv);
   const vb=mk("button","btn bx");vb.textContent="🚫 Сул тойрог тэмдэглэх";br.appendChild(vb);
+  if(rec){const dl=mk("button","btn bd_");dl.textContent="🗑 Энэ сарын орон тоог устгах";br.appendChild(dl);
+    dl.onclick=async()=>{if(dl.dataset.ok!=="1"){dl.dataset.ok="1";dl.textContent="Устгах уу? Дахин дарна уу";return;}
+      try{await dbSet("dreg/"+ctx.u+"/staff/"+M,null);toast("🗑 Орон тооны мэдээ устгагдлаа","ts");ctx.re();}catch(e){toast("Устгаж чадсангүй: "+(e&&e.message||e),"te");}};}
   vb.onclick=()=>{const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(420px,94vw)";ov.appendChild(bx);ov.onclick=e=>{if(e.target===ov)ov.remove();};
     const free=ctx.nos.filter(n=>!aVacOn(abs,n,t));
     bx.innerHTML="<h3 style='margin:0 0 14px'>🚫 Сул тойрог тэмдэглэх</h3><div class='fi' style='margin-bottom:10px'><label>Тойрог</label><select id='vn'>"+free.map(n=>"<option value='"+n+"'>"+n+"-р тойрог"+(ctx.nameOf(n)?" — "+esc(ctx.nameOf(n)):"")+"</option>").join("")+"</select></div><div class='fi' style='margin-bottom:10px'><label>Хэдний өдрөөс сул байгаа</label><input type='date' id='vf' value='"+t+"' max='"+t+"'></div><div class='fi' style='margin-bottom:10px'><label>Тойргийг орлон гүйцэтгэх алба хаагч <span class='dz'>(заавал биш)</span></label><select id='vs'><option value=''>—</option>"+ctx.nos.map(n=>"<option value='"+n+"'>"+n+"-р тойрог"+(ctx.nameOf(n)?" — "+esc(ctx.nameOf(n)):"")+"</option>").join("")+"</select></div><p class='dz'>Алба хаагч томилогдоход 4.3-т томилгоог тойрогтой нь бүртгэвэл, эсвэл «Ажиллаагүй алба хаагчийн бүртгэл»-д «Дуусгах» дарвал сул тойрог хаагдана.</p><div class='brow'><button class='btn bp' id='vok'>Тэмдэглэх</button><button class='btn bx' id='vcl'>Болих</button></div>";
