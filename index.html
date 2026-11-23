@@ -156,7 +156,29 @@ h1,h2,h3,.ff{font-family:Montserrat,Inter,'Segoe UI',sans-serif}
 .ptabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .pt{padding:7px 15px;border:1px solid #CBD5E1;border-radius:999px;cursor:pointer;font-size:13px;font-weight:600;color:#475569;background:#fff;transition:background .2s,color .2s}
 .pt.on{border-color:var(--bl);background:var(--bl);color:#fff}
+[hidden]{display:none!important}
 .tw{overflow-x:auto}
+.dlead{font-size:13.5px;color:#475569;line-height:1.6;margin:-6px 0 0}
+.dz{font-size:12.5px;color:#64748B}
+.dsec{font-size:12px;font-weight:800;color:#0E7490;letter-spacing:.06em;text-transform:uppercase;margin:18px 0 4px}
+.dctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.dctl input[type=date],.dctl select{padding:8px 10px;border:1px solid #CBD5E1;border-radius:10px;font:inherit;font-size:13.5px;background:#fff;color:var(--tx)}
+.dq{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 18px;padding:12px 0;border-bottom:1px solid #EEF2F6;align-items:center}
+.dq .dt{font-weight:600;font-size:14px;line-height:1.4}.dq .dt b{color:#0F766E;margin-right:5px}
+.dq .dh{font-size:12px;color:#64748B;margin-top:2px;line-height:1.4}.dq .db{font-size:11px;color:#94A3B8;margin-top:2px}
+.dq .din{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.dq .din label{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#64748B;text-align:center;width:88px;line-height:1.25}
+.dq .din label.dyn{flex-direction:row;width:auto;font-size:14px;color:var(--tx);gap:6px;cursor:pointer}
+.dq input[type=number]{width:78px;padding:9px 6px;border:1px solid #CBD5E1;border-radius:10px;font:inherit;font-size:16px;font-weight:700;text-align:center;background:var(--bg3);color:var(--tx)}
+.dq input[type=number]:focus{outline:none;border-color:#14B8A6;box-shadow:0 0 0 3px rgba(20,184,166,.18)}
+.dzero{display:flex;gap:8px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:10px;background:#FEF4E2;color:#92400E;font-size:13.5px;font-weight:600}
+.dsum{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(255,255,255,0),var(--bg2) 35%);padding:16px 0 2px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between;z-index:2}
+.dtot{font-weight:800;font-size:15px;color:#0F766E}
+.dtbl th,.dtbl td{text-align:center;font-variant-numeric:tabular-nums}.dtbl th:first-child,.dtbl td:first-child{text-align:left;white-space:nowrap}
+.dtbl tr.tot td{font-weight:800;background:#F1F5F9}.dtbl .cur{background:#ECFDF5!important}
+.dtbl th.clk{cursor:pointer;text-decoration:underline dotted}.dtbl tr.dclk{cursor:pointer}
+.dalert{border-left:4px solid #F59E0B;background:#FFFBEB;padding:10px 12px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.5}.dalert.r{border-left-color:#F43F5E;background:#FFF1F2}
+@media(max-width:640px){.dq{grid-template-columns:1fr}.dq .din{justify-content:flex-start}}
 table{width:100%;border-collapse:collapse}
 th{background:#F1F5F9;padding:9px 10px;text-align:left;font-size:11.5px;font-weight:700;color:#475569;border-bottom:1px solid var(--bd);white-space:nowrap}
 td{padding:9px 10px;border-bottom:1px solid #EEF2F6;font-size:13px;vertical-align:middle}
@@ -922,7 +944,7 @@ function enterApp(u){
       }catch{}
     },1500);
   }
-  renderTab("home");
+  renderTab(isExec()?"daily":"home");
   updPwBtn();
   try{SND.play("login");}catch{}
 }
@@ -1679,10 +1701,10 @@ function tHome(c){
 }
 function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];tabs.push({id:"home",l:"🏠 Нүүр"});
-  if(isExec()){tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
-  else if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
+  if(isExec()){tabs.push({id:"daily",l:"📝 Өдрийн мэдээ"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
+  else if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"daily",l:"📝 Өдрийн мэдээ"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
   if(!isExec()){tabs.push({id:"calendar",l:"🗓️ Хуанли"});tabs.push({id:"chat",l:"💬 Чат"});if(!isA)tabs.push({id:"staff",l:"👥 Гүйцэтгэгчид"});}
-  if(isA){tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"survey",l:"📋 Судалгаа"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"gsheets",l:"🔗 Хэргийн бүртгэл"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
+  if(isA){tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"daily",l:"📝 Өдрийн мэдээ"});tabs.push({id:"survey",l:"📋 Судалгаа"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"gsheets",l:"🔗 Хэргийн бүртгэл"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
   const tb=document.getElementById("TB");tb.innerHTML="";
   tabs.forEach(t=>{
     const d=mk("div","tab"+(S.tab===t.id?" on":""));
@@ -1693,7 +1715,7 @@ function renderTabs(){
   });
 }
 function renderTab(id){
-  if(isExec()&&!["home","mydata"].includes(id))id="home";
+  if(isExec()&&!["home","daily","mydata"].includes(id))id="home";
   S.tab=id;renderTabs();
   const c=document.getElementById("MC");c.innerHTML="";
   if(id==="home")tHome(c);
@@ -1709,6 +1731,7 @@ function renderTab(id){
   else if(id==="config")tConfig(c);
   else if(id==="staff")tStaff(c);
   else if(id==="calendar")tCalendar(c);
+  else if(id==="daily")tDaily(c);
 }
 
 // Нэгж "Мэдээ оруулах" руу ороход аль period-г анхны утгаар харуулахыг тодорхойлно.
@@ -4006,6 +4029,237 @@ async function sAllPW(){
 }
 
 window.addEventListener("DOMContentLoaded",initLogin);
+</script>
+<script>
+// ===== ӨДРИЙН МЭДЭЭ =====
+// Гүйцэтгэгч (тойрог) ажлын өдөр бүр бөглөнө; ахлах тойргоор, админ нэгжээр нэгтгэж харна.
+// Хадгалалт: daily/<нэгж>/<YYYY-MM-DD>/<тойрог> = {v:{q1_0:..}, ex, ext, note, zero, ts, name}
+//            dreg/<нэгж>/abs/<id> = {no, name, reason, from, to, sub, ts} — ажиллаагүй алба хаагч (ахлах бүртгэнэ)
+const DPROP=["Үл хөдлөх","Тээврийн хэрэгсэл","Бусад хөдлөх"];
+const DQ=[
+ {k:"q1",s:"Мэдэгдэл",t:"Мэдэгдэл хүргүүлсэн гүйцэтгэх баримт бичиг",c:["Гардуулсан","Баталгаат шуудангаар","Утас, цахим хэлбэрээр"],h:"Мэдэгдэх хуудас, үүрэг хүлээлгэх мэдэгдэл",b:"ШШГТХ 14.3, 14.4, 44.2.5"},
+ {k:"q2",s:"Хаягаар",t:"Хаягаар ажиллагаа явуулсан гүйцэтгэх баримт бичиг",h:"Оршин суугаа, ажлын болон хөрөнгийн байршлаар очиж үзлэг хийсэн",b:"ШШГТХ 44.2.6, 44.2.8, 48"},
+ {k:"q3",s:"Утсаар",t:"Утсаар холбогдож шаардлага тавьсан гүйцэтгэх баримт бичиг",h:"Төлбөр төлөгч, төлбөр авагчтай утсаар холбогдсон",b:"ШШГТХ 14.4"},
+ {k:"q4",s:"Дуудсан",t:"Дуудан ирүүлж, тайлбар авсан гүйцэтгэх баримт бичиг",c:["Дуудан ирүүлсэн","Хүлээн авч уулзсан"],b:"ШШГТХ 44.2.1, 44.2.3"},
+ {k:"q5",s:"Лавлагаа",t:"Лавлагаа авсан гүйцэтгэх баримт бичиг",h:"Улсын бүртгэл, банк, тээврийн хэрэгсэл, нийгмийн даатгал, татвар; баримт гаргуулсан",b:"ШШГТХ 44.2.2, 44.2.11"},
+ {k:"q6",s:"Хөрөнгө тогтоосон",t:"Хөрөнгө тогтоогдсон гүйцэтгэх баримт бичиг",h:"Лавлагаа, хаягаар ажиллагааны үр дүнд хөрөнгө, орлого тогтоогдсон"},
+ {k:"q7",s:"Данс хаасан",t:"Дансны зарлагыг хаасан (данс битүүмжилсэн)",h:"Банкинд хүргүүлсэн",b:"ШШГТХ 44.2.13"},
+ {k:"q8",s:"Данс чөлөөлсөн",t:"Дансны зарлагын хаалтыг цуцалсан (чөлөөлсөн)",b:"ШШГТХ 44.2.13, 49.9"},
+ {k:"q9",s:"Суутгал",t:"Цалин, орлогоос суутгал хийлгэхээр хүргүүлсэн",h:"Ажил олгогч, тэтгэвэр олгогчид хүргүүлсэн",b:"ШШГТХ 77.1.2, 89"},
+ {k:"q10",s:"Битүүмжилсэн",t:"Эд хөрөнгө битүүмжилсэн",c:DPROP,b:"ШШГТХ 44.2.8, 49"},
+ {k:"q11",s:"Хураасан",t:"Эд хөрөнгө хураан авсан",c:DPROP,b:"ШШГТХ 44.2.8, 54"},
+ {k:"q12",s:"Чөлөөлсөн",t:"Битүүмжлэл, хураалтаас чөлөөлсөн",b:"ШШГТХ 49.9"},
+ {k:"q13",s:"Эрх түдгэлзүүлэх",t:"Улсын бүртгэлд эрхийг түдгэлзүүлэх хүсэлт хүргүүлсэн",b:"ШШГТХ 44.2.14"}
+];
+const DABS=["Ээлжийн амралт","Өвчтэй","Албан томилолт","Сургалт","Цалинтай чөлөө","Цалингүй чөлөө","Жирэмсний болон амаржсаны амралт","Хүүхэд асрах чөлөө","Ажил тасалсан","Бусад"];
+const DWD=["Ня","Да","Мя","Лх","Пү","Ба","Бя"];
+function dqKeys(q){return q.c?q.c.map((_,i)=>q.k+"_"+i):[q.k];}
+function dqVal(r,q){if(!r||!r.v)return 0;return dqKeys(q).reduce((a,k)=>a+(+r.v[k]||0),0);}
+function dTotal(r){return DQ.slice(0,5).reduce((a,q)=>a+dqVal(r,q),0);} // Нийт ажиллагаа = 1–5-р асуултын нийлбэр
+function dD(s){return new Date(s+"T00:00:00");}
+function dWork(s){const w=dD(s).getDay();return w!==0&&w!==6;}
+function dDays(a,b){const r=[];const d=dD(a),e=dD(b);while(d<=e){r.push(ymd(d));d.setDate(d.getDate()+1);}return r;}
+function dRange(mode,day){const t=ymd(new Date());let a=day,b=day;
+  if(mode==="week"){const d=dD(day);d.setDate(d.getDate()-(d.getDay()+6)%7);a=ymd(d);d.setDate(d.getDate()+6);b=ymd(d);}
+  else if(mode==="month"){a=day.slice(0,8)+"01";b=ymd(new Date(+day.slice(0,4),+day.slice(5,7),0));}
+  return [a,b>t?t:b];}
+function dLab(s){return s.slice(5).replace("-",".")+" "+DWD[dD(s).getDay()];}
+function dObj(x){const o={};if(x)Object.keys(x).forEach(k=>{if(x[k]!=null)o[k]=x[k];});return o;}
+function dAbsOn(abs,no,day){return Object.values(abs||{}).find(a=>a&&String(a.no)===String(no)&&a.from<=day&&(!a.to||a.to>=day));}
+async function dQuery(path,a,b){const M=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");const s=await M.get(M.query(M.ref(fbDB,path),M.orderByKey(),M.startAt(a),M.endAt(b)));return s.exists()?s.val():{};}
+async function dLoad(u,a,b){if(a===b){const v=await dbGet("daily/"+u+"/"+a);const o={};if(v)o[a]=v;return o;}return dQuery("daily/"+u,a,b);}
+async function dXlsx(tbl,name){try{await loadSheetJS();XLSX.writeFile(XLSX.utils.table_to_book(tbl,{sheet:"Өдрийн мэдээ"}),name+".xlsx");}catch(e){toast("Excel гаргаж чадсангүй","te");}}
+function dCtl(onCh,extra){ // Өдөр / 7 хоног / Сар + огноо
+  const t=ymd(new Date());S._dMode=S._dMode||"day";S._dDay=S._dDay||t;
+  const w=mk("div","dctl");
+  [["day","Өдөр"],["week","7 хоног"],["month","Сар"]].forEach(([m,l])=>{const b=mk("button","pt"+(S._dMode===m?" on":""));b.type="button";b.textContent=l;b.onclick=()=>{S._dMode=m;onCh();};w.appendChild(b);});
+  const di=mk("input");di.type="date";di.max=t;di.value=S._dDay;di.onchange=()=>{if(di.value){S._dDay=di.value>t?t:di.value;onCh();}};w.appendChild(di);
+  if(extra)extra.forEach(e=>w.appendChild(e));
+  return w;
+}
+function dStat(n,l,cls){return "<div class='sc "+(cls||"")+"'><div class='n'>"+n+"</div><div class='l'>"+l+"</div></div>";}
+
+async function tDaily(c){
+  if(!fbDB||!window._get){c.innerHTML="<div class='card'>Сервертэй холбогдож чадсангүй.</div>";return;}
+  if(isExec())return dExec(c);
+  if(S.user.isAdmin){if(S._daUnit)return dUnit(c,S._daUnit,true);return dAdmin(c);}
+  return dUnit(c,S.user.code,false);
+}
+
+// ---------- Гүйцэтгэгч: дээр нь сүүлийн өдрүүдийн мэдээ, доор нь тухайн өдрийн маягт ----------
+async function dExec(c){
+  const u=S.user.code,no=String(S.user.person.no),nm=S.user.person.name||"",today=ymd(new Date());
+  const days=[];{const d=new Date();while(days.length<7){const s=ymd(d);if(dWork(s)||s===today)days.unshift(s);d.setDate(d.getDate()-1);}}
+  if(!S._dxDay||!days.includes(S._dxDay))S._dxDay=today;
+  const head=mk("div","card");head.innerHTML="<h2>📝 Өдрийн мэдээ — "+esc(no)+"-р тойрог"+(nm?" · "+esc(nm):"")+"</h2><p class='dlead'>Ажлын өдөр бүр тухайн өдөр <b>ажиллагаа явуулсан гүйцэтгэх баримт бичгийн тоог</b> бичнэ. Нэг баримт бичиг дээр нэг өдөр хэд хэдэн удаа ажилласан ч 1 гэж тоолно.</p>";
+  c.appendChild(head);
+  const hist=mk("div","card"),form=mk("div","card");
+  if(innerWidth<700){c.appendChild(form);c.appendChild(hist);}else{c.appendChild(hist);c.appendChild(form);}
+  hist.innerHTML=form.innerHTML="<div class='dz'>⏳ Ачаалж байна...</div>";
+  const [m1]=dRange("month",today),wk=dRange("week",today)[0];
+  const all=[...new Set([...dDays(m1,today),...days])];const R={};
+  await Promise.all(all.map(async d=>{try{R[d]=await dbGet("daily/"+u+"/"+d+"/"+no);}catch{R[d]=null;}}));
+  // Түүх
+  const sum=(ds,q)=>ds.reduce((a,d)=>a+(q?dqVal(R[d],q):dTotal(R[d])),0);
+  const wds=all.filter(d=>d>=wk),mds=all.filter(d=>d>=m1);
+  let h="<h2>🗓 Миний мэдээ — сүүлийн өдрүүд</h2><div class='tw'><table class='dtbl'><thead><tr><th>Ажиллагаа</th>"+days.map(d=>"<th class='clk"+(d===S._dxDay?" cur":"")+"' data-d='"+d+"' title='Энэ өдрийн мэдээг бөглөх, засах'>"+dLab(d)+"</th>").join("")+"<th>Энэ 7 хоног</th><th>Энэ сар</th></tr></thead><tbody>";
+  h+="<tr><td class='dz'>Төлөв</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?(R[d].zero?"○":"✅"):(d===today?"⏳":"⚠️"))+"</td>").join("")+"<td></td><td></td></tr>";
+  h+="<tr class='tot'><td>Нийт ажиллагаа (1–5)</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?dTotal(R[d]):"")+"</td>").join("")+"<td>"+sum(wds)+"</td><td>"+sum(mds)+"</td></tr>";
+  DQ.forEach((q,i)=>{h+="<tr><td>"+(i+1)+". "+esc(q.s)+"</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?dqVal(R[d],q):"")+"</td>").join("")+"<td>"+sum(wds,q)+"</td><td>"+sum(mds,q)+"</td></tr>";});
+  h+="</tbody></table></div><p class='dz' style='margin-top:8px'>✅ бөглөсөн · ○ ажиллагаа явуулаагүй гэж баталгаажуулсан · ⚠️ бөглөөгүй. Огноон дээр дарж тухайн өдрийн мэдээг нөхөж бөглөнө.</p>";
+  hist.innerHTML=h;
+  hist.querySelectorAll("th.clk").forEach(th=>th.onclick=()=>{S._dxDay=th.dataset.d;c.innerHTML="";dExec(c);});
+  // Маягт
+  const day=S._dxDay,r=R[day]||{},v=r.v||{};
+  form.innerHTML="";const fh=mk("div");fh.className="dctl";
+  fh.innerHTML="<h2 style='margin:0;border:0;padding:0;flex:1;min-width:220px'>✍️ "+(day===today?"Өнөөдрийн":dLab(day)+"-ны")+" мэдээ</h2>";
+  const sel=mk("select");days.slice().reverse().forEach(d=>{const o=mk("option");o.value=d;o.textContent=dLab(d)+(d===today?" (өнөөдөр)":"")+(R[d]?" ✓":"");if(d===day)o.selected=true;sel.appendChild(o);});
+  sel.onchange=()=>{S._dxDay=sel.value;c.innerHTML="";dExec(c);};fh.appendChild(sel);form.appendChild(fh);
+  if(r.ts)form.insertAdjacentHTML("beforeend","<div class='dz' style='margin:-6px 0 8px'>Хадгалсан: "+new Date(r.ts).toLocaleString("mn-MN")+" — засаад дахин хадгалж болно.</div>");
+  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>А. Шийдвэр гүйцэтгэх ажиллагаа</h3>");
+  DQ.forEach((q,i)=>{
+    const row=mk("div","dq");
+    row.innerHTML="<div><div class='dt'><b>"+(i+1)+".</b>"+esc(q.t)+"</div>"+(q.h?"<div class='dh'>"+esc(q.h)+"</div>":"")+(q.b?"<div class='db'>"+esc(q.b)+"</div>":"")+"</div>";
+    const box=mk("div","din");
+    dqKeys(q).forEach((k,j)=>{const lb=mk("label");const inp=mk("input");inp.type="number";inp.min="0";inp.step="1";inp.inputMode="numeric";inp.dataset.k=k;inp.value=v[k]!=null&&v[k]!==0?v[k]:"";inp.placeholder="0";
+      if(q.c){lb.appendChild(inp);lb.appendChild(document.createTextNode(q.c[j]));box.appendChild(lb);}else box.appendChild(inp);});
+    row.appendChild(box);form.appendChild(row);
+  });
+  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Б. Нэмэлт</h3>"
+    +"<div class='dq'><div><div class='dt'><b>14.</b>Онцгой тохиолдол гарсан уу?</div><div class='dh'>Эсэргүүцэл, халдлага, хүч хэрэглэсэн гэх мэт. «Тийм» бол ахлахад харагдана.</div></div><div class='din'><label class='dyn'><input type='radio' name='dex' value='0'"+(r.ex?"":" checked")+"> Үгүй</label><label class='dyn'><input type='radio' name='dex' value='1'"+(r.ex?" checked":"")+"> Тийм</label></div></div>"
+    +"<div class='fi' id='dexw' style='margin-top:8px"+(r.ex?"":";display:none")+"'><textarea id='dext' placeholder='Юу болсон, хэн оролцсон, авсан арга хэмжээг товч бичнэ үү'>"+esc(r.ext||"")+"</textarea></div>"
+    +"<div class='fi' style='margin-top:12px'><label><b>15.</b> Тэмдэглэл <span class='dz'>(заавал биш)</span></label><textarea id='dnote' placeholder='Тоонд багтаагүй тайлбар'>"+esc(r.note||"")+"</textarea></div>"
+    +"<label class='dzero' id='dzw' hidden><input type='checkbox' id='dzc'"+(r.zero?" checked":"")+"> Өнөөдөр ажиллагаа явуулаагүй гэдгийг баталж байна</label>");
+  form.querySelectorAll("input[name=dex]").forEach(x=>x.onchange=()=>{form.querySelector("#dexw").style.display=form.querySelector("input[name=dex]:checked").value==="1"?"":"none";});
+  const bar=mk("div","dsum");bar.innerHTML="<span class='dtot'>Нийт ажиллагаа: <span id='dtv'>0</span></span>";
+  const sv=mk("button","btn bp");sv.textContent=r.ts?"💾 Шинэчилж хадгалах":"💾 Мэдээ хадгалах";bar.appendChild(sv);form.appendChild(bar);
+  const read=()=>{const o={};form.querySelectorAll("input[data-k]").forEach(x=>{const n=Math.max(0,Math.floor(+x.value||0));if(n)o[x.dataset.k]=n;});return o;};
+  const upd=()=>{const o=read();form.querySelector("#dtv").textContent=dTotal({v:o});const z=!Object.keys(o).length;form.querySelector("#dzw").hidden=!z;};
+  form.querySelectorAll("input[data-k]").forEach(x=>x.oninput=upd);upd();
+  sv.onclick=async()=>{
+    const o=read(),ex=form.querySelector("input[name=dex]:checked").value==="1",ext=form.querySelector("#dext").value.trim(),note=form.querySelector("#dnote").value.trim();
+    const z=!Object.keys(o).length;
+    if(z&&!form.querySelector("#dzc").checked){form.querySelector("#dzw").hidden=false;toast("Бүх нүд 0 байна. Ажиллагаа явуулаагүй бол доорх нүдийг чагтална уу.","te");return;}
+    if(ex&&!ext){toast("Онцгой тохиолдлыг товч бичнэ үү.","te");form.querySelector("#dext").focus();return;}
+    const big=DQ.filter(q=>dqVal({v:o},q)>60);if(big.length&&!confirmBig(big))return;
+    sv.disabled=true;sv.textContent="⏳ Хадгалж байна...";
+    try{await dbSet("daily/"+u+"/"+day+"/"+no,{v:o,ex:ex?1:0,ext:ex?ext:"",note,zero:z?1:0,ts:Date.now(),name:nm});
+      toast("✅ "+(day===today?"Өнөөдрийн":dLab(day)+"-ны")+" мэдээ хадгалагдлаа","ts");try{SND.play("send");}catch{}c.innerHTML="";dExec(c);}
+    catch(e){sv.disabled=false;sv.textContent="💾 Мэдээ хадгалах";toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}
+  };
+  function confirmBig(b){const w=form.querySelector("#dbig");if(w&&w.dataset.ok==="1")return true;
+    const d=w||mk("div","dalert");d.id="dbig";d.dataset.ok="1";d.innerHTML="⚠️ "+b.map(q=>esc(q.s)).join(", ")+" дээр их тоо бичсэн байна. Зөв бол «Хадгалах» товчийг дахин дарна уу.";if(!w)bar.before(d);return false;}
+}
+
+// ---------- Ахлах: тойрог тойргоор нэгтгэл + ажиллаагүй алба хаагчийн бүртгэл ----------
+async function dUnit(c,u,back){
+  const re=()=>{c.innerHTML="";dUnit(c,u,back);},today=ymd(new Date());
+  const un=(S.units.find(x=>x.code===u)||{}).name||u;
+  const card=mk("div","card");c.appendChild(card);
+  const ex=[];if(back){const b=mk("button","btn bx");b.textContent="← Бүх нэгж";b.onclick=()=>{S._daUnit=null;c.innerHTML="";tDaily(c);};ex.push(b);}
+  const xb=mk("button","btn bx");xb.textContent="⬇ Excel";ex.push(xb);
+  card.innerHTML="<h2>📝 Өдрийн мэдээ — тойргоор"+(back?" · "+esc(u+" "+un):"")+"</h2>";card.appendChild(dCtl(re,ex));
+  const body=mk("div");card.appendChild(body);body.innerHTML="<div class='dz'>⏳ Ачаалж байна...</div>";
+  const [a,b]=dRange(S._dMode,S._dDay);let D={},abs={},ppl={};
+  try{[D,abs,ppl]=await Promise.all([dLoad(u,a,b),dbGet("dreg/"+u+"/abs").then(x=>x||{}),loadPeople(u).then(x=>x||{})]);}catch(e){body.innerHTML="<div class='dalert r'>Уншиж чадсангүй: "+esc(e&&e.message||e)+"</div>";return;}
+  const wdays=dDays(a,b).filter(d=>dWork(d)||D[d]);
+  const nos=[...new Set([...unitDists(u).map(String),...Object.keys(dObj(ppl))])].sort((x,y)=>+x-+y);
+  const nameOf=n=>{const p=dObj(ppl)[n];return p&&p.name||"";};
+  const rows=nos.map(n=>{const rs=wdays.map(d=>dObj(D[d])[n]).filter(Boolean);let ab=0,miss=0;
+    wdays.forEach(d=>{if(dObj(D[d])[n])return;if(dAbsOn(abs,n,d))ab++;else if(d!==today)miss++;});
+    return {n,name:nameOf(n)||(rs[0]&&rs[0].name)||"",rs,sent:rs.length,ab,miss,abNow:S._dMode==="day"?dAbsOn(abs,n,a):null,rec:S._dMode==="day"?dObj(D[a])[n]:null};});
+  const totQ=q=>rows.reduce((s,r)=>s+r.rs.reduce((x,y)=>x+dqVal(y,q),0),0),totAll=rows.reduce((s,r)=>s+r.rs.reduce((x,y)=>x+dTotal(y),0),0);
+  const isDay=S._dMode==="day",sentN=isDay?rows.filter(r=>r.rec).length:rows.reduce((s,r)=>s+r.sent,0),exp=rows.length*wdays.length;
+  const abN=isDay?rows.filter(r=>!r.rec&&r.abNow).length:rows.reduce((s,r)=>s+r.ab,0),missN=isDay?rows.filter(r=>!r.rec&&!r.abNow).length:rows.reduce((s,r)=>s+r.miss,0);
+  let h="<div class='stats'>"+dStat(rows.length,"Тойрог")+dStat(isDay?sentN:sentN+"/"+exp,isDay?"Бөглөсөн":"Бөглөсөн (тойрог×өдөр)","g")+dStat(abN,"Ажиллаагүй","o")+dStat(missN,isDay&&a===today?"Бөглөөгүй байна":"Бөглөөгүй","r")+dStat(totAll,"Нийт ажиллагаа")+"</div>";
+  h+="<div class='tw'><table class='dtbl' id='dut'><thead><tr><th>Тойрог</th><th>Гүйцэтгэгч</th><th>Төлөв</th><th>Нийт ажиллагаа</th>"+DQ.map((q,i)=>"<th title='"+esc(q.t)+"'>"+(i+1)+". "+esc(q.s)+"</th>").join("")+"</tr></thead><tbody>";
+  rows.forEach(r=>{let st;
+    if(isDay)st=r.rec?(r.rec.zero?"○ Ажиллагаагүй":"✅ "+new Date(r.rec.ts).toTimeString().slice(0,5)):r.abNow?"🏖 "+esc(r.abNow.reason):(a===today?"⏳ Бөглөөгүй":"⚠️ Бөглөөгүй");
+    else st=r.sent+"/"+wdays.length+" өдөр"+(r.ab?" · 🏖"+r.ab:"")+(r.miss?" · ⚠️"+r.miss:"");
+    h+="<tr class='dclk' data-n='"+r.n+"'><td>"+esc(r.n)+"</td><td style='text-align:left'>"+esc(r.name)+"</td><td style='text-align:left;white-space:nowrap'>"+st+"</td><td><b>"+r.rs.reduce((x,y)=>x+dTotal(y),0)+"</b></td>"+DQ.map(q=>"<td>"+r.rs.reduce((x,y)=>x+dqVal(y,q),0)+"</td>").join("")+"</tr>";});
+  h+="<tr class='tot'><td colspan='3'>Нэгжийн дүн</td><td>"+totAll+"</td>"+DQ.map(q=>"<td>"+totQ(q)+"</td>").join("")+"</tr></tbody></table></div><p class='dz' style='margin-top:8px'>Мөр дээр дарж тухайн тойргийн өдөр бүрийн задаргааг харна. Мэдэгдлийн цахим хувь: "+(()=>{const t=totQ(DQ[0]),e=rows.reduce((s,r)=>s+r.rs.reduce((x,y)=>x+(+((y.v||{}).q1_2)||0),0),0);return t?Math.round(e*100/t)+"%":"—";})()+"</p>";
+  // Анхааруулга
+  const al=[];
+  rows.forEach(r=>r.rs.forEach(x=>{if(x.ex)al.push("<div class='dalert r'>🚨 <b>"+esc(r.n)+"-р тойрог</b> "+esc(r.name)+": "+esc(x.ext||"онцгой тохиолдол")+"</div>");}));
+  DQ.forEach(q=>{const vals=rows.map(r=>({r,v:r.rs.reduce((x,y)=>x+dqVal(y,q),0)})).filter(o=>o.v>0);if(vals.length<3)return;const avg=vals.reduce((s,o)=>s+o.v,0)/vals.length;
+    vals.forEach(o=>{if(o.v>Math.max(10,avg*3))al.push("<div class='dalert'>📈 <b>"+esc(o.r.n)+"-р тойрог</b> — "+esc(q.s)+": "+o.v+" (нэгжийн дундаж "+Math.round(avg)+"). Шалгана уу.</div>");});});
+  if(isDay)rows.forEach(r=>{if(r.rec&&r.rec.note)al.push("<div class='dalert' style='border-left-color:#94A3B8;background:#F8FAFC'>💬 <b>"+esc(r.n)+"-р тойрог:</b> "+esc(r.rec.note)+"</div>");});
+  if(al.length)h+="<h3 class='dsec'>Анхааруулга, тэмдэглэл</h3>"+al.join("");
+  body.innerHTML=h;
+  xb.onclick=()=>dXlsx(body.querySelector("#dut"),"Өдрийн мэдээ "+u+" "+a+(a!==b?"_"+b:""));
+  body.querySelectorAll("tr.dclk").forEach(tr=>tr.onclick=()=>dDetail(tr.dataset.n,rows.find(r=>r.n===tr.dataset.n),wdays,D,abs));
+  // Ажиллаагүй алба хаагчийн бүртгэл
+  const ac=mk("div","card");c.appendChild(ac);dAbsCard(ac,u,abs,nos,nameOf,!back&&!S.user.isAdmin,re);
+}
+function dDetail(n,r,wdays,D,abs){
+  const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(980px,96vw)";ov.appendChild(bx);ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  let h="<h3 style='margin:0 0 12px'>"+esc(n)+"-р тойрог · "+esc(r&&r.name||"")+"</h3><div class='tw' style='max-height:70vh'><table class='dtbl'><thead><tr><th>Огноо</th><th>Нийт</th>"+DQ.map((q,i)=>"<th title='"+esc(q.t)+"'>"+(i+1)+"</th>").join("")+"<th>Тэмдэглэл</th></tr></thead><tbody>";
+  wdays.slice().reverse().forEach(d=>{const x=dObj(D[d])[n],ab=dAbsOn(abs,n,d);
+    h+="<tr><td>"+dLab(d)+"</td>"+(x?"<td><b>"+dTotal(x)+"</b></td>"+DQ.map(q=>"<td>"+(dqVal(x,q)||"")+"</td>").join("")+"<td style='text-align:left;white-space:normal;min-width:160px'>"+(x.ex?"🚨 "+esc(x.ext)+" ":"")+esc(x.note||"")+(x.zero?"○ ажиллагаагүй":"")+"</td>":"<td colspan='"+(DQ.length+2)+"' style='text-align:left'>"+(ab?"🏖 "+esc(ab.reason):"⚠️ Бөглөөгүй")+"</td>")+"</tr>";});
+  h+="</tbody></table></div><div class='brow'><button class='btn bx' id='dcl'>Хаах</button></div>";
+  bx.innerHTML=h;bx.querySelector("#dcl").onclick=()=>ov.remove();document.body.appendChild(ov);
+}
+function dAbsCard(ac,u,abs,nos,nameOf,canEdit,re){
+  const today=ymd(new Date());
+  const list=Object.entries(dObj(abs)).map(([id,a])=>Object.assign({id},a)).sort((x,y)=>(y.from||"").localeCompare(x.from||""));
+  const cur=list.filter(a=>!a.to||a.to>=today),old=list.filter(a=>a.to&&a.to<today).slice(0,15);
+  let h="<h2>🏖 Ажиллаагүй алба хаагчийн бүртгэл</h2><p class='dlead' style='margin-bottom:12px'>Эхлэх, дуусах өдрийг нэг удаа бүртгэхэд тэр хугацаанд тухайн тойрог «бөглөөгүй» гэж тооцогдохгүй. Дуусах өдөр тодорхойгүй бол хоосон үлдээгээд, ажилдаа гарахад «Дуусгах» дарна.</p>";
+  const row=a=>"<tr><td>"+(a.no?esc(a.no)+"-р тойрог":"")+"</td><td style='text-align:left'>"+esc(a.name||"")+"</td><td style='text-align:left'>"+esc(a.reason||"")+"</td><td>"+ymdMn(a.from)+" – "+(a.to?ymdMn(a.to):"…")+"</td><td>"+(a.sub?esc(a.sub)+"-р тойрог":"")+"</td>"+(canEdit?"<td style='white-space:nowrap'>"+(!a.to||a.to>=today?"<button class='btn bs' data-end='"+a.id+"' style='padding:5px 10px'>Дуусгах</button> ":"")+"<button class='btn bd_' data-del='"+a.id+"' style='padding:5px 10px'>✕</button></td>":"")+"</tr>";
+  const th="<thead><tr><th>Тойрог</th><th>Алба хаагч</th><th>Шалтгаан</th><th>Хугацаа</th><th>Орлон гүйцэтгэгч</th>"+(canEdit?"<th></th>":"")+"</tr></thead>";
+  h+=cur.length?"<div class='tw'><table class='dtbl'>"+th+"<tbody>"+cur.map(row).join("")+"</tbody></table></div>":"<div class='dz'>Одоогоор ажиллаагүй алба хаагч бүртгэгдээгүй байна.</div>";
+  if(old.length)h+="<details style='margin-top:10px'><summary class='dz' style='cursor:pointer'>Өмнөх бүртгэл ("+old.length+")</summary><div class='tw'><table class='dtbl'>"+th+"<tbody>"+old.map(row).join("")+"</tbody></table></div></details>";
+  if(canEdit)h+="<div class='brow'><button class='btn bp' id='dabn'>＋ Ажиллаагүй алба хаагч бүртгэх</button></div>";
+  ac.innerHTML=h;if(!canEdit)return;
+  ac.querySelectorAll("[data-end]").forEach(b=>b.onclick=async()=>{const a=abs[b.dataset.end];const yd=new Date();yd.setDate(yd.getDate()-1);const to=ymd(yd)<a.from?a.from:ymd(yd);
+    try{await dbSet("dreg/"+u+"/abs/"+b.dataset.end+"/to",to);toast("✅ Дууссан гэж тэмдэглэлээ","ts");re();}catch(e){toast("Алдаа: "+(e&&e.message||e),"te");}});
+  ac.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Устгах уу?";return;}
+    try{await dbSet("dreg/"+u+"/abs/"+b.dataset.del,null);toast("Устгалаа","ts");re();}catch(e){toast("Алдаа: "+(e&&e.message||e),"te");}});
+  ac.querySelector("#dabn").onclick=()=>{
+    const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(460px,94vw)";ov.appendChild(bx);ov.onclick=e=>{if(e.target===ov)ov.remove();};
+    const opt=nos.map(n=>"<option value='"+n+"'>"+n+"-р тойрог"+(nameOf(n)?" — "+esc(nameOf(n)):"")+"</option>").join("");
+    bx.innerHTML="<h3 style='margin:0 0 14px'>🏖 Ажиллаагүй алба хаагч бүртгэх</h3>"
+      +"<div class='fi' style='margin-bottom:10px'><label>Алба хаагч</label><select id='an'>"+opt+"<option value=''>Бусад алба хаагч (тойроггүй)</option></select></div>"
+      +"<div class='fi' id='anw' style='margin-bottom:10px;display:none'><label>Нэр, албан тушаал</label><input id='ann'></div>"
+      +"<div class='fi' style='margin-bottom:10px'><label>Шалтгаан</label><select id='ar'>"+DABS.map(x=>"<option>"+x+"</option>").join("")+"</select></div>"
+      +"<div class='fr'><div class='fi'><label>Эхлэх огноо</label><input type='date' id='af' value='"+today+"'></div><div class='fi'><label>Дуусах огноо (тодорхойгүй бол хоосон)</label><input type='date' id='at'></div></div>"
+      +"<div class='fi' style='margin-bottom:10px'><label>Тойргийг орлон гүйцэтгэх алба хаагч (заавал биш)</label><select id='as'><option value=''>—</option>"+opt+"</select></div>"
+      +"<div class='brow'><button class='btn bp' id='asv'>Бүртгэх</button><button class='btn bx' id='acl'>Болих</button></div>";
+    document.body.appendChild(ov);
+    const an=bx.querySelector("#an");an.onchange=()=>{bx.querySelector("#anw").style.display=an.value?"none":"";};
+    bx.querySelector("#acl").onclick=()=>ov.remove();
+    bx.querySelector("#asv").onclick=async()=>{const no=an.value,name=no?nameOf(no):bx.querySelector("#ann").value.trim(),from=bx.querySelector("#af").value,to=bx.querySelector("#at").value;
+      if(!no&&!name){toast("Алба хаагчийн нэрийг бичнэ үү","te");return;}if(!from){toast("Эхлэх огноог сонгоно уу","te");return;}if(to&&to<from){toast("Дуусах огноо эхлэхээс өмнө байна","te");return;}
+      const id=Date.now().toString(36);
+      try{await dbSet("dreg/"+u+"/abs/"+id,{no:no||"",name,reason:bx.querySelector("#ar").value,from,to:to||"",sub:bx.querySelector("#as").value||"",ts:Date.now()});ov.remove();toast("✅ Бүртгэлээ","ts");re();}
+      catch(e){toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}};
+  };
+}
+
+// ---------- Админ: нэгж тус бүрийн нэгтгэл ----------
+async function dAdmin(c){
+  const re=()=>{c.innerHTML="";dAdmin(c);},today=ymd(new Date());
+  const card=mk("div","card");c.appendChild(card);
+  const xb=mk("button","btn bx");xb.textContent="⬇ Excel";
+  card.innerHTML="<h2>📝 Өдрийн мэдээ — нэгжээр</h2>";card.appendChild(dCtl(re,[xb]));
+  const body=mk("div");card.appendChild(body);body.innerHTML="<div class='dz'>⏳ 31 нэгжийн мэдээг ачаалж байна...</div>";
+  const [a,b]=dRange(S._dMode,S._dDay),isDay=S._dMode==="day";
+  const units=S.units.filter(x=>!x.isAdmin&&!x.disabled&&unitDists(x.code).length);
+  const res=await Promise.all(units.map(async x=>{try{const [D,abs]=await Promise.all([dLoad(x.code,a,b),dbGet("dreg/"+x.code+"/abs")]);return {x,D,abs:abs||{}};}catch{return {x,D:{},abs:{},err:1};}}));
+  let N={t:0,sent:0,exp:0,ab:0,miss:0,all:0},QT=DQ.map(()=>0),al=[];
+  const rows=res.map(({x,D,abs,err})=>{const nos=unitDists(x.code).map(String),wd=dDays(a,b).filter(d=>dWork(d)||D[d]);let sent=0,ab=0,miss=0,all=0;const qt=DQ.map(()=>0);
+    wd.forEach(d=>{const day=dObj(D[d]);nos.forEach(n=>{const r=day[n];if(r){sent++;all+=dTotal(r);DQ.forEach((q,i)=>qt[i]+=dqVal(r,q));if(r.ex)al.push("<div class='dalert r'>🚨 <b>"+esc(x.code)+" · "+esc(n)+"-р тойрог</b> ("+dLab(d)+"): "+esc(r.ext||"")+"</div>");}
+      else if(dAbsOn(abs,n,d))ab++;else if(d!==today||isDay)miss++;});});
+    N.t+=nos.length;N.sent+=sent;N.exp+=nos.length*wd.length;N.ab+=ab;N.miss+=miss;N.all+=all;qt.forEach((v,i)=>QT[i]+=v);
+    return {x,nos,sent,exp:nos.length*wd.length,ab,miss,all,qt,err};});
+  let h="<div class='stats'>"+dStat(N.t,"Тойрог")+dStat(N.sent+(isDay?"":"/"+N.exp),"Бөглөсөн","g")+dStat(N.ab,"Ажиллаагүй","o")+dStat(N.miss,"Бөглөөгүй","r")+dStat(N.all,"Нийт ажиллагаа")+"</div>";
+  h+="<div class='tw'><table class='dtbl' id='dat'><thead><tr><th>Нэгж</th><th>Тойрог</th><th>Бөглөсөн</th><th>Ажиллаагүй</th><th>Бөглөөгүй</th><th>Нийт ажиллагаа</th>"+DQ.map((q,i)=>"<th title='"+esc(q.t)+"'>"+(i+1)+". "+esc(q.s)+"</th>").join("")+"</tr></thead><tbody>";
+  rows.forEach(r=>{const pc=r.exp?Math.round(r.sent*100/r.exp):0;h+="<tr class='dclk' data-u='"+r.x.code+"'><td style='text-align:left'><b>"+esc(r.x.code)+"</b> "+esc((r.x.name||"").split("—").pop().trim())+(r.err?" ⚠️":"")+"</td><td>"+r.nos.length+"</td><td><span class='badge "+(pc>=90?"bok":pc>=50?"bwarn":"bfail")+"'>"+r.sent+"/"+r.exp+"</span></td><td>"+r.ab+"</td><td>"+r.miss+"</td><td><b>"+r.all+"</b></td>"+r.qt.map(v=>"<td>"+v+"</td>").join("")+"</tr>";});
+  h+="<tr class='tot'><td>Улсын дүн</td><td>"+N.t+"</td><td>"+N.sent+"/"+N.exp+"</td><td>"+N.ab+"</td><td>"+N.miss+"</td><td>"+N.all+"</td>"+QT.map(v=>"<td>"+v+"</td>").join("")+"</tr></tbody></table></div><p class='dz' style='margin-top:8px'>Нэгж дээр дарж тойрог тойргоор нь харна.</p>";
+  if(al.length)h+="<h3 class='dsec'>Онцгой тохиолдол</h3>"+al.join("");
+  body.innerHTML=h;
+  xb.onclick=()=>dXlsx(body.querySelector("#dat"),"Өдрийн мэдээ улсаар "+a+(a!==b?"_"+b:""));
+  body.querySelectorAll("tr.dclk").forEach(tr=>tr.onclick=()=>{S._daUnit=tr.dataset.u;c.innerHTML="";tDaily(c);});
+}
 </script>
 </body>
 </html>
