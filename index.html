@@ -1700,6 +1700,7 @@ function tHome(c){
     if(me){mine="<div class='hcard' style='display:flex;flex-direction:column;gap:12px'><span style='font-family:Montserrat,Inter,sans-serif;font-size:17px;font-weight:800'>Миний нэгжийн мэдээ</span><div class='mine-list'>";
       pr.rows.filter(r=>r.elig.has(me)).forEach(r=>{const ok=r.sent.has(me);mine+="<div><span>"+esc(r.plan)+"</span><span class='badge "+(ok?"bok":"bwarn")+"'>"+(ok?"✓ Илгээгдсэн":"Илгээгээгүй")+"</span></div>";});
       mine+="</div><button class='btn bp' id='h_go2' style='align-self:flex-start'>Мэдээ оруулах</button></div>";}
+    if(me){ps.innerHTML=uProgHTML(pr,entries,me,periodsTxt,mine);const g=ps.querySelector("#h_go2");if(g)g.onclick=()=>renderTab("data");animRings(ps);return;}
     ps.innerHTML="<div class='hsec-h'><div><span class='eyebrow' style='color:#B45309'>Шууд</span><h2>Мэдээ ирүүлэлтийн явц</h2></div><span class='asof'><span class='live' style='margin-right:6px;vertical-align:middle'></span>"+esc(periodsTxt)+"</span></div>"
       +"<div class='prog-grid'><div class='hcard' style='display:flex;flex-direction:column;gap:18px'><div style='display:flex;align-items:center;gap:22px;flex-wrap:wrap'>"+ringSVG(150,64,14,tot?all/tot*100:0,"#14B8A6",String(all),tot+" нэгжээс")
       +"<div style='display:flex;flex-direction:column;gap:6px;flex:1 1 160px;min-width:0'><span style='font-family:Montserrat,Inter,sans-serif;font-size:18px;font-weight:800'>Бүх мэдээгээ илгээсэн</span><span style='font-size:14px;color:var(--tx2);line-height:1.5'>"+all+" нэгж бүгдийг, "+part+" нэгж дутуу илгээсэн. "+(tot-all-part)+" нэгж хараахан илгээгээгүй.</span></div></div>"
@@ -4818,6 +4819,43 @@ function fbConnWrap(){if(window._fbWrapped)return;window._fbWrapped=1;
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)act();});
   setInterval(()=>{if(_fbOff||_fbBusy||!window._goOff||!fbDB)return;if(S.user&&S.user.isAdmin)return; // админ холбогдсон хэвээр
     const idle=Date.now()-_fbLast;if(idle>(document.hidden?20000:60000)){_fbOff=true;try{window._goOff();}catch{}}},5000);})();
+
+// ---------- Нүүр: нэгжид зөвхөн өөрийн мэдээ ирүүлэлтийн явц (бусад нэгжийнхийг харуулахгүй) ----------
+// «Ирүүлэх ёстой» үе = тухайн төлөвлөгөөг аль нэг нэгж энэ онд хамгийн анх илгээсэн үеэс одоогийн үе хүртэл.
+function uPerIdx(f,s){let m;if(f==="month"&&(m=/(\d{4}) оны (\d+)-р сар/.exec(s)))return +m[1]*12+(+m[2]-1);if(f==="quarter"&&(m=/(\d{4}) оны (\d)-р улирал/.exec(s)))return +m[1]*4+(+m[2]-1);if(f==="year"&&(m=/(\d{4}) оны/.exec(s)))return +m[1];return null;}
+function uPerLab(f,i){if(f==="month")return Math.floor(i/12)+" оны "+(i%12+1)+"-р сар";if(f==="quarter")return Math.floor(i/4)+" оны "+(i%4+1)+"-р улирал";return i+" оны жилийн эцэс";}
+function uPerShort(f,i){if(f==="month")return (i%12+1)+"-р сар";if(f==="quarter")return (i%4+1)+"-р улирал";return "Жил";}
+function uHist(pr,entries,me){
+  const yr=new Date().getFullYear(),has=e=>e.values&&Object.values(e.values).some(v=>v!==""&&v!=null);
+  const rows=[];let need=0,got=0;const miss=[];
+  pr.rows.filter(r=>r.elig.has(me)).forEach(r=>{const f=r.freq;
+    if(!["month","quarter","year"].includes(f)){const ok=r.sent.has(me);need++;if(ok)got++;else miss.push({plan:r.plan,lab:r.period,cur:1});rows.push({plan:r.plan,f,cells:[{lab:r.period,s:r.period,ok,cur:1}]});return;}
+    const cur=uPerIdx(f,r.period);if(cur==null)return;
+    const pe=entries.filter(e=>e.freq===f&&(e.plans||[]).includes(r.plan)&&has(e));
+    const yrMin=f==="month"?yr*12:f==="quarter"?yr*4:yr;
+    let first=cur;pe.forEach(e=>{const i=uPerIdx(f,e.period);if(i!=null&&i>=yrMin&&i<first)first=i;});
+    const mine=new Set(pe.filter(e=>e.unit===me).map(e=>uPerIdx(f,e.period)));
+    const cells=[];for(let i=first;i<=cur;i++){const ok=mine.has(i),isCur=i===cur;cells.push({lab:uPerLab(f,i),s:uPerShort(f,i),ok,cur:isCur});need++;if(ok)got++;else miss.push({plan:r.plan,lab:uPerLab(f,i),cur:isCur,i});}
+    rows.push({plan:r.plan,f,cells});});
+  miss.sort((a,b)=>(b.cur?1:0)-(a.cur?1:0)||(b.i||0)-(a.i||0));
+  return {rows,need,got,miss};
+}
+function uProgHTML(pr,entries,me,periodsTxt,mine){
+  const H=uHist(pr,entries,me),pct=H.need?H.got/H.need*100:0,yr=new Date().getFullYear();
+  const old=H.miss.filter(m=>!m.cur),curM=H.miss.filter(m=>m.cur);
+  let left="<div class='hcard' style='display:flex;flex-direction:column;gap:18px'><div style='display:flex;align-items:center;gap:22px;flex-wrap:wrap'>"+ringSVG(150,64,14,pct,pct>=90?"#14B8A6":pct>=60?"#3B82F6":"#F59E0B",String(H.got),H.need+" мэдээнээс")
+    +"<div style='display:flex;flex-direction:column;gap:6px;flex:1 1 160px;min-width:0'><span style='font-family:Montserrat,Inter,sans-serif;font-size:18px;font-weight:800'>Манай нэгж "+yr+" онд</span><span style='font-size:14px;color:var(--tx2);line-height:1.5'>Ирүүлэх ёстой <b>"+H.need+"</b> мэдээнээс <b>"+H.got+"</b>-ийг ирүүлсэн."+(old.length?" Өмнөх хугацааны <b style='color:#B45309'>"+old.length+"</b> мэдээ ирүүлээгүй.":"")+(curM.length?" Энэ хугацаанд <b>"+curM.length+"</b> мэдээ ирүүлэх үлдсэн.":"")+"</span></div></div>";
+  if(H.miss.length)left+="<div><div style='font-weight:700;font-size:13.5px;margin-bottom:8px'>Ирүүлээгүй мэдээ</div><div class='mine-list'>"+H.miss.slice(0,8).map(m=>"<div><span>"+esc(m.plan)+" <span style='color:var(--tx3);font-size:12px'>· "+esc(m.lab)+"</span></span><span class='badge "+(m.cur?"bwarn":"bfail")+"'>"+(m.cur?"Энэ хугацаанд":"Хоцорсон")+"</span></div>").join("")+(H.miss.length>8?"<div class='dz'>… бусад "+(H.miss.length-8)+"</div>":"")+"</div></div>";
+  else left+="<div class='dalert' style='border-left-color:#10B981;background:#ECFDF5'>✅ Бүх мэдээгээ ирүүлсэн байна. Баярлалаа!</div>";
+  // Өөрийн түүх: төлөвлөгөө × хугацаа
+  let grid="<div style='display:flex;flex-direction:column;gap:10px'><div style='font-weight:700;font-size:13.5px'>Төлөвлөгөө тус бүрээр — "+yr+" он</div>";
+  H.rows.forEach(r=>{grid+="<div><div style='font-size:12.5px;color:#334155;margin-bottom:4px'>"+esc(r.plan)+"</div><div style='display:flex;gap:4px;flex-wrap:wrap'>"+r.cells.map(c=>{const col=c.ok?["#14B8A6","#0D9488","#fff"]:c.cur?["#F1F5F9","#94A3B8","#475569"]:["#FEF3C7","#F59E0B","#92400E"];
+    return "<span title='"+esc(c.lab+" — "+(c.ok?"ирүүлсэн":c.cur?"энэ хугацаанд ирүүлнэ":"ирүүлээгүй"))+"' style='min-width:46px;padding:4px 6px;border-radius:8px;border:1.5px solid "+col[1]+";background:"+col[0]+";color:"+col[2]+";font-size:11px;font-weight:700;text-align:center'>"+esc(c.s)+"</span>";}).join("")+"</div></div>";});
+  grid+="<div class='legend'><span><i style='background:#14B8A6;border-color:#0D9488'></i>Ирүүлсэн</span><span><i style='background:#FEF3C7;border-color:#F59E0B'></i>Ирүүлээгүй</span><span><i style='background:#F1F5F9;border-color:#94A3B8'></i>Энэ хугацаанд ирүүлнэ</span></div></div>";
+  left+=grid+"</div>";
+  return "<div class='hsec-h'><div><span class='eyebrow' style='color:#B45309'>Шууд</span><h2>Манай нэгжийн мэдээ ирүүлэлт</h2></div><span class='asof'><span class='live' style='margin-right:6px;vertical-align:middle'></span>"+esc(periodsTxt)+"</span></div>"
+    +"<div class='prog-grid'>"+left+"<div style='display:flex;flex-direction:column;gap:18px;min-width:0'>"+mine+"</div></div>";
+}
 </script>
 </body>
 </html>
