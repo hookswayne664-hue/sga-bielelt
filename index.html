@@ -4308,9 +4308,11 @@ const AREG={
    {k:"ord",l:"Тушаалын дугаар",t:"text",req:1,b:"А/192 9.6.2",show:v=>v.st==="Шийдвэрлэсэн"&&v.out==="Шийтгэл ногдуулсан"},
    {k:"ordd",l:"Тушаалын огноо",t:"date",req:1,show:v=>v.st==="Шийдвэрлэсэн"&&v.out==="Шийтгэл ногдуулсан"},
    {k:"mon",l:"Бууруулах, хасах хугацаа (сар, 1–3)",t:"num",req:1,show:v=>v.st==="Шийдвэрлэсэн"&&v.out==="Шийтгэл ногдуулсан"&&PEN_LONG.includes(v.pen)},
-   {k:"clr",l:"Сахилгын шийтгэлгүйд эрт тооцсон огноо",t:"date",h:"Хоосон бол тушаалын огнооноос хойш 1 жилээр автоматаар тооцно (А/86 6.1–6.2)",show:v=>v.st==="Шийдвэрлэсэн"&&v.out==="Шийтгэл ногдуулсан"}],
-  check:v=>v.mon&&(+v.mon<1||+v.mon>3)?"Бууруулах, хасах хугацаа 1–3 сар байна.":"",
-  cols:[["Огноо",r=>ymdMn(r.d)],["Алба хаагч",r=>aEmpLab(r)],["Зөрчил",r=>esc(r.viol||""),1],["Төлөв",r=>r.st==="Шийдвэрлэсэн"?esc(r.out||"Шийдвэрлэсэн"):"<span class='badge bwarn'>Шалгаж байгаа · "+aDaysSince(r.d)+" хоног</span>"],["Шийтгэл",r=>esc(r.pen||""),1],["Тушаал",r=>r.ord?esc(r.ord)+" · "+ymdMn(r.ordd):""],["Шийтгэлгүйд тооцох",r=>aClr(r)?ymdMn(aClr(r)):""]],
+   {k:"_hc",l:"Шийтгэлгүйд тооцох",t:"hdr",show:v=>v.st==="Шийдвэрлэсэн"&&v.out==="Шийтгэл ногдуулсан"},
+   {k:"clr",l:"Хүсэлтээр хугацаанаас өмнө шийтгэлгүйд тооцсон огноо",t:"date",h:"Шийтгэл ногдуулснаас хойш 6 сар өнгөрсний дараа алба хаагчийн хүсэлтээр тооцож болно. Хоосон бол тушаалын огнооноос хойш 1 жил өнгөрөхөд автоматаар тооцогдоно (А/86 6.1–6.2). Бүртгэл устахгүй, түүхэнд үлдэнэ.",show:v=>v.st==="Шийдвэрлэсэн"&&v.out==="Шийтгэл ногдуулсан"},
+   {k:"clrOrd",l:"Шийтгэлгүйд тооцсон тушаалын дугаар",t:"text",req:1,show:v=>v.st==="Шийдвэрлэсэн"&&v.out==="Шийтгэл ногдуулсан"&&!!v.clr}],
+  check:v=>v.mon&&(+v.mon<1||+v.mon>3)?"Бууруулах, хасах хугацаа 1–3 сар байна.":v.clr&&v.ordd&&v.clr<aAddM(v.ordd,6)?"Шийтгэл ногдуулснаас хойш 6 сар өнгөрөөгүй байна ("+ymdMn(aAddM(v.ordd,6))+"-наас хойш хүсэлтээр тооцож болно).":v.clr&&v.ordd&&v.clr<v.ordd?"Шийтгэлгүйд тооцсон огноо тушаалын огнооноос өмнө байна.":"",
+  cols:[["Огноо",r=>ymdMn(r.d)],["Алба хаагч",r=>aEmpLab(r)],["Зөрчил",r=>esc(r.viol||""),1],["Төлөв",r=>r.st==="Шийдвэрлэсэн"?esc(r.out||"Шийдвэрлэсэн"):"<span class='badge bwarn'>Шалгаж байгаа · "+aDaysSince(r.d)+" хоног</span>"],["Шийтгэл",r=>esc(r.pen||""),1],["Тушаал",r=>r.ord?esc(r.ord)+" · "+ymdMn(r.ordd):""],["Шийтгэлгүйд тооцох",r=>aClr(r)?ymdMn(aClr(r))+(r.clr?" (хүсэлтээр)":aActive(r)?"":" ✓"):""]],
   grp:"viol",open:r=>r.st!=="Шийдвэрлэсэн",
   stats:(L,M)=>[[L.filter(r=>r.st!=="Шийдвэрлэсэн").length,"Шалгаж байгаа","o"],[L.filter(r=>(r.d||"").slice(0,7)===M).length,"Энэ сард бүртгэсэн"],[L.filter(r=>r.out==="Шийтгэл ногдуулсан"&&(r.ordd||"").slice(0,7)===M).length,"Энэ сард шийтгэл ногдуулсан","r"],[L.filter(aActive).length,"Шийтгэлтэй алба хаагч","r"]]},
  eth:{id:"eth",n:"2.2",icon:"🤝",t:"Ёс зүйн зөрчил",h:"Ёс зүйн дэд хорооны дүгнэлтийг үндэслэн хариуцлага хүлээлгэнэ. Ёс зүйн хариуцлага нь сахилгын хариуцлагаас чөлөөлөхгүй (ТАХЁЗТХ 16.4).",
@@ -4362,6 +4364,7 @@ function aFm(n){return String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g
 function aMon(s){const d=dD(s);d.setDate(d.getDate()-(d.getDay()+6)%7);return ymd(d);}
 function aWkLab(m){const d=dD(m);d.setDate(d.getDate()+6);return m.slice(5).replace("-",".")+"–"+ymd(d).slice(5).replace("-",".");}
 function aWkMonthEnd(m){const d=dD(m);d.setDate(d.getDate()+6);return ymd(d).slice(0,7)!==m.slice(0,7)||ymd(new Date(d.getFullYear(),d.getMonth()+1,0))===ymd(d);}
+function aAddM(s,n){if(!s)return "";const d=dD(s),day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));return ymd(d);}
 function aAddY(s){return s?(+s.slice(0,4)+1)+s.slice(4):"";}
 function aDaysSince(s){return s?Math.max(0,Math.round((dD(ymd(new Date()))-dD(s))/864e5)):0;}
 function aClr(r){return r.out==="Шийтгэл ногдуулсан"?(r.clr||aAddY(r.ordd)):"";}
@@ -4426,11 +4429,12 @@ function aRegCard(w,spec,ctx){
   h+=vis.length?"<div class='tw'><table class='dtbl' id='rt_"+spec.id+"'><thead><tr><th>№</th>"+spec.cols.map(c=>"<th>"+c[0]+"</th>").join("")+"</tr></thead><tbody>"
     +vis.map((r,i)=>"<tr class='dclk' data-id='"+r.id+"'><td>"+(i+1)+"</td>"+spec.cols.map(c=>"<td style='"+(c[2]?"text-align:left;white-space:normal;min-width:160px":"white-space:nowrap")+"'>"+c[1](r)+"</td>").join("")+"</tr>").join("")+"</tbody></table></div>"
     :"<div class='dz'>Энэ хугацаанд бүртгэл алга.</div>";
-  if(ctx.canEdit)h+="<div class='brow'><button class='btn bp' data-add='1'>＋ Шинээр бүртгэх</button></div>";
+  if(ctx.canEdit)h+="<div class='brow'><button class='btn bp' data-add='1'>＋ Шинээр бүртгэх</button>"+(spec.id==="disc"?"<button class='btn bx' data-past='1'>＋ Өмнө ногдуулсан шийтгэл оруулах</button>":"")+"</div>"+(spec.id==="disc"?"<p class='dz' style='margin-top:6px'>Системийг ашиглаж эхлэхэд хүчинтэй байгаа (сүүлийн 1 жилд ногдуулсан) шийтгэлийг тушаалын огноогоор нь нэг удаа оруулна. Тэгснээр шийтгэлгүйд тооцох хугацаа зөв тоологдоно.</p>":"");
   const body=mk("div");body.innerHTML=h;card.appendChild(body);
   xb.onclick=()=>{const t=body.querySelector("table");if(!t){toast("Excel-д гаргах бүртгэл алга","te");return;}dXlsx(t,spec.n+" "+spec.t.slice(0,25)+" "+ctx.u+" "+M);};
   body.querySelectorAll("tr.dclk").forEach(tr=>tr.onclick=()=>{const r=L.find(x=>x.id===tr.dataset.id);aForm(spec,r.id,r,ctx);});
   const ab=body.querySelector("[data-add]");if(ab)ab.onclick=()=>aForm(spec,null,{},ctx);
+  const pb=body.querySelector("[data-past]");if(pb)pb.onclick=()=>aForm(spec,null,{st:"Шийдвэрлэсэн",out:"Шийтгэл ногдуулсан",basis:"Хуульд заасан бусад",sum:"Систем ашиглаж эхлэхээс өмнө ногдуулсан шийтгэл"},ctx);
 }
 
 // ---------- Ерөнхий маягт (modal) ----------
@@ -4575,12 +4579,16 @@ async function aExecEx(w,ctx){
   card.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{const x=it[+b.dataset.i];aForm(AREG.spec,null,{d:x.d,no:x.no,sum:x.r.ext||"",src:x.d+"/"+x.no},ctx);});
 }
 
-// ---------- 2. Шийтгэлтэй алба хаагчид (автомат) ----------
+// ---------- 2. Шийтгэлтэй алба хаагчид + түүх (автомат) ----------
 function aPenList(w,ctx){
-  const L=aList(ctx.R,"disc").filter(aActive).sort((a,b)=>aClr(a).localeCompare(aClr(b)));
+  const t=ymd(new Date()),P=aList(ctx.R,"disc").filter(r=>r.out==="Шийтгэл ногдуулсан"&&r.ordd);
+  const L=P.filter(aActive).sort((a,b)=>aClr(a).localeCompare(aClr(b))),H=P.filter(r=>!aActive(r)).sort((a,b)=>aClr(b).localeCompare(aClr(a)));
   const card=mk("div","card");w.appendChild(card);
-  card.innerHTML="<h2>📌 Сахилгын шийтгэлтэй алба хаагчид (автомат)</h2><p class='dlead' style='margin-bottom:10px'>Шийтгэл ногдуулснаас хойш 1 жил хүртэл энд харагдана, хугацаа дуусахад жагсаалтаас автоматаар гарна (А/86 6.1–6.2).</p>"
-   +(L.length?"<div class='tw'><table class='dtbl'><thead><tr><th>Алба хаагч</th><th>Шийтгэл</th><th>Тушаал</th><th>Шийтгэлгүйд тооцох огноо</th></tr></thead><tbody>"+L.map(r=>"<tr><td>"+aEmpLab(r)+"</td><td style='text-align:left;white-space:normal'>"+esc(r.pen||"")+(r.mon?" ("+r.mon+" сар)":"")+"</td><td>"+esc(r.ord||"")+" · "+ymdMn(r.ordd)+"</td><td>"+ymdMn(aClr(r))+"</td></tr>").join("")+"</tbody></table></div>":"<div class='dz'>Сахилгын шийтгэлтэй алба хаагч алга.</div>");
+  const pen=r=>esc(r.pen||"")+(r.mon?" ("+r.mon+" сар)":"");
+  let h="<h2>📌 Сахилгын шийтгэлтэй алба хаагчид (автомат)</h2><p class='dlead' style='margin-bottom:10px'>Шийтгэл ногдуулснаас хойш 1 жил өнгөрөхөд, эсвэл 6 сарын дараа хүсэлтээр тушаал гарахад «Шийтгэлгүйд тооцогдсон» түүх рүү шилжинэ. Бүртгэл устахгүй.</p>";
+  h+=L.length?"<div class='tw'><table class='dtbl'><thead><tr><th>Алба хаагч</th><th>Шийтгэл</th><th>Тушаал</th><th>Шийтгэлгүйд тооцох огноо</th><th></th></tr></thead><tbody>"+L.map(r=>"<tr><td>"+aEmpLab(r)+"</td><td style='text-align:left;white-space:normal'>"+pen(r)+"</td><td>"+esc(r.ord||"")+" · "+ymdMn(r.ordd)+"</td><td>"+ymdMn(aClr(r))+"</td><td>"+(aAddM(r.ordd,6)<=t?"<span class='badge bok'>6 сар өнгөрсөн — хүсэлтээр тооцох боломжтой</span>":"<span class='dz'>"+ymdMn(aAddM(r.ordd,6))+"-наас хүсэлтээр</span>")+"</td></tr>").join("")+"</tbody></table></div>":"<div class='dz'>Сахилгын шийтгэлтэй алба хаагч алга.</div>";
+  if(H.length)h+="<details style='margin-top:12px'><summary class='dz' style='cursor:pointer'>Шийтгэлгүйд тооцогдсон — түүх ("+H.length+")</summary><div class='tw'><table class='dtbl'><thead><tr><th>Алба хаагч</th><th>Шийтгэл</th><th>Тушаал</th><th>Шийтгэлгүйд тооцогдсон</th><th>Хэрхэн</th></tr></thead><tbody>"+H.map(r=>"<tr><td>"+aEmpLab(r)+"</td><td style='text-align:left;white-space:normal'>"+pen(r)+"</td><td>"+esc(r.ord||"")+" · "+ymdMn(r.ordd)+"</td><td>"+ymdMn(aClr(r))+"</td><td style='text-align:left'>"+(r.clr?"Хүсэлтээр, хугацаанаас өмнө ("+esc(r.clrOrd||"")+")":"1 жил өнгөрч автоматаар")+"</td></tr>").join("")+"</tbody></table></div></details>";
+  card.innerHTML=h;
 }
 
 // ---------- 3.3. Автоматаар гарах тоо ----------
