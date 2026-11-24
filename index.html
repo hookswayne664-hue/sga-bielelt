@@ -1143,9 +1143,9 @@ async function tStaff(c){
       {const pv=mk("div");pv.style.cssText="font-size:12px;color:#64748B;margin-top:3px;display:flex;gap:6px;align-items:center";
         if(p.pw){const sp=mk("span");sp.textContent="Нууц үг: ••••••";sp.style.fontFamily="monospace";const eb=mk("button","btn bx");eb.style.cssText="padding:2px 8px;font-size:12px";eb.textContent="👁";eb.title="Нууц үгийг харах";
           eb.onclick=()=>{const on=sp.dataset.on==="1";sp.dataset.on=on?"0":"1";sp.textContent="Нууц үг: "+(on?"••••••":p.pw);eb.textContent=on?"👁":"🙈";};pv.appendChild(sp);pv.appendChild(eb);}
-        else pv.textContent="Нууц үг хадгалагдаагүй — «🔑 Нууц үг» дарж шинээр өгнө";
+        else pv.textContent="Нууц үг хадгалагдаагүй — «🔄 Нууц үг солих» дарж шинээр өгнө";
         nameTd.appendChild(pv);}
-      const br=mk("button","btn bx");br.textContent="🔑 Нууц үг";br.title="Шинэ нууц үг олгох";br.onclick=()=>run(br,p.name,no,true);
+      const br=mk("button","btn bx");br.textContent="🔄 Нууц үг солих";br.title="Шинэ нууц үг олгоно — хуучин нууц үг хүчингүй болно. Зөвхөн харах бол нэрийн доорх 👁 товчийг дарна";br.onclick=()=>run(br,p.name,no,true);
       const bc=mk("button","btn bx");bc.style.marginLeft="6px";bc.textContent="✏️ Хүн солих";
       bc.onclick=()=>{nameTd.innerHTML="";const inp=mk("input");inp.placeholder="Шинэ гүйцэтгэгчийн овог нэр";inp.style.cssText=inS;nameTd.appendChild(inp);inp.focus();
         act.innerHTML="";const ok=mk("button","btn bp");ok.textContent="Солих";const cn=mk("button","btn bx");cn.style.marginLeft="6px";cn.textContent="Болих";
