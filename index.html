@@ -1004,7 +1004,7 @@ function pwAsk(no,name,reset){return new Promise(res=>{const ov=mk("div","modal-
   const def=tmpPwd();
   bx.innerHTML="<h3 style='margin:0 0 6px'>🔑 "+(reset?"Шинэ нууц үг":"Эрх нээх")+" — "+esc(no)+"-р тойрог</h3><p class='dz' style='margin:0 0 12px'>"+esc(name||"")+"</p>"
    +"<div class='fi' style='margin-bottom:8px'><label>Нууц үг (6-аас доошгүй тэмдэгт, жишээ нь 6 оронтой тоо)</label><input id='pwi' value='"+def+"' autocomplete='off' style='font-family:monospace;font-size:18px;letter-spacing:2px'></div>"
-   +"<p class='dz' style='margin:0 0 6px'>Системийн санал болгосон тоог хэвээр үлдээж болно, эсвэл өөрийн тоогоо бичнэ. Нууц үг хадгалагдах тул дараа нь 👁 товчоор харж болно.</p><div id='pwe' style='color:var(--rd);font-size:13px;min-height:18px'></div>"
+   +"<p class='dz' style='margin:0 0 6px'>Системийн санал болгосон тоог хэвээр үлдээж болно, эсвэл өөрийн тоогоо бичнэ. Нууц үг хадгалагдах тул дараа нь «👁 Нууц үг харах» товчоор харж болно.</p><div id='pwe' style='color:var(--rd);font-size:13px;min-height:18px'></div>"
    +"<div class='brow'><button class='btn bp' id='pwok'>"+(reset?"Солих":"Эрх нээх")+"</button><button class='btn bx' id='pwcl'>Болих</button></div>";
   document.body.appendChild(ov);const i=bx.querySelector("#pwi");i.focus();i.select();
   const done=v=>{ov.remove();res(v);};bx.querySelector("#pwcl").onclick=()=>done(null);ov.onclick=e=>{if(e.target===ov)done(null);};
@@ -1081,10 +1081,11 @@ async function issuePerson(unit,name,no,cpw){
   if(prev.uid&&prev.uid!==cr.user.uid){try{await dbSet("config/accounts/"+prev.uid,null);}catch{}}
   await dbSet("config/login/"+unit+"/"+no,{email,active:true});
   const now=new Date().toISOString();
-  const rec=Object.assign({},prev,{name:name||prev.name,role:"exec",email,rev,uid:cr.user.uid,active:true,mustChange:false,issued:now,updated:now,by:S.user.code,pw});
+  const rec=Object.assign({},prev,{name:name||prev.name,role:"exec",email,rev,uid:cr.user.uid,active:true,mustChange:false,issued:now,updated:now,by:S.user.code});delete rec.pw;
   delete rec.lastLogin;
   if(prev.name&&name&&prev.name!==name){rec.history=(prev.history||[]).concat([{name:prev.name,until:now}]);}
   if(isNew)rec.created=now;
+  try{await dbSet("dreg/"+unit+"/pw/"+no,{pw,ts:Date.now()});}catch(e){console.warn("[SGA] pw save",e);}
   await window._set(window._r(fbDB,"config/people/"+unit+"/"+no),rec);
   return{no,pw,name:rec.name};
 }
@@ -1101,7 +1102,7 @@ async function tStaff(c){
   const re=()=>{c.innerHTML="";tStaff(c);};
   const isA=!!S.user.isAdmin;
   const head=mk("div","card");
-  head.innerHTML="<h3 style='margin:0 0 6px'>👥 Шийдвэр гүйцэтгэгчдийн эрх</h3><p style='margin:0;font-size:13.5px;color:#475569;line-height:1.6'>Тойрог бүрт ажиллаж буй шийдвэр гүйцэтгэгчийн нэрийг бүртгээд «Эрх нээх» дарна. Гарсан нууц үгийг тухайн гүйцэтгэгчид өгөхөд тэр «Шийдвэр гүйцэтгэгч» хэсгээр нэвтэрнэ. Нууц үгээ мартвал «🔑 Нууц үг», тойрогт өөр хүн томилогдвол «✏️ Хүн солих» товчийг дарна.</p>";
+  head.innerHTML="<h3 style='margin:0 0 6px'>👥 Шийдвэр гүйцэтгэгчдийн эрх</h3><p style='margin:0;font-size:13.5px;color:#475569;line-height:1.6'>Тойрог бүрт ажиллаж буй шийдвэр гүйцэтгэгчийн нэрийг бүртгээд «Эрх нээх» дарна. Гарсан нууц үгийг тухайн гүйцэтгэгчид өгөхөд тэр «Шийдвэр гүйцэтгэгч» хэсгээр нэвтэрнэ. Нууц үгээ мартвал «👁 Нууц үг харах» дарж хэлж өгнө, шинээр өгөх бол «🔄 Нууц үг солих», тойрогт өөр хүн томилогдвол «✏️ Хүн солих» товчийг дарна.</p>";
   c.appendChild(head);
   const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
   let unit=isA?(S._staffUnit||(units.find(u=>unitDists(u.code).length)||units[0]).code):S.user.code;
@@ -1140,11 +1141,13 @@ async function tStaff(c){
       inp.onkeydown=e=>{if(e.key==="Enter")b.click();};act.appendChild(b);
     }else{
       nameTd.textContent=p.name||"";
-      {const pv=mk("div");pv.style.cssText="font-size:12px;color:#64748B;margin-top:3px;display:flex;gap:6px;align-items:center";
-        if(p.pw){const sp=mk("span");sp.textContent="Нууц үг: ••••••";sp.style.fontFamily="monospace";const eb=mk("button","btn bx");eb.style.cssText="padding:2px 8px;font-size:12px";eb.textContent="👁";eb.title="Нууц үгийг харах";
-          eb.onclick=()=>{const on=sp.dataset.on==="1";sp.dataset.on=on?"0":"1";sp.textContent="Нууц үг: "+(on?"••••••":p.pw);eb.textContent=on?"👁":"🙈";};pv.appendChild(sp);pv.appendChild(eb);}
-        else pv.textContent="Нууц үг хадгалагдаагүй — «🔄 Нууц үг солих» дарж шинээр өгнө";
-        nameTd.appendChild(pv);}
+
+      const bv=mk("button","btn bx");bv.textContent="👁 Нууц үг харах";bv.style.marginRight="6px";
+      bv.onclick=async()=>{if(bv.dataset.on==="1"){bv.dataset.on="0";bv.textContent="👁 Нууц үг харах";return;}
+        let x=null;try{x=await dbGet("dreg/"+unit+"/pw/"+no);}catch{}
+        if(!x||!x.pw){toast("Энэ тойргийн нууц үг хадгалагдаагүй байна (өмнө нээсэн эрх). «🔄 Нууц үг солих» дарж нэг удаа шинээр өгнө үү.","te");return;}
+        bv.dataset.on="1";bv.textContent="🔑 "+x.pw;bv.style.fontFamily="monospace";};
+      act.appendChild(bv);
       const br=mk("button","btn bx");br.textContent="🔄 Нууц үг солих";br.title="Шинэ нууц үг олгоно — хуучин нууц үг хүчингүй болно. Зөвхөн харах бол нэрийн доорх 👁 товчийг дарна";br.onclick=()=>run(br,p.name,no,true);
       const bc=mk("button","btn bx");bc.style.marginLeft="6px";bc.textContent="✏️ Хүн солих";
       bc.onclick=()=>{nameTd.innerHTML="";const inp=mk("input");inp.placeholder="Шинэ гүйцэтгэгчийн овог нэр";inp.style.cssText=inS;nameTd.appendChild(inp);inp.focus();
