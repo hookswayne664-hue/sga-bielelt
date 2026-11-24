@@ -1630,7 +1630,7 @@ function ringSVG(size,r,stroke,pct,color,center,sub){
 function animRings(root){requestAnimationFrame(()=>requestAnimationFrame(()=>{root.querySelectorAll("circle.v[data-off]").forEach(c=>c.setAttribute("stroke-dashoffset",c.getAttribute("data-off")));root.querySelectorAll(".bar>i[data-w]").forEach(b=>b.style.width=b.getAttribute("data-w"));}));}
 const KPI_CATS=["Иргэн","Захиргаа","Эрүү","Зөрчил","Бусад","Хүүхдийн тэтгэлэг"];
 const KPI_CAT_STYLE=[["#14B8A6","#0F766E","#E6FAF7"],["#3B82F6","#1D4ED8","#EAF1FE"],["#8B5CF6","#6D28D9","#F1ECFE"],["#EC4899","#BE185D","#FDEBF4"],["#64748B","#475569","#EEF2F6"],["#F59E0B","#B45309","#FEF4E2"]];
-const KPI_WK_DEF=["Шинээр хүлээн авсан ГББ","Дуусгавар болгосон ГББ","Барагдуулсан мөнгөн дүн, сая ₮","Гадаадад зорчих эрх түдгэлзүүлсэн","Гадаадад зорчих эрх сэргээсэн","Тээврийн хэрэгслийн эрх хязгаарласан","Хүлээн авсан өргөдөл, гомдол","Албадан дуудлага худалдаа"];
+const KPI_WK_DEF=["Шүүхэд хариуцагчаар татагдсан нэхэмжлэл (7 хоногт)","Шүүхэд хяналтад байгаа нэхэмжлэл","Өргөдөл, гомдлын дагуу нэгжүүдэд хүргүүлсэн үүрэг","Эрэн сурвалжилж олж тогтоосон төлбөр төлөгч","Тэтгэлгээс зайлсхийсэн төлбөр төлөгчид баривчлах шийтгэл (өссөн дүн)","Шүүхээс шинээр ирсэн ГББ"];
 function kpiObj(){const k=S.kpi||{};return{asOf:k.asOf||"",cats:KPI_CATS.map((n,i)=>Object.assign({name:n,done:"",all:"",money:""},(k.cats||[])[i]||{},{name:n})),prev:k.prev||null,weekly:{range:(k.weekly&&k.weekly.range)||"",items:KPI_WK_DEF.map((l,i)=>Object.assign({label:l,value:"",delta:""},((k.weekly&&k.weekly.items)||[])[i]||{}))}};}
 function num(v){const n=parseFloat(String(v==null?"":v).replace(/\s/g,"").replace(",","."));return isNaN(n)?null:n;}
 async function saveKpi(k){S.kpi=k;try{localStorage.setItem("sga_kpi",JSON.stringify(k));}catch{}if(fbDB&&window._set){try{await window._set(window._r(fbDB,"config/kpi"),k);toast("✅ Үзүүлэлт хадгалагдлаа","ts");}catch(e){toast("⚠️ Сервер рүү хадгалж чадсангүй","te");}}}
@@ -1696,7 +1696,7 @@ function tHome(c){
   }
   if(hasW){
     const sec=mk("section","hsec rise d3");wrap.appendChild(sec);
-    let h="<div class='hsec-h'><div><span class='eyebrow' style='color:#1D4ED8'>Албаны 7 хоног</span><h2>7 хоногийн шуурхай мэдээ</h2></div>"+(k.weekly.range?"<span class='asof'>"+esc(k.weekly.range)+"</span>":"")+"</div><div class='wk-grid'>";
+    let h="<div class='hsec-h'><div><span class='eyebrow' style='color:#1D4ED8'>ШГА-ны 7 хоногийн танилцуулгаас</span><h2>Энэ 7 хоногийн онцлох тоо</h2></div>"+(k.weekly.range?"<span class='asof'>"+esc(k.weekly.range)+"</span>":"")+"</div><div class='wk-grid'>";
     k.weekly.items.filter(w=>w.value!=="").forEach(w=>{const v=num(w.value);const up=/^▲|^\+/.test(w.delta),dn=/^▼|^-/.test(w.delta);
       h+="<div class='hcard' style='display:flex;flex-direction:column;gap:10px;padding:20px'><span style='font-size:13px;color:var(--tx2);line-height:1.4;min-height:36px'>"+esc(w.label)+"</span><span style='font-family:Montserrat,Inter,sans-serif;font-size:30px;font-weight:800'"+(v!=null?" data-count='"+v+"'":"")+">"+(v!=null?"0":esc(w.value))+"</span>"
         +(w.delta?"<span style='font-size:13px;font-weight:700;color:"+(up?"#047857":dn?"#BE123C":"#475569")+"'>"+esc(w.delta)+" <span style='font-weight:400;color:#64748B'>өмнөх 7 хоногоос</span></span>":"")+"</div>";});
@@ -5019,7 +5019,20 @@ async function homeLive(sec){
   h+=card(exN?"🚨":"✅","Онцгой тохиолдол",exN,exN?"халдлага, эсэргүүцэл гэх мэт — анхааралтай":"энэ 7 хоногт гараагүй",exN?"#BE123C":"#047857");
   if(ex)h+=card("⚖️","Шүүх хуралдаан",S_(C,"n19"),"энэ 7 хоногт оролцсон");
   else{const oc=R.comp.filter(r=>!r.rd).length,od=R.disc.filter(r=>r.st!=="Шийдвэрлэсэн").length;h+=card("📨","Хянагдаж буй",oc+" · "+od,"өргөдөл, гомдол (нэгжид шууд) · сахилгын шалгалт",oc+od?"#B45309":"");}
-  h+="</div><p class='dz' style='margin-top:8px'>Шийдвэр гүйцэтгэгчдийн өдрийн мэдээнээс автоматаар тооцов. Албан ёсны биелэлтийн тоо дээрх хэсэгт (7 хоногийн танилцуулгаас) байна.</p>";
+  h+="</div>";
+  // 🏆 Өнгөрсөн 7 хоногийн манлай — админ тооцоолж config/kpi/top-д хадгална, бусад нь уншина
+  let top=(S.kpi||{}).top||null;
+  if(adm&&P.length){const U={},E={};const wdN=Math.max(1,wd(pm,(()=>{const d=dD(pm);d.setDate(d.getDate()+6);return ymd(d);})()).length);
+    P.forEach(x=>{const tt=dTotal(x.r);U[x.u]=(U[x.u]||0)+tt;const k=x.u+"|"+x.no;E[k]=E[k]||{u:x.u,no:x.no,name:x.r.name||"",t:0};E[k].t+=tt;if(x.r.name)E[k].name=x.r.name;});
+    const units=Object.entries(U).map(([u,t])=>({u,name:unitNm(u),avg:Math.round(t/Math.max(1,unitDists(u).length)/wdN*10)/10})).filter(x=>x.avg>0).sort((a,b)=>b.avg-a.avg).slice(0,3);
+    const execs=Object.values(E).filter(x=>x.t>0).sort((a,b)=>b.t-a.t).slice(0,5).map(x=>Object.assign(x,{un:unitNm(x.u)}));
+    top={wk:pm,units,execs,ts:Date.now()};S.kpi=Object.assign({},S.kpi||{},{top});try{await dbSet("config/kpi/top",top);}catch(e){console.warn("[SGA top]",e);}}
+  if(top&&((top.units||[]).length||(top.execs||[]).length)){
+    const md=["🥇","🥈","🥉","🏅","🏅"];
+    h+="<div class='hcard' style='margin-top:14px;padding:18px;border-left:4px solid #F59E0B'><div style='font-family:Montserrat,Inter,sans-serif;font-size:17px;font-weight:800;margin-bottom:10px'>🏆 Өнгөрсөн 7 хоногийн манлай <span class='dz' style='font-weight:400'>("+aWkLab(top.wk)+")</span></div><div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px'>"
+      +"<div><div class='dz' style='margin-bottom:6px'>Нэгж — 1 тойрогт өдөрт ногдох ажиллагаагаар</div>"+(top.units||[]).map((x,i)=>"<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #EEF2F6'><span>"+md[i]+" "+esc(x.name||x.u)+"</span><b>"+x.avg+"</b></div>").join("")+"</div>"
+      +"<div><div class='dz' style='margin-bottom:6px'>Шийдвэр гүйцэтгэгч — нийт ажиллагаагаар</div>"+(top.execs||[]).map((x,i)=>"<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #EEF2F6'><span>"+md[i]+" "+esc(x.name||"")+" <span class='dz'>· "+esc(x.un||x.u)+", "+esc(x.no)+"-р тойрог</span></span><b>"+x.t+"</b></div>").join("")+"</div></div></div>";}
+  h+="<p class='dz' style='margin-top:8px'>Шийдвэр гүйцэтгэгчдийн өдрийн мэдээнээс автоматаар тооцов. Албан ёсны биелэлтийн тоо дээрх хэсэгт (7 хоногийн танилцуулгаас) байна.</p>";
   sec.innerHTML=sec.querySelector(".hsec-h").outerHTML+h;
 }
 </script>
