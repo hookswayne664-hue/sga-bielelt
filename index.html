@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ШГА Биелэлт"><meta name="theme-color" content="#0F766E">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ШГА Биелэлт"><meta name="theme-color" content="#14244F"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png">
+<script>window.__bip=null;addEventListener("beforeinstallprompt",e=>{e.preventDefault();window.__bip=e;document.querySelectorAll(".instbtn").forEach(b=>b.hidden=false);document.querySelectorAll(".instalt").forEach(b=>b.hidden=true);});addEventListener("appinstalled",()=>{window.__bip=null;document.querySelectorAll(".instbtn").forEach(b=>{b.hidden=false;b.disabled=true;b.textContent="✅ Суулгалаа — утасныхаа дэлгэцээс нээнэ үү";});});if("serviceWorker"in navigator&&/^https?:/.test(location.protocol))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+function sgaInstall(){const e=window.__bip;if(!e)return;e.prompt();e.userChoice.finally(()=>{window.__bip=null;});}</script>
 <title>ШГА · БИЕЛЭЛТ</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -439,6 +441,7 @@ function cycleTheme(){let t="";try{t=localStorage.getItem("sga_theme")||"";}catc
           <button class="lbtn" id="lB" onclick="doLogin()">⏳ Ачаалж байна...</button>
           <div class="lerr" id="lE"></div>
           <div class="lhint">Нууц үгээ мартсан бол Төлөвлөлт, дотоод ажлын хэлтэст хандана уу</div>
+          <button type="button" class="lbtn instbtn" hidden onclick="sgaInstall()" style="margin-top:10px;background:linear-gradient(135deg,#F59E0B,#D97706)">📲 Утсандаа апп суулгах</button>
           <div class="lhint" style="margin-top:6px"><a href="#linst" style="color:#0F766E;font-weight:700;text-decoration:none">📱 Гар утсандаа апп шиг суулгах заавар →</a></div>
         </div>
       </div>
@@ -5081,8 +5084,9 @@ function homeInstall(box){
   const A="<div style='flex:1;min-width:260px;background:#F8FAFC;border-radius:12px;padding:14px 16px"+(and?";outline:2px solid #14B8A6":"")+"'><b>🤖 Android (Chrome)</b>"+(and?" <span class='badge bok'>Таны утас</span>":"")
     +step(1,"Сайтыг <b>Chrome</b> хөтчөөр нээнэ.")+step(2,"Баруун дээд буланд байрлах <b>⋮</b> (3 цэг) дээр дарна.")+step(3,"<b>«Нүүр дэлгэцэнд нэмэх»</b> (Add to Home screen) эсвэл <b>«Апп суулгах»</b>-ыг сонгоно.")+step(4,"<b>«Нэмэх»</b> дарна — утасны дэлгэц дээр «ШГА Биелэлт» нэртэй дүрс гарна.")+"</div>";
   const I="<div style='flex:1;min-width:260px;background:#F8FAFC;border-radius:12px;padding:14px 16px"+(ios?";outline:2px solid #14B8A6":"")+"'><b>🍎 iPhone (Safari)</b>"+(ios?" <span class='badge bok'>Таны утас</span>":"")
-    +step(1,"Сайтыг заавал <b>Safari</b> хөтчөөр нээнэ (Chrome-оор болохгүй).")+step(2,"Доод хэсэгт байрлах <b>Хуваалцах</b> товч (⬆️ сумтай дөрвөлжин) дээр дарна.")+step(3,"Доош гүйлгээд <b>«Нүүр дэлгэцэнд нэмэх»</b> (Add to Home Screen)-ийг сонгоно.")+step(4,"Баруун дээд буланд <b>«Нэмэх»</b> (Add) дарна.")+"</div>";
-  const body="<div class='dz' style='margin:4px 0 10px'>Суулгасны дараа сайт апп шиг шууд нээгдэж, хаягийг дахин бичих шаардлагагүй. Нэвтрэх нэр, нууц үг өмнөхтэй адил.</div><div style='display:flex;gap:12px;flex-wrap:wrap'>"+(ios?I+A:A+I)+"</div>"
+    +step(1,"Сайтыг заавал <b>Safari</b> хөтчөөр нээнэ (Chrome-оор болохгүй).")+step(2,"Доод хэсэгт байрлах <b>Хуваалцах</b> товч (⬆️ сумтай дөрвөлжин) дээр дарна.")+step(3,"Жагсаалтыг <b>хамгийн доод хүртэл</b> гүйлгээд <b>«Нүүр дэлгэцэнд нэмэх»</b> (Add to Home Screen)-ийг сонгоно. Байхгүй бол хамгийн доор байрлах <b>«Edit Actions»</b>-оос нэмнэ.")+step(4,"Баруун дээд буланд <b>«Нэмэх»</b> (Add) дарна.")+"</div>";
+  const bigBtn="<div style='text-align:center;margin:4px 0 14px'><button type='button' class='lbtn instbtn' "+(window.__bip?"":"hidden")+" onclick='sgaInstall()' style='max-width:360px;font-size:17px'>📲 Апп суулгах — нэг дарахад болно</button>"+(ios?"<div class='dz' style='margin-top:6px'>iPhone дээр товч гарахгүй — доорх 4 алхмаар суулгана.</div>":"<div class='dz instalt' "+(window.__bip?"hidden":"")+" style='margin-top:6px'>«📲 Апп суулгах» товч гарахгүй байвал сайтаа <b>Chrome</b> хөтчөөр нээнэ үү (Viber, Messenger дотроос биш). Эсвэл доорх алхмаар суулгана.</div>")+"</div>";
+  const body=bigBtn+"<div class='dz' style='margin:4px 0 10px'>Суулгасны дараа сайт апп шиг шууд нээгдэж, хаягийг дахин бичих шаардлагагүй. Нэвтрэх нэр, нууц үг өмнөхтэй адил.</div><div style='display:flex;gap:12px;flex-wrap:wrap'>"+(ios?I+A:A+I)+"</div>"
     +"<div class='dz' style='margin-top:10px'>💡 Суулгасан апп-аас нэвтрэхэд энэ заавар харагдахгүй болно.</div>";
   box.innerHTML="<div class='hd'><span class='eyebrow'>Заавар</span><h2>📱 Гар утсандаа апп шиг суулгах</h2></div><div style='background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 6px 24px rgba(15,23,42,.06)'>"+body+"</div>";
 }
