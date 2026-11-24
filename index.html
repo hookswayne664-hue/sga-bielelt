@@ -4047,34 +4047,41 @@ window.addEventListener("DOMContentLoaded",initLogin);
 // Гүйцэтгэгч (тойрог) ажлын өдөр бүр бөглөнө; ахлах тойргоор, админ нэгжээр нэгтгэж харна.
 // Хадгалалт: daily/<нэгж>/<YYYY-MM-DD>/<тойрог> = {v:{q1_0:..}, ex, ext, note, zero, ts, name}
 //            dreg/<нэгж>/abs/<id> = {no, name, reason, from, to, sub, ts} — ажиллаагүй алба хаагч (ахлах бүртгэнэ)
-const DPROP=["Үл хөдлөх","Тээврийн хэрэгсэл","Бусад хөдлөх"];
+const DPROP=["Хөдлөх: тээврийн хэрэгсэл","Хөдлөх: бусад","Үл хөдлөх: орон сууц","Үл хөдлөх: хашаа байшин, хувийн сууц","Үл хөдлөх: барилга, объект","Үл хөдлөх: газар"];
+// t:1 — «Нийт ажиллагаа»-нд тоологдоно (2-р асуулт нь 1-р асуултын задаргаа тул тоологдохгүй)
 const DQ=[
- {k:"q1",s:"Мэдэгдэл",t:"Мэдэгдэл хүргүүлсэн гүйцэтгэх баримт бичиг",c:["Гардуулсан","Баталгаат шуудангаар","Утас, цахим хэлбэрээр"],h:"Мэдэгдэх хуудас, үүрэг хүлээлгэх мэдэгдэл",b:"ШШГТХ 14.3, 14.4, 44.2.5"},
- {k:"q2",s:"Хаягаар",t:"Хаягаар ажиллагаа явуулсан гүйцэтгэх баримт бичиг",h:"Оршин суугаа, ажлын болон хөрөнгийн байршлаар очиж үзлэг хийсэн",b:"ШШГТХ 44.2.6, 44.2.8, 48"},
- {k:"q3",s:"Утсаар",t:"Утсаар холбогдож шаардлага тавьсан гүйцэтгэх баримт бичиг",h:"Төлбөр төлөгч, төлбөр авагчтай утсаар холбогдсон",b:"ШШГТХ 14.4"},
- {k:"q4",s:"Дуудсан",t:"Дуудан ирүүлж, тайлбар авсан гүйцэтгэх баримт бичиг",c:["Дуудан ирүүлсэн","Хүлээн авч уулзсан"],b:"ШШГТХ 44.2.1, 44.2.3"},
- {k:"q5",s:"Лавлагаа",t:"Лавлагаа авсан гүйцэтгэх баримт бичиг",h:"Улсын бүртгэл, банк, тээврийн хэрэгсэл, нийгмийн даатгал, татвар; баримт гаргуулсан",b:"ШШГТХ 44.2.2, 44.2.11"},
- {k:"q6",s:"Хөрөнгө тогтоосон",t:"Хөрөнгө тогтоогдсон гүйцэтгэх баримт бичиг",h:"Лавлагаа, хаягаар ажиллагааны үр дүнд хөрөнгө, орлого тогтоогдсон"},
- {k:"q7",s:"Данс хаасан",t:"Дансны зарлагыг хаасан (данс битүүмжилсэн)",h:"Банкинд хүргүүлсэн",b:"ШШГТХ 44.2.13"},
- {k:"q8",s:"Данс чөлөөлсөн",t:"Дансны зарлагын хаалтыг цуцалсан (чөлөөлсөн)",b:"ШШГТХ 44.2.13, 49.9"},
- {k:"q9",s:"Суутгал",t:"Цалин, орлогоос суутгал хийлгэхээр хүргүүлсэн",h:"Ажил олгогч, тэтгэвэр олгогчид хүргүүлсэн",b:"ШШГТХ 77.1.2, 89"},
- {k:"q10",s:"Битүүмжилсэн",t:"Эд хөрөнгө битүүмжилсэн",c:DPROP,b:"ШШГТХ 44.2.8, 49"},
- {k:"q11",s:"Хураасан",t:"Эд хөрөнгө хураан авсан",c:DPROP,b:"ШШГТХ 44.2.8, 54"},
- {k:"q12",s:"Чөлөөлсөн",t:"Битүүмжлэл, хураалтаас чөлөөлсөн",b:"ШШГТХ 49.9"},
- {k:"q13",s:"Эрх түдгэлзүүлэх",t:"Улсын бүртгэлд эрхийг түдгэлзүүлэх хүсэлт хүргүүлсэн",b:"ШШГТХ 44.2.14"}
+ {k:"n1",g:"А. Мэдэгдэл, дуудлага",s:"Мэдэгдэл",t:"Мэдэгдэл хүргүүлсэн гүйцэтгэх баримт бичиг",c:["Мэдэгдэх хуудас","Зарлан дуудах хуудас","Биелүүлэх хуудас (үүрэг хүлээлгэх)"],b:"ШШГТХ 14, 44.2.1, 44.2.5",tt:1},
+ {k:"n2",g:"А. Мэдэгдэл, дуудлага",s:"Хүргүүлсэн хэлбэр",t:"Мэдэгдлийг хүргүүлсэн хэлбэр",c:["Хаягаар очиж гардуулсан","Баталгаат шуудангаар","Утас, цахимаар"],h:"1-р асуултад бичсэн мэдэгдлийг хэрхэн хүргүүлснээр задална",b:"ШШГТХ 14.3, 14.4"},
+ {k:"n3",g:"А. Мэдэгдэл, дуудлага",s:"Дуудсан",t:"Дуудан ирүүлж, тайлбар авсан гүйцэтгэх баримт бичиг",c:["Дуудан ирүүлсэн","Хүлээн авч уулзсан"],b:"ШШГТХ 44.2.1",tt:1},
+ {k:"n4",g:"А. Мэдэгдэл, дуудлага",s:"Хөрөнгийн мэдүүлэг",t:"Төлбөр төлөгчөөс хөрөнгийн мэдүүлэг авсан",b:"ШШГТХ 44.2.3",tt:1},
+ {k:"n5",g:"Б. Хөрөнгө тогтоох",s:"Лавлагаа",t:"Лавлагаа авсан гүйцэтгэх баримт бичиг",h:"Улсын бүртгэл, банк, тээврийн хэрэгсэл, нийгмийн даатгал, татвар; баримт гаргуулсан",b:"ШШГТХ 44.2.2, 44.2.11",tt:1},
+ {k:"n6",g:"Б. Хөрөнгө тогтоох",s:"Үзлэг",t:"Хаягаар очиж үзлэг хийсэн гүйцэтгэх баримт бичиг",h:"Оршин суугаа, ажлын болон хөрөнгийн байршлаар",b:"ШШГТХ 44.2.6, 44.2.7",tt:1},
+ {k:"n7",g:"Б. Хөрөнгө тогтоох",s:"Эрэн сурвалжилсан",t:"Төлбөр төлөгч, түүний хөрөнгийг эрэн сурвалжилсан",b:"ШШГТХ 44.2.10",tt:1},
+ {k:"n8",g:"Б. Хөрөнгө тогтоох",s:"Хөрөнгө тогтоосон",t:"Хөрөнгө тогтоогдсон гүйцэтгэх баримт бичиг",c:DPROP,h:"Лавлагаа, үзлэгийн үр дүнд хөрөнгө, орлого тогтоогдсон"},
+ {k:"n9",g:"В. Албадлагын арга хэмжээ",s:"Данс",t:"Дансны зарлага хаасан, хаалтыг цуцалсан",c:["Хаасан","Хаалтыг цуцалсан"],b:"ШШГТХ 44.2.13, 49.9"},
+ {k:"n10",g:"В. Албадлагын арга хэмжээ",s:"Суутгал",t:"Цалин, орлогоос суутгал хийлгэхээр хүргүүлсэн",h:"Ажил олгогч, тэтгэвэр олгогчид",b:"ШШГТХ 77.1.2, 89"},
+ {k:"n11",g:"В. Албадлагын арга хэмжээ",s:"Битүүмжилсэн",t:"Эд хөрөнгө битүүмжилсэн",c:DPROP,b:"ШШГТХ 44.2.8, 49"},
+ {k:"n12",g:"В. Албадлагын арга хэмжээ",s:"Хураасан",t:"Эд хөрөнгө хураан авсан",c:DPROP,b:"ШШГТХ 44.2.8, 54"},
+ {k:"n13",g:"В. Албадлагын арга хэмжээ",s:"Чөлөөлсөн",t:"Битүүмжлэл, хураалтаас чөлөөлсөн",b:"ШШГТХ 49.9"},
+ {k:"n14",g:"В. Албадлагын арга хэмжээ",s:"Эрх түдгэлзүүлэх",t:"Эрх түдгэлзүүлэх хүсэлт хүргүүлсэн",c:["Гадаадад зорчих эрх","Үл хөдлөх хөрөнгийн эрх","Тээврийн хэрэгсэл","Бусад эрх"],b:"ШШГТХ 44.2.14, 44.2.15, 59"},
+ {k:"n15",g:"В. Албадлагын арга хэмжээ",s:"Мэдэлд шилжүүлсэн",t:"Үл хөдлөх хөрөнгийг төлбөр авагчийн мэдэлд шилжүүлсэн",b:"ШШГТХ 44.2.16"},
+ {k:"n16",g:"Г. Шинжээч, үнэлгээ",s:"Шинжээч томилсон",t:"Шинжээч томилсон",b:"ШШГТХ 42.1, 44.2.9"},
+ {k:"n17",g:"Г. Шинжээч, үнэлгээ",s:"Эрх, үүрэг тайлбарласан",t:"Шинжээчид эрх, үүргийг тайлбарласан",b:"ШШГТХ 7.2"},
+ {k:"n18",g:"Г. Шинжээч, үнэлгээ",s:"Үнэлгээ танилцуулсан",t:"Үнэлгээг талуудад танилцуулсан",b:"ШШГТХ 55.1, 55.3"}
 ];
 const DVAC="Сул тойрог (алба хаагч томилогдоогүй)";
 const DABS=[DVAC,"Ээлжийн амралт","Өвчтэй","Албан томилолт","Сургалт","Цалинтай чөлөө","Цалингүй чөлөө","Жирэмсний болон амаржсаны амралт","Хүүхэд асрах чөлөө","Ажил тасалсан","Бусад"];
 const DWD=["Ня","Да","Мя","Лх","Пү","Ба","Бя"];
 function dqKeys(q){return q.c?q.c.map((_,i)=>q.k+"_"+i):[q.k];}
 function dqVal(r,q){if(!r||!r.v)return 0;return dqKeys(q).reduce((a,k)=>a+(+r.v[k]||0),0);}
-function dTotal(r){return DQ.slice(0,5).reduce((a,q)=>a+dqVal(r,q),0);} // Нийт ажиллагаа = 1–5-р асуултын нийлбэр
+function dTotal(r){return DQ.filter(q=>q.tt).reduce((a,q)=>a+dqVal(r,q),0);} // Нийт ажиллагаа = tt тэмдэгтэй асуултуудын нийлбэр
 function dD(s){return new Date(s+"T00:00:00");}
 function dWork(s){const w=dD(s).getDay();return w!==0&&w!==6;}
 function dDays(a,b){const r=[];const d=dD(a),e=dD(b);while(d<=e){r.push(ymd(d));d.setDate(d.getDate()+1);}return r;}
 function dRange(mode,day){const t=ymd(new Date());let a=day,b=day;
   if(mode==="week"){const d=dD(day);d.setDate(d.getDate()-(d.getDay()+6)%7);a=ymd(d);d.setDate(d.getDate()+6);b=ymd(d);}
   else if(mode==="month"){a=day.slice(0,8)+"01";b=ymd(new Date(+day.slice(0,4),+day.slice(5,7),0));}
+  else if(mode==="range"){a=S._dFrom||day;b=S._dTo||day;if(b<a){const x=a;a=b;b=x;}}
   return [a,b>t?t:b];}
 function dLab(s){return s.slice(5).replace("-",".")+" "+DWD[dD(s).getDay()];}
 function dObj(x){const o={};if(x)Object.keys(x).forEach(k=>{if(x[k]!=null)o[k]=x[k];});return o;}
@@ -4085,8 +4092,11 @@ async function dXlsx(tbl,name){try{await loadSheetJS();XLSX.writeFile(XLSX.utils
 function dCtl(onCh,extra){ // Өдөр / 7 хоног / Сар + огноо
   const t=ymd(new Date());S._dMode=S._dMode||"day";S._dDay=S._dDay||t;
   const w=mk("div","dctl");
-  [["day","Өдөр"],["week","7 хоног"],["month","Сар"]].forEach(([m,l])=>{const b=mk("button","pt"+(S._dMode===m?" on":""));b.type="button";b.textContent=l;b.onclick=()=>{S._dMode=m;onCh();};w.appendChild(b);});
-  const di=mk("input");di.type="date";di.max=t;di.value=S._dDay;di.onchange=()=>{if(di.value){S._dDay=di.value>t?t:di.value;onCh();}};w.appendChild(di);
+  [["day","Өдөр"],["week","7 хоног"],["month","Сар"],["range","Хугацаа"]].forEach(([m,l])=>{const b=mk("button","pt"+(S._dMode===m?" on":""));b.type="button";b.textContent=l;b.onclick=()=>{S._dMode=m;if(m==="range"){S._dTo=S._dTo||t;S._dFrom=S._dFrom||t.slice(0,8)+"01";}onCh();};w.appendChild(b);});
+  if(S._dMode==="range"){const f=mk("input"),e=mk("input");f.type=e.type="date";f.max=e.max=t;f.value=S._dFrom;e.value=S._dTo;f.title="Эхлэх огноо";e.title="Дуусах огноо";
+    f.onchange=()=>{if(f.value){S._dFrom=f.value;onCh();}};e.onchange=()=>{if(e.value){S._dTo=e.value>t?t:e.value;onCh();}};
+    w.appendChild(f);w.insertAdjacentHTML("beforeend","<span class='dz'>—</span>");w.appendChild(e);}
+  else{const di=mk("input");di.type="date";di.max=t;di.value=S._dDay;di.onchange=()=>{if(di.value){S._dDay=di.value>t?t:di.value;onCh();}};w.appendChild(di);}
   if(extra)extra.forEach(e=>w.appendChild(e));
   return w;
 }
@@ -4113,7 +4123,7 @@ async function dExec(c){
   const wds=all.filter(d=>d>=wk),mds=all.filter(d=>d>=m1);
   let h="<h2>🗓 Миний мэдээ — сүүлийн өдрүүд</h2><div class='tw'><table class='dtbl'><thead><tr><th>Ажиллагаа</th>"+days.map(d=>"<th class='clk"+(d===S._dxDay?" cur":"")+"' data-d='"+d+"' title='Энэ өдрийн мэдээг бөглөх, засах'>"+dLab(d)+"</th>").join("")+"<th>Энэ 7 хоног</th><th>Энэ сар</th></tr></thead><tbody>";
   h+="<tr><td class='dz'>Төлөв</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?(R[d].zero?"○":"✅"):(d===today?"⏳":"⚠️"))+"</td>").join("")+"<td></td><td></td></tr>";
-  h+="<tr class='tot'><td>Нийт ажиллагаа (1–5)</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?dTotal(R[d]):"")+"</td>").join("")+"<td>"+sum(wds)+"</td><td>"+sum(mds)+"</td></tr>";
+  h+="<tr class='tot'><td>Нийт ажиллагаа</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?dTotal(R[d]):"")+"</td>").join("")+"<td>"+sum(wds)+"</td><td>"+sum(mds)+"</td></tr>";
   DQ.forEach((q,i)=>{h+="<tr><td>"+(i+1)+". "+esc(q.s)+"</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?dqVal(R[d],q):"")+"</td>").join("")+"<td>"+sum(wds,q)+"</td><td>"+sum(mds,q)+"</td></tr>";});
   XQ.forEach(q=>{h+="<tr><td>➕ "+esc(q.t)+"</td>"+days.map(d=>"<td class='"+(d===S._dxDay?"cur":"")+"'>"+(R[d]?dqVal(R[d],q):"")+"</td>").join("")+"<td>"+wds.reduce((a,d)=>a+dqVal(R[d],q),0)+"</td><td>"+mds.reduce((a,d)=>a+dqVal(R[d],q),0)+"</td></tr>";});
   h+="</tbody></table></div><p class='dz' style='margin-top:8px'>✅ бөглөсөн · ○ ажиллагаа явуулаагүй гэж баталгаажуулсан · ⚠️ бөглөөгүй. Огноон дээр дарж тухайн өдрийн мэдээг нөхөж бөглөнө.</p>";
@@ -4126,8 +4136,8 @@ async function dExec(c){
   const sel=mk("select");days.slice().reverse().forEach(d=>{const o=mk("option");o.value=d;o.textContent=dLab(d)+(d===today?" (өнөөдөр)":"")+(R[d]?" ✓":"");if(d===day)o.selected=true;sel.appendChild(o);});
   sel.onchange=()=>{S._dxDay=sel.value;c.innerHTML="";dExec(c);};fh.appendChild(sel);form.appendChild(fh);
   if(r.ts)form.insertAdjacentHTML("beforeend","<div class='dz' style='margin:-6px 0 8px'>Хадгалсан: "+new Date(r.ts).toLocaleString("mn-MN")+" — засаад дахин хадгалж болно.</div>");
-  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>А. Шийдвэр гүйцэтгэх ажиллагаа</h3>");
   DQ.forEach((q,i)=>{
+    if(!i||DQ[i-1].g!==q.g)form.insertAdjacentHTML("beforeend","<h3 class='dsec'>"+esc(q.g)+"</h3>");
     const row=mk("div","dq");
     row.innerHTML="<div><div class='dt'><b>"+(i+1)+".</b>"+esc(q.t)+"</div>"+(q.h?"<div class='dh'>"+esc(q.h)+"</div>":"")+(q.b?"<div class='db'>"+esc(q.b)+"</div>":"")+"</div>";
     const box=mk("div","din");
@@ -4135,7 +4145,8 @@ async function dExec(c){
       if(q.c){lb.appendChild(inp);lb.appendChild(document.createTextNode(q.c[j]));box.appendChild(lb);}else box.appendChild(inp);});
     row.appendChild(box);form.appendChild(row);
   });
-  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Б. Нэмэлт</h3>"
+  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Д. Дотоод ажил</h3><label class='dzero' style='background:#EEF2FF;color:#3730A3'><input type='checkbox' id='diw'"+(r.iw?" checked":"")+"> Өнөөдөр дотоод ажил хийсэн <span style='font-weight:400'>(хавтаст хэрэг бүрдүүлэх, лавлагаа хавсаргах, товъёоглох, өргөдөл, гомдлын хариу бичих гэх мэт)</span></label>");
+  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Е. Нэмэлт</h3>"
     +"<div class='dq'><div><div class='dt'><b>14.</b>Онцгой тохиолдол гарсан уу?</div><div class='dh'>Эсэргүүцэл, халдлага, хүч хэрэглэсэн гэх мэт. «Тийм» бол ахлахад харагдана.</div></div><div class='din'><label class='dyn'><input type='radio' name='dex' value='0'"+(r.ex?"":" checked")+"> Үгүй</label><label class='dyn'><input type='radio' name='dex' value='1'"+(r.ex?" checked":"")+"> Тийм</label></div></div>"
     +"<div class='fi' id='dexw' style='margin-top:8px"+(r.ex?"":";display:none")+"'><textarea id='dext' placeholder='Юу болсон, хэн оролцсон, авсан арга хэмжээг товч бичнэ үү'>"+esc(r.ext||"")+"</textarea></div>"
     +"<div class='fi' style='margin-top:12px'><label><b>15.</b> Тэмдэглэл <span class='dz'>(заавал биш)</span></label><textarea id='dnote' placeholder='Тоонд багтаагүй тайлбар'>"+esc(r.note||"")+"</textarea></div>"
@@ -4148,16 +4159,16 @@ async function dExec(c){
     dl.onclick=async()=>{if(dl.dataset.ok!=="1"){dl.dataset.ok="1";dl.textContent="Устгах уу? Дахин дарна уу";return;}
       try{await dbSet("daily/"+u+"/"+day+"/"+no,null);toast("🗑 "+dLab(day)+"-ны мэдээ устгагдлаа","ts");c.innerHTML="";dExec(c);}catch(e){toast("Устгаж чадсангүй: "+(e&&e.message||e),"te");}};}
   const read=()=>{const o={};form.querySelectorAll("input[data-k]").forEach(x=>{const n=Math.max(0,Math.floor(+x.value||0));if(n)o[x.dataset.k]=n;});return o;};
-  const upd=()=>{const o=read();form.querySelector("#dtv").textContent=dTotal({v:o});const z=!Object.keys(o).length;form.querySelector("#dzw").hidden=!z;};
+  const upd=()=>{const o=read();form.querySelector("#dtv").textContent=dTotal({v:o});const z=!Object.keys(o).length&&!form.querySelector("#diw").checked;form.querySelector("#dzw").hidden=!z;};form.querySelector("#diw").onchange=()=>upd();
   form.querySelectorAll("input[data-k]").forEach(x=>x.oninput=upd);upd();
   sv.onclick=async()=>{
     const o=read(),ex=form.querySelector("input[name=dex]:checked").value==="1",ext=form.querySelector("#dext").value.trim(),note=form.querySelector("#dnote").value.trim();
-    const z=!Object.keys(o).length;
+    const iw=form.querySelector("#diw").checked,z=!Object.keys(o).length&&!iw;
     if(z&&!form.querySelector("#dzc").checked){form.querySelector("#dzw").hidden=false;toast("Бүх нүд 0 байна. Ажиллагаа явуулаагүй бол доорх нүдийг чагтална уу.","te");return;}
     if(ex&&!ext){toast("Онцгой тохиолдлыг товч бичнэ үү.","te");form.querySelector("#dext").focus();return;}
     const big=DQ.filter(q=>dqVal({v:o},q)>60);if(big.length&&!confirmBig(big))return;
     sv.disabled=true;sv.textContent="⏳ Хадгалж байна...";
-    try{await dbSet("daily/"+u+"/"+day+"/"+no,{v:o,ex:ex?1:0,ext:ex?ext:"",note,zero:z?1:0,ts:Date.now(),name:nm});
+    try{await dbSet("daily/"+u+"/"+day+"/"+no,{v:o,ex:ex?1:0,ext:ex?ext:"",note,zero:z?1:0,iw:iw?1:0,ts:Date.now(),name:nm});
       toast("✅ "+(day===today?"Өнөөдрийн":dLab(day)+"-ны")+" мэдээ хадгалагдлаа","ts");try{SND.play("send");}catch{}c.innerHTML="";dExec(c);}
     catch(e){sv.disabled=false;sv.textContent="💾 Мэдээ хадгалах";toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}
   };
@@ -4191,7 +4202,7 @@ async function dUnit(c,u,back){
     if(isDay)st=r.rec?(r.rec.zero?"○ Ажиллагаагүй":"✅ "+new Date(r.rec.ts).toTimeString().slice(0,5)):r.abNow?(r.abNow.reason===DVAC?"🚫 Сул тойрог":"🏖 "+esc(r.abNow.reason)):(a===today?"⏳ Бөглөөгүй":"⚠️ Бөглөөгүй");
     else st=r.sent+"/"+wdays.length+" өдөр"+(r.ab?" · 🏖"+r.ab:"")+(r.miss?" · ⚠️"+r.miss:"");
     h+="<tr class='dclk' data-n='"+r.n+"'><td>"+esc(r.n)+"</td><td style='text-align:left'>"+esc(r.name)+"</td><td style='text-align:left;white-space:nowrap'>"+st+"</td><td><b>"+r.rs.reduce((x,y)=>x+dTotal(y),0)+"</b></td>"+DQ.map(q=>"<td>"+r.rs.reduce((x,y)=>x+dqVal(y,q),0)+"</td>").join("")+XQ.map(q=>"<td>"+r.rs.reduce((x,y)=>x+dqVal(y,q),0)+"</td>").join("")+"</tr>";});
-  h+="<tr class='tot'><td colspan='3'>Нэгжийн дүн</td><td>"+totAll+"</td>"+DQ.map(q=>"<td>"+totQ(q)+"</td>").join("")+XQ.map(q=>"<td>"+totQ(q)+"</td>").join("")+"</tr></tbody></table></div><p class='dz' style='margin-top:8px'>Мөр дээр дарж тухайн тойргийн өдөр бүрийн задаргааг харна. Мэдэгдлийн цахим хувь: "+(()=>{const t=totQ(DQ[0]),e=rows.reduce((s,r)=>s+r.rs.reduce((x,y)=>x+(+((y.v||{}).q1_2)||0),0),0);return t?Math.round(e*100/t)+"%":"—";})()+"</p>";
+  h+="<tr class='tot'><td colspan='3'>Нэгжийн дүн</td><td>"+totAll+"</td>"+DQ.map(q=>"<td>"+totQ(q)+"</td>").join("")+XQ.map(q=>"<td>"+totQ(q)+"</td>").join("")+"</tr></tbody></table></div><p class='dz' style='margin-top:8px'>Мөр дээр дарж тухайн тойргийн өдөр бүрийн задаргааг харна. Мэдэгдлийн цахим хувь: "+(()=>{const t=totQ(DQ[1]),e=rows.reduce((s,r)=>s+r.rs.reduce((x,y)=>x+(+((y.v||{}).n2_2)||0),0),0);return t?Math.round(e*100/t)+"%":"—";})()+"</p>";
   // Анхааруулга
   const al=[];
   rows.forEach(r=>r.rs.forEach(x=>{if(x.ex)al.push("<div class='dalert r'>🚨 <b>"+esc(r.n)+"-р тойрог</b> "+esc(r.name)+": "+esc(x.ext||"онцгой тохиолдол")+"</div>");}));
@@ -4347,23 +4358,24 @@ const AREG={
    {k:"sum",l:"Товч агуулга, шийдвэрлэлт",t:"area",req:1,h:"Шүүхийн шийдвэр гарсан бол дугаар",b:"А/192 9.6.2–9.6.3"}],
   cols:[["Огноо",r=>ymdMn(r.d)],["Алба хаагч",r=>aEmpLab(r)],["Төрөл",r=>esc(r.type||"")],["Товч агуулга, шийдвэрлэлт",r=>esc(r.sum||""),1]],
   stats:(L,M)=>{const m=L.filter(r=>(r.d||"").slice(0,7)===M);return [[m.filter(r=>r.type==="Гэмт хэрэгт холбогдсон").length,"Энэ сард гэмт хэрэгт","r"],[m.filter(r=>r.type==="Зөрчилд холбогдсон").length,"Энэ сард зөрчилд","o"],[L.filter(r=>(r.d||"").slice(0,4)===M.slice(0,4)).length,"Оны эхнээс"]];}},
- comp:{id:"comp",n:"3.1",icon:"📨",t:"Өргөдөл, гомдлын бүртгэл (зөвхөн нэгжид шууд гаргасан)",h:"Дээд шатнаас шилжиж ирсэн (ХЗДХЯ, 11-11, ШШГЕГ, ШГА) өргөдөл, гомдол ШГА-ны Е-док-оор хянагддаг тул энд бүртгэхгүй. Шийдвэрлэсэн үед бүртгэлээ нээж 3.2 хэсгийг нэмж бөглөнө.",w:620,
+ comp:{id:"comp",n:"3.1",icon:"📨",t:"Өргөдөл, гомдлын бүртгэл (зөвхөн нэгжид шууд гаргасан)",h:"Дээд шатнаас шилжиж ирсэн (ХЗДХЯ, 11-11, ШШГЕГ, ШГА) өргөдөл, гомдол ШГА-ны Е-док-оор хянагддаг тул энд бүртгэхгүй. Шийдвэрлэсэн үед бүртгэлээ нээж шийдвэрлэлтийг нэмж бөглөнө.",w:620,
   f:[{k:"d",l:"Бүртгэсэн огноо",t:"date",req:1,def:1},
-   {k:"form",l:"Хэлбэр",t:"sel",req:1,o:["Шийдвэр гүйцэтгэгчийн үйлдлийн талаарх гомдол (ахлах шийдвэр гүйцэтгэгчид)","Бусад гомдол","Өргөдөл","Санал, хүсэлт","Талархал"],b:"ШШГТХ 44.3–44.4"},
-   {k:"to",l:"Хэнд гаргасан",t:"sel",req:1,o:["Газар, хэлтсийн дарга","Ахлах","Шийдвэр гүйцэтгэгч"]},
-   {k:"ch",l:"Ирсэн суваг",t:"sel",req:1,o:["Биечлэн","Шуудан","Цахим","Утас"]},
-   {k:"cont",l:"Агуулга",t:"sel",req:1,o:["Шийдвэр гүйцэтгэгчийн үйлдэл, эс үйлдэхүй","Ажиллагаа удааширсан","Хөрөнгө битүүмжлэх, хураах","Үнэлгээ, дуудлага худалдаа","Төлбөрийн тооцоо","Мэдээлэл, лавлагаа авах","Бусад"]},
+   {k:"ptype",l:"Гаргагч",t:"sel",req:1,o:["Иргэн","Хуулийн этгээд"]},
+   {k:"party",l:"Хэн гаргасан",t:"sel",req:1,o:["Төлбөр төлөгч","Төлбөр авагч","Гуравдагч этгээд"]},
+   {k:"form",l:"Төрөл",t:"sel",req:1,o:["Хүсэлт","Гомдол","Санал, мэдээлэл","Талархал"],b:"ШШГТХ 44.3–44.4"},
+   {k:"ch",l:"Ирсэн хэлбэр",t:"sel",req:1,o:["Биечлэн","Шуудангаар","Цахим шуудан, аппликейшнээр","Утсаар"]},
+   {k:"cont",l:"Агуулга",t:"sel",req:1,o:["Шийдвэр гүйцэтгэх ажиллагаа биелэгдэхгүй удааширсан","Мэдээлэл өгдөггүй, тайлбарладаггүй","Шийдвэр гүйцэтгэгч утсаа авдаггүй, холбогдох боломжгүй","Алба хаагчийн харилцаа, ёс зүй","Шийдвэр гүйцэтгэгчийг солих","Дансны хасалт, нээлт","Цалин, орлогоос суутгал хийсэн","Хилийн хориг","Эд хөрөнгө битүүмжлэх, хураах","Албадан дуудлага худалдаа","Хүүхдийн тэтгэлэг гаргуулах","Шийдвэр гүйцэтгэх ажиллагааг түдгэлзүүлэх","Бусад"]},
    {k:"gbb",l:"Гүйцэтгэх баримт бичгийн дугаар",t:"text",h:"Холбогдох бол бичнэ. Ижил дугаараар өмнө нь бүртгэгдсэн бол «Давтан»-ыг систем санал болгоно."},
-   {k:"rep",l:"Давтан эсэх",t:"yn",req:1,h:"Систем санал болгоно, ахлах баталгаажуулна"},
-   {k:"_h2",l:"3.2. Шийдвэрлэлт (шийдвэрлэсэн үед бөглөнө)",t:"hdr"},
-   {k:"rd",l:"Шийдвэрлэсэн огноо",t:"date",h:"Шийдвэрлээгүй бол хоосон үлдээнэ — хянагдаж буйд тооцогдоно"},
-   {k:"out",l:"Шийдвэрлэлтийн үр дүн",t:"sel",req:1,o:["Үндэслэлтэй — шаардлагыг хангасан","Үндэслэлтэй — хэсэгчлэн хангасан","Үндэслэлгүй — татгалзсан","Харьяаллын дагуу шилжүүлсэн","Хариу өгөх шаардлагагүй (талархал, мэдээлэл)"],b:"ШШГТХ 44.4, 44.6",show:v=>!!v.rd},
-   {k:"meas",l:"Авсан арга хэмжээ",t:"multi",req:1,o:["Ажиллагааг хүчингүй болгосон (ШШГТХ 44.6)","Ажиллагааг залруулсан","Тайлбар, мэдээлэл өгсөн","Сахилгын асуудал үүсгэсэн","Бусад"],h:"«Сахилгын асуудал үүсгэсэн» бол 2-р бүлгийн сахилгын бүртгэлд «Өргөдөл, гомдол» үндэслэлээр холбож бүртгэнэ",show:v=>!!v.rd&&/^Үндэслэлтэй/.test(v.out||"")},
-   {k:"how",l:"Хариуг хэрхэн өгсөн",t:"sel",req:1,o:["Бичгээр","Амаар","Цахимаар"],show:v=>!!v.rd&&v.out!=="Хариу өгөх шаардлагагүй (талархал, мэдээлэл)"}],
+   {k:"rep",l:"Нэг асуудлаар давтан гаргасан эсэх",t:"yn",req:1,h:"Систем санал болгоно, ахлах баталгаажуулна"},
+   {k:"_h2",l:"Шийдвэрлэлт (шийдвэрлэсэн үед бөглөнө)",t:"hdr"},
+   {k:"rd",l:"Эцэслэн шийдвэрлэсэн огноо",t:"date",h:"Шийдвэрлээгүй бол хоосон үлдээнэ — хянагдаж байгаад тооцогдоно"},
+   {k:"out",l:"Шийдвэрлэлтийн үр дүн",t:"sel",req:1,o:["Үндэслэлтэй","Үндэслэлгүй","Тайлбар, мэдээлэл, хууль зүйн зөвлөгөө өгч шийдвэрлэсэн","Харьяаллын дагуу шилжүүлсэн, буцаасан"],b:"ШШГТХ 44.4, 44.6",show:v=>!!v.rd},
+   {k:"late",l:"Хуулийн хугацаа хэтэрсэн эсэх",t:"yn",req:1,h:"Нэгжийн Е-док дахь шийдвэрлэх хугацаатай (сунгалтыг оруулаад) тулгаж тэмдэглэнэ",show:v=>!!v.rd},
+   {k:"disc",l:"Сахилга, ёс зүйн хариуцлага тооцсон эсэх",t:"yn",req:1,h:"«Тийм» бол «2. Сахилга, хариуцлага» хэсэгт энэ өргөдөл, гомдлыг холбож бүртгэнэ",show:v=>!!v.rd}],
   check:(v,ctx,id)=>v.rd&&v.rd<v.d?"Шийдвэрлэсэн огноо бүртгэсэн огнооноос өмнө байна.":"",
-  cols:[["Огноо",r=>ymdMn(r.d)],["Хэлбэр",r=>esc((r.form||"").replace(/ \(.*\)/,"")),1],["Агуулга",r=>esc(r.cont||"")],["ГББ",r=>esc(r.gbb||"")+(r.rep==1?" <span class='badge bwarn'>Давтан</span>":"")],["Төлөв",r=>r.rd?"✅ "+ymdMn(r.rd):"<span class='badge bwarn'>Хянагдаж буй</span>"],["Үр дүн",r=>esc(r.out||""),1]],
+  cols:[["Огноо",r=>ymdMn(r.d)],["Гаргагч",r=>esc([r.ptype,r.party].filter(Boolean).join(", "))],["Төрөл",r=>esc(r.form||"")],["Агуулга",r=>esc(r.cont||""),1],["ГББ",r=>esc(r.gbb||"")+(r.rep==1?" <span class='badge bwarn'>Давтан</span>":"")],["Төлөв",r=>r.rd?"✅ "+ymdMn(r.rd)+(r.late==1?" <span class='badge bfail'>Хугацаа хэтэрсэн</span>":""):"<span class='badge bwarn'>Хянагдаж байгаа</span>"],["Үр дүн",r=>esc(r.out||"")+(r.disc==1?" · сахилга тооцсон":""),1]],
   grp:"cont",open:r=>!r.rd,
-  stats:(L,M)=>{const a=aCompMonth(L,M);return [[a.nw,"Энэ сард ирсэн"],[a.done,"Шийдвэрлэсэн","g"],[a.open,"Хянагдаж буй","o"],[a.base+(a.done?" ("+Math.round(a.base*100/a.done)+"%)":""),"Үндэслэлтэй","r"],[a.rep,"Давтан"]];}},
+  stats:(L,M)=>{const a=aCompMonth(L,M);return [[a.nw,"Энэ сард ирсэн"],[a.done,"Эцэслэн шийдвэрлэсэн","g"],[a.open,"Хянагдаж байгаа","o"],[a.base+(a.done?" ("+Math.round(a.base*100/a.done)+"%)":""),"Үндэслэлтэй","r"],[a.rep,"Давтан"]];}},
  appt:{id:"appt",n:"4.3",icon:"🪪",t:"Томилгоо, чөлөөлөлт",h:"Тухай бүр бүртгэнэ. Томилсон, тойрог өөрчилсөн бол «👥 Гүйцэтгэгчид» цэсээр тойргийн нэвтрэх эрхийг шинэчилнэ.",
   f:[{k:"name",l:"Алба хаагч",t:"text",req:1,h:"Овог, нэр, албан тушаал"},{k:"type",l:"Төрөл",t:"sel",req:1,o:["Томилсон","Чөлөөлсөн","Шилжүүлсэн","Тойрог өөрчилсөн"]},
    {k:"no",l:"Тойрог",t:"toj",show:v=>!!v.type,h:"Шийдвэр гүйцэтгэгч бол тойргийг сонгоно. Томилсон, тойрог өөрчилсөн бол тухайн тойргийн «Сул тойрог» бүртгэл автоматаар хаагдана; чөлөөлсөн, шилжүүлсэн бол тойрог сул гэж автоматаар бүртгэгдэнэ."},
@@ -4393,7 +4405,7 @@ function aPplN(r){return (r.ppl||[]).length+String(r.pplO||"").split(/[,;\n]/).f
 function aList(R,id){return Object.entries(dObj(R&&R[id])).map(([k,r])=>Object.assign({id:k},r));}
 function aMonEnd(M){return ymd(new Date(+M.slice(0,4),+M.slice(5,7),0));}
 function aCompMonth(L,M){const e=aMonEnd(M),m=L.filter(r=>(r.d||"").slice(0,7)===M),dn=L.filter(r=>(r.rd||"").slice(0,7)===M);
-  return {nw:m.length,done:dn.length,open:L.filter(r=>(r.d||"")<=e&&(!r.rd||r.rd>e)).length,base:dn.filter(r=>/^Үндэслэлтэй/.test(r.out||"")).length,rep:m.filter(r=>r.rep==1).length,m,dn};}
+  return {nw:m.length,done:dn.length,open:L.filter(r=>(r.d||"")<=e&&(!r.rd||r.rd>e)).length,base:dn.filter(r=>/^Үндэслэлтэй/.test(r.out||"")).length,rep:m.filter(r=>r.rep==1).length,late:dn.filter(r=>r.late==1).length,m,dn};}
 function aMonCtl(re,extra){const w=mk("div","dctl");S._aMon=S._aMon||ymd(new Date()).slice(0,7);
   const mi=mk("input");mi.type="month";mi.value=S._aMon;mi.max=ymd(new Date()).slice(0,7);mi.style.cssText="padding:8px 10px;border:1px solid #CBD5E1;border-radius:10px;font:inherit";mi.onchange=()=>{if(mi.value){S._aMon=mi.value;re();}};
   w.insertAdjacentHTML("beforeend","<span class='dz'>Сар:</span>");w.appendChild(mi);(extra||[]).forEach(e=>w.appendChild(e));return w;}
@@ -4569,7 +4581,7 @@ function aForm(spec,id,rec,ctx){
       if(prev.length){hint.style.display="";hint.innerHTML="🔁 Энэ гүйцэтгэх баримт бичгээр өмнө нь "+prev.length+" өргөдөл, гомдол бүртгэгдсэн байна ("+prev.map(r=>ymdMn(r.d)).join(", ")+"). «Давтан» гэж санал болголоо.";
         const rp=bx.querySelector("[data-k=rep]");if(rp&&!rp.dataset.touched&&!id)rp.value="1";}
       else hint.style.display="none";
-      if((o.meas||[]).includes("Сахилгын асуудал үүсгэсэн")&&id&&!aList(ctx.R,"disc").some(r=>r.comp===id)){hint.style.display="";hint.innerHTML+=(hint.innerHTML?"<br>":"")+"⚖️ Сахилгын асуудал үүсгэсэн бол «2. Сахилга, хариуцлага» хэсэгт үндэслэлийг «Өргөдөл, гомдол» гэж сонгоод энэ гомдлыг холбож бүртгэнэ үү.";}}
+      if(o.disc==="1"&&id&&!aList(ctx.R,"disc").some(r=>r.comp===id)){hint.style.display="";hint.innerHTML+=(hint.innerHTML?"<br>":"")+"⚖️ Сахилгын асуудал үүсгэсэн бол «2. Сахилга, хариуцлага» хэсэгт үндэслэлийг «Өргөдөл, гомдол» гэж сонгоод энэ гомдлыг холбож бүртгэнэ үү.";}}
   };
   bx.querySelectorAll("input,select,textarea").forEach(e=>{e.addEventListener("input",upd);e.addEventListener("change",()=>{e.dataset.touched="1";upd();});});
   upd();document.body.appendChild(ov);
@@ -4691,10 +4703,10 @@ function aComp33(w,ctx){
   const card=mk("div","card");w.appendChild(card);
   card.innerHTML="<h2>🧮 3.3. Автоматаар гарах тоо — "+M.replace("-",".")+"</h2><p class='dlead' style='margin-bottom:10px'>Ахлах бөглөхгүй. Нэгжийн сарын өргөдөл, гомдлын судалгааны «нэгжид шууд гаргасан» хэсгийг эндээс бөглөнө. Шийдвэрлэх хугацааг систем тоолохгүй.</p>"
    +"<div class='tw'><table class='dtbl' id='a33'><tbody>"
-   +"<tr><td>Өмнөх сараас шилжсэн (хянагдаж буй)</td><td><b>"+prev+"</b></td><td></td></tr>"
-   +"<tr><td>3.3.1. Шинээр ирсэн</td><td><b>"+a.nw+"</b></td><td style='text-align:left;white-space:normal'>Хэлбэрээр: "+by(a.m,"form")+"<br>Сувгаар: "+by(a.m,"ch")+"<br>Агуулгаар: "+by(a.m,"cont")+"</td></tr>"
-   +"<tr><td>3.3.2. Шийдвэрлэсэн</td><td><b>"+a.done+"</b></td><td style='text-align:left;white-space:normal'>"+by(a.dn,"out")+"</td></tr>"
-   +"<tr><td>3.3.3. Хянагдаж буй (сарын эцэст)</td><td><b>"+a.open+"</b></td><td style='text-align:left'>Өмнөх үлдэгдэл + шинээр ирсэн − шийдвэрлэсэн</td></tr>"
+   +"<tr><td>Өмнөх сараас шилжсэн (хянагдаж байгаа)</td><td><b>"+prev+"</b></td><td></td></tr>"
+   +"<tr><td>3.3.1. Шинээр ирсэн</td><td><b>"+a.nw+"</b></td><td style='text-align:left;white-space:normal'>Төрлөөр: "+by(a.m,"form")+"<br>Гаргагчаар: "+by(a.m,"ptype")+"<br>Хэн гаргасан: "+by(a.m,"party")+"<br>Ирсэн хэлбэрээр: "+by(a.m,"ch")+"<br>Агуулгаар: "+by(a.m,"cont")+"</td></tr>"
+   +"<tr><td>3.3.2. Эцэслэн шийдвэрлэсэн</td><td><b>"+a.done+"</b></td><td style='text-align:left;white-space:normal'>"+by(a.dn,"out")+"<br>Хуулийн хугацаа хэтэрсэн: <b>"+a.late+"</b> · Сахилга, ёс зүйн хариуцлага тооцсон: <b>"+a.dn.filter(r=>r.disc==1).length+"</b></td></tr>"
+   +"<tr><td>3.3.3. Хянагдаж байгаа (сарын эцэст)</td><td><b>"+a.open+"</b></td><td style='text-align:left'>Өмнөх үлдэгдэл + шинээр ирсэн − шийдвэрлэсэн</td></tr>"
    +"<tr><td>3.3.4. Үндэслэлтэй</td><td><b>"+a.base+"</b></td><td style='text-align:left'>"+(a.done?Math.round(a.base*100/a.done)+"% (шийдвэрлэснээс)":"—")+"</td></tr>"
    +"<tr><td>3.3.4. Давтан</td><td><b>"+a.rep+"</b></td><td style='text-align:left'>"+(a.nw?Math.round(a.rep*100/a.nw)+"% (шинээр ирснээс)":"—")+"</td></tr>"
    +"</tbody></table></div><div class='brow'><button class='btn bx' id='a33x'>⬇ Excel</button></div>";
@@ -4757,8 +4769,8 @@ async function aAdmin(w,sec){
       return [r?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>Ирээгүй</span>"].concat(AW11.filter(q=>!q.m).map(q=>r?dqVal(r,q):""),[sp.length,sp.filter(x=>x.urg==1).length,c?c.hi.bn:"",c?aFm(c.hi.ba):"",r?(+v.hi_done_n||0):"",c?c.pl.bn:"",c?aFm(c.pl.ba):"",r?(+v.pl_done_n||0):""]);};}
   else if(sec==="2"){cols=["Шалгаж байгаа","Энэ сард бүртгэсэн","Шийтгэл ногдуулсан (сард)","Шийтгэлтэй алба хаагч","Ёс зүй — хэлэлцэж байгаа","Ёс зүй (сард)","Гэмт хэрэгт (сард)","Зөрчилд (сард)"];
     rowF=R=>{const D=aList(R,"disc"),E=aList(R,"eth"),C=aList(R,"crim");return [D.filter(r=>r.st!=="Шийдвэрлэсэн").length,D.filter(r=>inM(r.d)).length,D.filter(r=>r.out==="Шийтгэл ногдуулсан"&&inM(r.ordd)).length,D.filter(aActive).length,E.filter(r=>r.con==="Хэлэлцэж байгаа").length,E.filter(r=>inM(r.d)).length,C.filter(r=>inM(r.d)&&r.type==="Гэмт хэрэгт холбогдсон").length,C.filter(r=>inM(r.d)&&r.type==="Зөрчилд холбогдсон").length];};}
-  else if(sec==="3"){cols=["Шинээр ирсэн","Үүнээс гомдол","Шийдвэрлэсэн","Хянагдаж буй","Үндэслэлтэй","Давтан","Талархал"];
-    rowF=R=>{const L=aList(R,"comp"),a=aCompMonth(L,M);return [a.nw,a.m.filter(r=>/гомдол/i.test(r.form||"")).length,a.done,a.open,a.base,a.rep,a.m.filter(r=>r.form==="Талархал").length];};}
+  else if(sec==="3"){cols=["Шинээр ирсэн","Үүнээс гомдол","Эцэслэн шийдвэрлэсэн","Хянагдаж байгаа","Үндэслэлтэй","Давтан","Хугацаа хэтэрсэн","Сахилга тооцсон","Талархал"];
+    rowF=R=>{const L=aList(R,"comp"),a=aCompMonth(L,M);return [a.nw,a.m.filter(r=>r.form==="Гомдол").length,a.done,a.open,a.base,a.rep,a.late,a.dn.filter(r=>r.disc==1).length,a.m.filter(r=>r.form==="Талархал").length];};}
   else {cols=["Сул тойрог (өнөөдөр)","Батлагдсан (ШГ)","Ажиллаж буй (ШГ)","Сул (ШГ)","Батлагдсан (бусад)","Ажиллаж буй (бусад)","Сул (бусад)","Өнөөдөр ажиллаагүй","Томилсон (сард)","Чөлөөлсөн (сард)","Сургалт (сард)","Хамрагдсан (хүн)"];
     rowF=R=>{const st=dObj(R.staff),ks=Object.keys(st).filter(k=>k<=M).sort(),s=ks.length?(st[ks[ks.length-1]].v||{}):null,n=k=>s?(+s[k]||0):"",A=aList(R,"appt").filter(r=>inM(r.d)),Tr=aList(R,"trn").filter(r=>inM(r.d));
       const act=Object.values(dObj(R.abs)).filter(a=>a&&a.from<=today&&(!a.to||a.to>=today)),ab=act.filter(a=>a.reason!==DVAC).length,vc=act.filter(a=>a.reason===DVAC).length;
@@ -4792,10 +4804,10 @@ async function tExecMine(c){
   const Q=DQ.concat(XQ),sum=(ds,q)=>ds.reduce((s,d)=>s+(R[d]?(q?dqVal(R[d],q):dTotal(R[d])):0),0);
   const wd=ds=>ds.filter(d=>dWork(d)),filled=ds=>ds.filter(d=>R[d]).length;
   const allWd=wd(days),miss=allWd.filter(d=>!R[d]&&d!==t);
-  let h="<div class='stats'>"+dStat(filled(days)+"/"+allWd.length,"Бөглөсөн өдөр","g")+dStat(miss.length,"Бөглөөгүй өдөр",miss.length?"r":"")+dStat(sum(days),"Нийт ажиллагаа (1–5)")+dStat(sum(days,DQ[5]),"Хөрөнгө тогтоосон")+"</div>";
+  let h="<div class='stats'>"+dStat(filled(days)+"/"+allWd.length,"Бөглөсөн өдөр","g")+dStat(miss.length,"Бөглөөгүй өдөр",miss.length?"r":"")+dStat(sum(days),"Нийт ажиллагаа")+dStat(sum(days,DQ[5]),"Хөрөнгө тогтоосон")+"</div>";
   h+="<div class='tw'><table class='dtbl' id='xmt'><thead><tr><th>Ажиллагаа</th>"+W.map(w=>"<th>"+lab(w)+"</th>").join("")+"<th>Сарын дүн</th></tr></thead><tbody>";
   h+="<tr><td class='dz'>Бөглөсөн өдөр</td>"+W.map(w=>"<td>"+filled(w.ds)+"/"+wd(w.ds).length+"</td>").join("")+"<td>"+filled(days)+"/"+allWd.length+"</td></tr>";
-  h+="<tr class='tot'><td>Нийт ажиллагаа (1–5)</td>"+W.map(w=>"<td>"+sum(w.ds)+"</td>").join("")+"<td>"+sum(days)+"</td></tr>";
+  h+="<tr class='tot'><td>Нийт ажиллагаа</td>"+W.map(w=>"<td>"+sum(w.ds)+"</td>").join("")+"<td>"+sum(days)+"</td></tr>";
   Q.forEach((q,i)=>{h+="<tr><td>"+(i<DQ.length?(i+1)+". ":"➕ ")+esc(q.s)+"</td>"+W.map(w=>"<td>"+sum(w.ds,q)+"</td>").join("")+"<td><b>"+sum(days,q)+"</b></td></tr>";});
   h+="</tbody></table></div>";
   if(miss.length)h+="<div class='dalert' style='margin-top:12px'>⚠️ Бөглөөгүй ажлын өдөр: "+miss.map(d=>dLab(d)).join(", ")+". Ажиллаагүй (чөлөө, амралт) бол ахлахдаа хэлж бүртгүүлнэ үү.</div>";
