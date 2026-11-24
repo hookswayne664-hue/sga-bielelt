@@ -1000,6 +1000,16 @@ async function authMod(){
   _authMod={auth:A.getAuth(window._fbApp),sec:A.getAuth(sec),signIn:A.signInWithEmailAndPassword,create:A.createUserWithEmailAndPassword,updatePassword:A.updatePassword,signOut:A.signOut};
   return _authMod;
 }
+function pwAsk(no,name,reset){return new Promise(res=>{const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(420px,94vw)";ov.appendChild(bx);
+  const def=tmpPwd();
+  bx.innerHTML="<h3 style='margin:0 0 6px'>🔑 "+(reset?"Шинэ нууц үг":"Эрх нээх")+" — "+esc(no)+"-р тойрог</h3><p class='dz' style='margin:0 0 12px'>"+esc(name||"")+"</p>"
+   +"<div class='fi' style='margin-bottom:8px'><label>Нууц үг (6-аас доошгүй тэмдэгт, жишээ нь 6 оронтой тоо)</label><input id='pwi' value='"+def+"' autocomplete='off' style='font-family:monospace;font-size:18px;letter-spacing:2px'></div>"
+   +"<p class='dz' style='margin:0 0 6px'>Системийн санал болгосон тоог хэвээр үлдээж болно, эсвэл өөрийн тоогоо бичнэ. Нууц үг хадгалагдах тул дараа нь 👁 товчоор харж болно.</p><div id='pwe' style='color:var(--rd);font-size:13px;min-height:18px'></div>"
+   +"<div class='brow'><button class='btn bp' id='pwok'>"+(reset?"Солих":"Эрх нээх")+"</button><button class='btn bx' id='pwcl'>Болих</button></div>";
+  document.body.appendChild(ov);const i=bx.querySelector("#pwi");i.focus();i.select();
+  const done=v=>{ov.remove();res(v);};bx.querySelector("#pwcl").onclick=()=>done(null);ov.onclick=e=>{if(e.target===ov)done(null);};
+  const ok=()=>{const v=i.value.trim();if(v.length<6){bx.querySelector("#pwe").textContent="Нууц үг дор хаяж 6 тэмдэгттэй байна.";return;}if(/\s/.test(v)){bx.querySelector("#pwe").textContent="Хоосон зай оруулж болохгүй.";return;}done(v);};
+  bx.querySelector("#pwok").onclick=ok;i.onkeydown=e=>{if(e.key==="Enter")ok();};});}
 function tmpPwd(){const a=new Uint32Array(1);crypto.getRandomValues(a);return String(100000+a[0]%900000);}
 async function doPersonLogin(){
   const code=document.getElementById("lC").value,no=String(document.getElementById("lN").value||"").trim(),pwd=document.getElementById("lP").value;
@@ -1055,11 +1065,11 @@ async function loadPeople(unit){
   const s=await window._get(window._r(fbDB,"config/people"+(unit?"/"+unit:"")));
   return s&&s.exists&&s.exists()?(s.val()||{}):{};
 }
-async function issuePerson(unit,name,no){
+async function issuePerson(unit,name,no,cpw){
   const A=await authMod();
   const all=await loadPeople(unit)||{};
   const prev=all[no]||{};const isNew=!prev.email;
-  let rev=isNew?0:(prev.rev||0)+1,cr=null,email="";const pw=tmpPwd();
+  let rev=isNew?0:(prev.rev||0)+1,cr=null,email="";const pw=cpw||tmpPwd();
   for(let t=0;t<6&&!cr;t++){
     email=pEmail(unit,no,rev);
     try{cr=await A.create(A.sec,email,pw);}
@@ -1071,7 +1081,7 @@ async function issuePerson(unit,name,no){
   if(prev.uid&&prev.uid!==cr.user.uid){try{await dbSet("config/accounts/"+prev.uid,null);}catch{}}
   await dbSet("config/login/"+unit+"/"+no,{email,active:true});
   const now=new Date().toISOString();
-  const rec=Object.assign({},prev,{name:name||prev.name,role:"exec",email,rev,uid:cr.user.uid,active:true,mustChange:false,issued:now,updated:now,by:S.user.code});
+  const rec=Object.assign({},prev,{name:name||prev.name,role:"exec",email,rev,uid:cr.user.uid,active:true,mustChange:false,issued:now,updated:now,by:S.user.code,pw});
   delete rec.lastLogin;
   if(prev.name&&name&&prev.name!==name){rec.history=(prev.history||[]).concat([{name:prev.name,until:now}]);}
   if(isNew)rec.created=now;
@@ -1118,7 +1128,7 @@ async function tStaff(c){
   const t=mk("table","sttbl");t.innerHTML="<thead><tr><th>Тойрог</th><th>Шийдвэр гүйцэтгэгч</th><th>Төлөв</th><th></th></tr></thead>";
   const tb=mk("tbody");
   const inS="padding:8px 10px;border:1px solid #CBD5E1;border-radius:9px;font-family:inherit;width:100%;min-width:160px;box-sizing:border-box";
-  const run=async(btn,name,no,reset)=>{btn.disabled=true;const o=btn.textContent;btn.textContent="⏳";try{const r=await issuePerson(unit,name,String(no));S._staffMsg={unit,r,reset};re();}catch(e){toast("❌ "+(e&&e.message||e),"te");btn.disabled=false;btn.textContent=o;}};
+  const run=async(btn,name,no,reset)=>{const cpw=await pwAsk(no,name,reset);if(cpw===null)return;btn.disabled=true;const o=btn.textContent;btn.textContent="⏳";try{const r=await issuePerson(unit,name,String(no),cpw);S._staffMsg={unit,r,reset};re();}catch(e){toast("❌ "+(e&&e.message||e),"te");btn.disabled=false;btn.textContent=o;}};
   ds.forEach(no=>{const p=people[no]||{};const tr=mk("tr");const has=!!p.email;
     const st=!has?"<span class='stbadge stoff'>Эрх нээгээгүй</span>":p.active===false?"<span class='stbadge stoff'>Хаалттай</span>":!p.lastLogin?"<span class='stbadge stnew'>Нэвтрээгүй</span>":"<span class='stbadge stok'>Идэвхтэй</span>";
     tr.innerHTML="<td><b>"+no+"</b></td><td></td><td>"+st+"</td><td style='white-space:nowrap;text-align:right'></td>";
@@ -1130,6 +1140,11 @@ async function tStaff(c){
       inp.onkeydown=e=>{if(e.key==="Enter")b.click();};act.appendChild(b);
     }else{
       nameTd.textContent=p.name||"";
+      {const pv=mk("div");pv.style.cssText="font-size:12px;color:#64748B;margin-top:3px;display:flex;gap:6px;align-items:center";
+        if(p.pw){const sp=mk("span");sp.textContent="Нууц үг: ••••••";sp.style.fontFamily="monospace";const eb=mk("button","btn bx");eb.style.cssText="padding:2px 8px;font-size:12px";eb.textContent="👁";eb.title="Нууц үгийг харах";
+          eb.onclick=()=>{const on=sp.dataset.on==="1";sp.dataset.on=on?"0":"1";sp.textContent="Нууц үг: "+(on?"••••••":p.pw);eb.textContent=on?"👁":"🙈";};pv.appendChild(sp);pv.appendChild(eb);}
+        else pv.textContent="Нууц үг хадгалагдаагүй — «🔑 Нууц үг» дарж шинээр өгнө";
+        nameTd.appendChild(pv);}
       const br=mk("button","btn bx");br.textContent="🔑 Нууц үг";br.title="Шинэ нууц үг олгох";br.onclick=()=>run(br,p.name,no,true);
       const bc=mk("button","btn bx");bc.style.marginLeft="6px";bc.textContent="✏️ Хүн солих";
       bc.onclick=()=>{nameTd.innerHTML="";const inp=mk("input");inp.placeholder="Шинэ гүйцэтгэгчийн овог нэр";inp.style.cssText=inS;nameTd.appendChild(inp);inp.focus();
