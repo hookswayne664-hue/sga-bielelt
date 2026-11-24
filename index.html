@@ -4369,11 +4369,13 @@ const AREG={
    {k:"rep",l:"Нэг асуудлаар давтан гаргасан эсэх",t:"yn",req:1,h:"Систем санал болгоно, ахлах баталгаажуулна"},
    {k:"_h2",l:"Шийдвэрлэлт (шийдвэрлэсэн үед бөглөнө)",t:"hdr"},
    {k:"rd",l:"Эцэслэн шийдвэрлэсэн огноо",t:"date",h:"Шийдвэрлээгүй бол хоосон үлдээнэ — хянагдаж байгаад тооцогдоно"},
-   {k:"out",l:"Шийдвэрлэлтийн үр дүн",t:"sel",req:1,o:["Үндэслэлтэй","Үндэслэлгүй","Тайлбар, мэдээлэл, хууль зүйн зөвлөгөө өгч шийдвэрлэсэн","Харьяаллын дагуу шилжүүлсэн, буцаасан"],b:"ШШГТХ 44.4, 44.6",show:v=>!!v.rd},
+   {k:"out",l:"Шийдвэрлэлтийн үр дүн",t:"sel",req:1,o:["Үндэслэлтэй","Үндэслэлгүй","Тайлбар, мэдээлэл, хууль зүйн зөвлөгөө өгч шийдвэрлэсэн","Харьяаллын дагуу шилжүүлсэн, буцаасан"],h:"Үндэслэлгүй бол хангаагүйд тооцогдоно",b:"ШШГТХ 44.4, 44.6",show:v=>!!v.rd},
+   {k:"sat",l:"Хэрхэн хангасан",t:"sel",req:1,o:["Хангасан","Зарим хэсгийг хангасан"],show:v=>!!v.rd&&v.out==="Үндэслэлтэй"},
+   {k:"satN",l:"Хэрхэн хангасан",t:"sel",req:1,o:["Хангаагүй"],dv:"Хангаагүй",show:v=>!!v.rd&&v.out==="Үндэслэлгүй"},
    {k:"late",l:"Хуулийн хугацаа хэтэрсэн эсэх",t:"yn",req:1,h:"Нэгжийн Е-док дахь шийдвэрлэх хугацаатай (сунгалтыг оруулаад) тулгаж тэмдэглэнэ",show:v=>!!v.rd},
    {k:"disc",l:"Сахилга, ёс зүйн хариуцлага тооцсон эсэх",t:"yn",req:1,h:"«Тийм» бол «2. Сахилга, хариуцлага» хэсэгт энэ өргөдөл, гомдлыг холбож бүртгэнэ",show:v=>!!v.rd}],
-  check:(v,ctx,id)=>v.rd&&v.rd<v.d?"Шийдвэрлэсэн огноо бүртгэсэн огнооноос өмнө байна.":"",
-  cols:[["Огноо",r=>ymdMn(r.d)],["Гаргагч",r=>esc([r.ptype,r.party].filter(Boolean).join(", "))],["Төрөл",r=>esc(r.form||"")],["Агуулга",r=>esc(r.cont||""),1],["ГББ",r=>esc(r.gbb||"")+(r.rep==1?" <span class='badge bwarn'>Давтан</span>":"")],["Төлөв",r=>r.rd?"✅ "+ymdMn(r.rd)+(r.late==1?" <span class='badge bfail'>Хугацаа хэтэрсэн</span>":""):"<span class='badge bwarn'>Хянагдаж байгаа</span>"],["Үр дүн",r=>esc(r.out||"")+(r.disc==1?" · сахилга тооцсон":""),1]],
+  check:(v,ctx,id)=>{if(v.satN){v.sat=v.satN;delete v.satN;}return v.rd&&v.rd<v.d?"Шийдвэрлэсэн огноо бүртгэсэн огнооноос өмнө байна.":"";},
+  cols:[["Огноо",r=>ymdMn(r.d)],["Гаргагч",r=>esc([r.ptype,r.party].filter(Boolean).join(", "))],["Төрөл",r=>esc(r.form||"")],["Агуулга",r=>esc(r.cont||""),1],["ГББ",r=>esc(r.gbb||"")+(r.rep==1?" <span class='badge bwarn'>Давтан</span>":"")],["Төлөв",r=>r.rd?"✅ "+ymdMn(r.rd)+(r.late==1?" <span class='badge bfail'>Хугацаа хэтэрсэн</span>":""):"<span class='badge bwarn'>Хянагдаж байгаа</span>"],["Үр дүн",r=>esc(r.out||"")+(r.sat?" ("+esc(r.sat.toLowerCase())+")":"")+(r.disc==1?" · сахилга тооцсон":""),1]],
   grp:"cont",open:r=>!r.rd,
   stats:(L,M)=>{const a=aCompMonth(L,M);return [[a.nw,"Энэ сард ирсэн"],[a.done,"Эцэслэн шийдвэрлэсэн","g"],[a.open,"Хянагдаж байгаа","o"],[a.base+(a.done?" ("+Math.round(a.base*100/a.done)+"%)":""),"Үндэслэлтэй","r"],[a.rep,"Давтан"]];}},
  appt:{id:"appt",n:"4.3",icon:"🪪",t:"Томилгоо, чөлөөлөлт",h:"Тухай бүр бүртгэнэ. Томилсон, тойрог өөрчилсөн бол «👥 Гүйцэтгэгчид» цэсээр тойргийн нэвтрэх эрхийг шинэчилнэ.",
@@ -4552,7 +4554,7 @@ function aForm(spec,id,rec,ctx){
     else if(f.t==="text")x="<input data-k='"+f.k+"' value='"+esc(v||"")+"' style='"+inS+"'>";
     else if(f.t==="num")x="<input type='number' min='0' data-k='"+f.k+"' value='"+esc(v==null?"":v)+"' style='"+inS+";max-width:140px'>";
     else if(f.t==="area")x="<textarea data-k='"+f.k+"' rows='3' style='"+inS+"'>"+esc(v||"")+"</textarea>";
-    else if(f.t==="sel")x="<select data-k='"+f.k+"' style='"+inS+"'><option value=''>— сонгоно уу —</option>"+f.o.map(o=>"<option"+(o===v?" selected":"")+">"+esc(o)+"</option>").join("")+"</select>";
+    else if(f.t==="sel")x="<select data-k='"+f.k+"' style='"+inS+"'><option value=''>— сонгоно уу —</option>"+f.o.map(o=>"<option"+(o===(v||(f.k==="satN"&&rec.sat==="Хангаагүй"?rec.sat:f.dv))?" selected":"")+">"+esc(o)+"</option>").join("")+"</select>";
     else if(f.t==="yn")x="<select data-k='"+f.k+"' style='"+inS+";max-width:140px'><option value='0'>Үгүй</option><option value='1'"+(v==1?" selected":"")+">Тийм</option></select>";
     else if(f.t==="toj")x="<select data-k='"+f.k+"' style='"+inS+"'><option value=''>— сонгоно уу —</option>"+empOpt(v)+"</select>";
     else if(f.t==="multi")x="<div class='amul' style='display:flex;flex-direction:column;gap:6px'>"+f.o.map(o=>"<label><input type='checkbox' data-m='"+f.k+"' value='"+esc(o)+"'"+((v||[]).includes(o)?" checked":"")+">"+esc(o)+"</label>").join("")+"</div>";
@@ -4707,7 +4709,7 @@ function aComp33(w,ctx){
    +"<tr><td>3.3.1. Шинээр ирсэн</td><td><b>"+a.nw+"</b></td><td style='text-align:left;white-space:normal'>Төрлөөр: "+by(a.m,"form")+"<br>Гаргагчаар: "+by(a.m,"ptype")+"<br>Хэн гаргасан: "+by(a.m,"party")+"<br>Ирсэн хэлбэрээр: "+by(a.m,"ch")+"<br>Агуулгаар: "+by(a.m,"cont")+"</td></tr>"
    +"<tr><td>3.3.2. Эцэслэн шийдвэрлэсэн</td><td><b>"+a.done+"</b></td><td style='text-align:left;white-space:normal'>"+by(a.dn,"out")+"<br>Хуулийн хугацаа хэтэрсэн: <b>"+a.late+"</b> · Сахилга, ёс зүйн хариуцлага тооцсон: <b>"+a.dn.filter(r=>r.disc==1).length+"</b></td></tr>"
    +"<tr><td>3.3.3. Хянагдаж байгаа (сарын эцэст)</td><td><b>"+a.open+"</b></td><td style='text-align:left'>Өмнөх үлдэгдэл + шинээр ирсэн − шийдвэрлэсэн</td></tr>"
-   +"<tr><td>3.3.4. Үндэслэлтэй</td><td><b>"+a.base+"</b></td><td style='text-align:left'>"+(a.done?Math.round(a.base*100/a.done)+"% (шийдвэрлэснээс)":"—")+"</td></tr>"
+   +"<tr><td>3.3.4. Үндэслэлтэй</td><td><b>"+a.base+"</b></td><td style='text-align:left'>"+(a.done?Math.round(a.base*100/a.done)+"% (шийдвэрлэснээс)":"—")+(a.base?" · Хангасан: <b>"+a.dn.filter(r=>r.sat==="Хангасан").length+"</b>, зарим хэсгийг хангасан: <b>"+a.dn.filter(r=>r.sat==="Зарим хэсгийг хангасан").length+"</b>":"")+"</td></tr>"
    +"<tr><td>3.3.4. Давтан</td><td><b>"+a.rep+"</b></td><td style='text-align:left'>"+(a.nw?Math.round(a.rep*100/a.nw)+"% (шинээр ирснээс)":"—")+"</td></tr>"
    +"</tbody></table></div><div class='brow'><button class='btn bx' id='a33x'>⬇ Excel</button></div>";
   card.querySelector("#a33x").onclick=()=>dXlsx(card.querySelector("#a33"),"3.3 Өргөдөл гомдол "+ctx.u+" "+M);
