@@ -4049,6 +4049,7 @@ window.addEventListener("DOMContentLoaded",initLogin);
 //            dreg/<нэгж>/abs/<id> = {no, name, reason, from, to, sub, ts} — ажиллаагүй алба хаагч (ахлах бүртгэнэ)
 const DPROP=["Хөдлөх: тээврийн хэрэгсэл","Хөдлөх: бусад","Үл хөдлөх: орон сууц","Үл хөдлөх: хашаа байшин, хувийн сууц","Үл хөдлөх: барилга, объект","Үл хөдлөх: газар"];
 // t:1 — «Нийт ажиллагаа»-нд тоологдоно (2-р асуулт нь 1-р асуултын задаргаа тул тоологдохгүй)
+const DCOURT=["Шийдвэр гүйцэтгэгчийн шийдвэр, ажиллагааны талаарх гомдол","Хөрөнгийн үнэлгээний талаарх гомдол","Битүүмжлэлээс хасуулах, чөлөөлүүлэх нэхэмжлэл","Хууль бус ажиллагааны хохирлын нэхэмжлэл","Бусад"];
 const DQ=[
  {k:"n1",g:"А. Мэдэгдэл, дуудлага",s:"Мэдэгдэл",t:"Мэдэгдэл хүргүүлсэн гүйцэтгэх баримт бичиг",c:["Мэдэгдэх хуудас","Зарлан дуудах хуудас","Биелүүлэх хуудас (үүрэг хүлээлгэх)"],b:"ШШГТХ 14, 44.2.1, 44.2.5",tt:1},
  {k:"n2",g:"А. Мэдэгдэл, дуудлага",s:"Хүргүүлсэн хэлбэр",t:"Мэдэгдлийг хүргүүлсэн хэлбэр",c:["Хаягаар очиж гардуулсан","Баталгаат шуудангаар","Утас, цахимаар"],h:"1-р асуултад бичсэн мэдэгдлийг хэрхэн хүргүүлснээр задална",b:"ШШГТХ 14.3, 14.4"},
@@ -4067,7 +4068,8 @@ const DQ=[
  {k:"n15",g:"В. Албадлагын арга хэмжээ",s:"Мэдэлд шилжүүлсэн",t:"Үл хөдлөх хөрөнгийг төлбөр авагчийн мэдэлд шилжүүлсэн",b:"ШШГТХ 44.2.16"},
  {k:"n16",g:"Г. Шинжээч, үнэлгээ",s:"Шинжээч томилсон",t:"Шинжээч томилсон",b:"ШШГТХ 42.1, 44.2.9"},
  {k:"n17",g:"Г. Шинжээч, үнэлгээ",s:"Эрх, үүрэг тайлбарласан",t:"Шинжээчид эрх, үүргийг тайлбарласан",b:"ШШГТХ 7.2"},
- {k:"n18",g:"Г. Шинжээч, үнэлгээ",s:"Үнэлгээ танилцуулсан",t:"Үнэлгээг талуудад танилцуулсан",b:"ШШГТХ 55.1, 55.3"}
+ {k:"n18",g:"Г. Шинжээч, үнэлгээ",s:"Үнэлгээ танилцуулсан",t:"Үнэлгээг талуудад танилцуулсан",b:"ШШГТХ 55.1, 55.3"},
+ {k:"n19",g:"Д. Шүүх хуралдаан",s:"Шүүх хуралдаан",t:"Шүүх хуралдаанд оролцсон",c:DCOURT,h:"Шүүх хуралдаан бүтэн өдрийг авсан бол бусад нүдийг хоосон үлдээж болно",b:"ШШГТХ 27.1.1, 27.1.2, 44.4, 55.7, 63.4, 122.1, 122.2",tt:1}
 ];
 const DVAC="Сул тойрог (алба хаагч томилогдоогүй)";
 const DABS=[DVAC,"Ээлжийн амралт","Өвчтэй","Албан томилолт","Сургалт","Цалинтай чөлөө","Цалингүй чөлөө","Жирэмсний болон амаржсаны амралт","Хүүхэд асрах чөлөө","Ажил тасалсан","Бусад"];
@@ -4145,8 +4147,8 @@ async function dExec(c){
       if(q.c){lb.appendChild(inp);lb.appendChild(document.createTextNode(q.c[j]));box.appendChild(lb);}else box.appendChild(inp);});
     row.appendChild(box);form.appendChild(row);
   });
-  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Д. Дотоод ажил</h3><label class='dzero' style='background:#EEF2FF;color:#3730A3'><input type='checkbox' id='diw'"+(r.iw?" checked":"")+"> Өнөөдөр дотоод ажил хийсэн <span style='font-weight:400'>(хавтаст хэрэг бүрдүүлэх, лавлагаа хавсаргах, товъёоглох, өргөдөл, гомдлын хариу бичих гэх мэт)</span></label>");
-  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Е. Нэмэлт</h3>"
+  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Е. Дотоод ажил</h3><label class='dzero' style='background:#EEF2FF;color:#3730A3'><input type='checkbox' id='diw'"+(r.iw?" checked":"")+"> Өнөөдөр дотоод ажил хийсэн <span style='font-weight:400'>(хавтаст хэрэг бүрдүүлэх, лавлагаа хавсаргах, товъёоглох, өргөдөл, гомдлын хариу бичих гэх мэт)</span></label>");
+  form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Ж. Нэмэлт</h3>"
     +"<div class='dq'><div><div class='dt'><b>14.</b>Онцгой тохиолдол гарсан уу?</div><div class='dh'>Эсэргүүцэл, халдлага, хүч хэрэглэсэн гэх мэт. «Тийм» бол ахлахад харагдана.</div></div><div class='din'><label class='dyn'><input type='radio' name='dex' value='0'"+(r.ex?"":" checked")+"> Үгүй</label><label class='dyn'><input type='radio' name='dex' value='1'"+(r.ex?" checked":"")+"> Тийм</label></div></div>"
     +"<div class='fi' id='dexw' style='margin-top:8px"+(r.ex?"":";display:none")+"'><textarea id='dext' placeholder='Юу болсон, хэн оролцсон, авсан арга хэмжээг товч бичнэ үү'>"+esc(r.ext||"")+"</textarea></div>"
     +"<div class='fi' style='margin-top:12px'><label><b>15.</b> Тэмдэглэл <span class='dz'>(заавал биш)</span></label><textarea id='dnote' placeholder='Тоонд багтаагүй тайлбар'>"+esc(r.note||"")+"</textarea></div>"
@@ -4293,6 +4295,7 @@ async function dAdmin(c){
 // dreg/<нэгж>/staff/<YYYY-MM> = {v:{..},ts} — 4.2 орон тоо
 const ASEC=[["d","📝 Өдрийн мэдээ"],["1","1. ШГ ажиллагаа"],["2","2. Сахилга, хариуцлага"],["3","3. Өргөдөл, гомдол"],["4","4. Хүний нөөц"]];
 const AW11=[
+ {k:"a1",s:"Шүүх хуралдаан",t:"Шүүх хуралдаанд оролцсон — ахлах өөрөө",c:DCOURT,h:"Шийдвэр гүйцэтгэгчдийн оролцсон тоо өдрийн мэдээнээс автоматаар нэмэгдэнэ — энд зөвхөн ахлах өөрөө оролцсоноо бичнэ"},
  {k:"a2",s:"Төлөөлөх эрх",t:"Шүүх, цагдаа, АТГ-д төлөөлөх эрхээ хэрэгжүүлсэн",c:["Шүүх","Цагдаа","АТГ"]},
  {k:"a3",s:"Тайлбарлуулсан",t:"Шийдвэрийг тайлбарлуулахаар шүүхэд хандсан"},
  {k:"a4",s:"Материал шилжүүлсэн",t:"Шийдвэр биелүүлээгүй, саад учруулсан тухай материал шилжүүлсэн",c:["Эрүүгийн хэрэг","Зөрчил"]},
@@ -4394,6 +4397,7 @@ const AREG={
 // ---------- туслах ----------
 function unitNm(u){return ((S.units.find(x=>x.code===u)||{}).name||"").split("—").pop().trim();}
 function aFm(n){return String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+function aCourt(r){const v=(r&&r.v)||{};return Object.keys(v).filter(k=>/^a1x?_\d+$/.test(k)).reduce((s,k)=>s+(+v[k]||0),0);}
 function aMon(s){const d=dD(s);d.setDate(d.getDate()-(d.getDay()+6)%7);return ymd(d);}
 function aWkLab(m){const d=dD(m);d.setDate(d.getDate()+6);return m.slice(5).replace("-",".")+"–"+ymd(d).slice(5).replace("-",".");}
 function aWkMonthEnd(m){const d=dD(m);d.setDate(d.getDate()+6);return ymd(d).slice(0,7)!==m.slice(0,7)||ymd(new Date(d.getFullYear(),d.getMonth()+1,0))===ymd(d);}
@@ -4626,7 +4630,7 @@ async function aWeekCard(w,ctx){
   // түүх
   const hw=Object.keys(wk).sort().slice(-8);
   if(hw.length){let h="<details"+(ctx.canEdit?"":" open")+" style='margin-bottom:12px'><summary class='dz' style='cursor:pointer'>Сүүлийн 7 хоногуудын мэдээ ("+hw.length+")</summary><div class='tw'><table class='dtbl' id='awh'><thead><tr><th>Үзүүлэлт</th>"+hw.map(x=>"<th class='clk"+(x===m?" cur":"")+"' data-m='"+x+"'>"+aWkLab(x)+"</th>").join("")+"</tr></thead><tbody>";
-    AW11.filter(q=>!q.m).forEach((q,i)=>{h+="<tr><td>1.1."+(i+1)+" "+esc(q.s)+"</td>"+hw.map(x=>"<td>"+dqVal(wk[x],q)+"</td>").join("")+"</tr>";});
+    AW11.filter(q=>!q.m).forEach((q,i)=>{h+="<tr><td>1.1."+(i+1)+" "+esc(q.s)+(q.k==="a1"?" (гүйцэтгэгч + ахлах)":"")+"</td>"+hw.map(x=>"<td>"+(q.k==="a1"?aCourt(wk[x]):dqVal(wk[x],q))+"</td>").join("")+"</tr>";});
     if(ctx.canEdit)aCqOn(ctx.R.cq,"wk").forEach(q=>{h+="<tr><td>➕ "+esc(q.t)+"</td>"+hw.map(x=>"<td>"+dqVal(wk[x],q)+"</td>").join("")+"</tr>";});
     ABAL.forEach(B=>{h+="<tr><td>"+B.n+" үлдэгдэл (тоо)</td>"+hw.map(x=>"<td>"+CH[x][B.k].bn+"</td>").join("")+"</tr><tr><td>"+B.n+" үлдэгдэл (төгрөг)</td>"+hw.map(x=>"<td>"+aFm(CH[x][B.k].ba)+"</td>").join("")+"</tr>";});
     h+="</tbody></table></div></details>";card.insertAdjacentHTML("beforeend",h);
@@ -4634,13 +4638,15 @@ async function aWeekCard(w,ctx){
   const form=mk("div");card.appendChild(form);
   if(rec.ts)form.insertAdjacentHTML("beforeend","<div class='dz' style='margin-bottom:8px'>Хадгалсан: "+new Date(rec.ts).toLocaleString("mn-MN")+(ctx.canEdit?" — засаад дахин хадгалж болно.":"")+"</div>");
   else if(!ctx.canEdit){form.insertAdjacentHTML("beforeend","<div class='dalert'>⚠️ Энэ 7 хоногийн мэдээ ирээгүй байна.</div>");}
-  const me=aWkMonthEnd(m);
+  const me=aWkMonthEnd(m),we=(()=>{const d=dD(m);d.setDate(d.getDate()+6);return ymd(d);})();
+  let XS=DCOURT.map(()=>0);try{const D=await dQuery("daily/"+ctx.u,m,we);Object.values(D||{}).forEach(day=>Object.values(day||{}).forEach(r=>{const v=(r&&r.v)||{};XS.forEach((_,i)=>XS[i]+=+v["n19_"+i]||0);}));}catch{}
   form.insertAdjacentHTML("beforeend","<h3 class='dsec'>1.1. Долоо хоногийн тоон мэдээ</h3>");
   AW11.forEach((q,i)=>{const row=mk("div","dq");
     row.innerHTML="<div><div class='dt'><b>1.1."+(i+1)+"</b>"+esc(q.t)+"</div>"+(q.h?"<div class='dh'>"+esc(q.h)+(q.m&&me?" — <b style='color:#B45309'>энэ 7 хоногт заавал</b>":"")+"</div>":"")+(q.b?"<div class='db'>"+esc(q.b)+"</div>":"")+"</div>";
     const box=mk("div","din");dqKeys(q).forEach((k,j)=>{const lb=mk("label"),inp=mk("input");inp.type="number";inp.min="0";inp.inputMode="numeric";inp.dataset.w=k;inp.value=v[k]!=null&&(v[k]!==0||q.m)?v[k]:"";inp.placeholder="0";
       if(q.c){lb.appendChild(inp);lb.appendChild(document.createTextNode(q.c[j]));box.appendChild(lb);}else box.appendChild(inp);});
-    row.appendChild(box);form.appendChild(row);});
+    row.appendChild(box);form.appendChild(row);
+    if(q.k==="a1")form.insertAdjacentHTML("beforeend","<div class='dalert' style='border-left-color:#14B8A6;background:#F0FDFA;margin:4px 0 8px'>⚖️ Шийдвэр гүйцэтгэгчид энэ 7 хоногт өдрийн мэдээгээр нийт <b>"+XS.reduce((a,b)=>a+b,0)+"</b> шүүх хуралдаанд оролцсон (автомат)"+(XS.some(x=>x)?": "+DCOURT.map((c,i)=>XS[i]?esc(c.toLowerCase())+" "+XS[i]:"").filter(Boolean).join(", "):"")+". Ахлахын бичсэн тоо үүн дээр нэмэгдэнэ.</div>");});
   if(ctx.canEdit){const XW=aCqOn(ctx.R.cq,"wk");if(XW.length)aCqInputs(form,v,XW,"data-w","Нэгжийн нэмэлт асуулт");}
   ABAL.forEach(B=>{const p=prevBal(B);
     let h="<h3 class='dsec'>"+B.n+". "+esc(B.t)+"</h3><div class='dz' style='margin-bottom:6px'>"+esc(B.h)+"</div><div class='tw'><table class='dtbl'><thead><tr><th>Үзүүлэлт</th><th>Тоо</th><th>Дүн (төгрөг)</th></tr></thead><tbody>";
@@ -4668,7 +4674,7 @@ async function aWeekCard(w,ctx){
       if(B.k==="pl"&&(+o.pl_seal_n||0)+(+o.pl_seize_n||0)>x.tn){toast("1.4: битүүмжилсэн, хураасан тоо нийт баримт бичгээс их байна.","te");return;}}
     if(me&&dqKeys(AW11.find(q=>q.m)).some(k=>o[k]==null)){toast("Сарын сүүлийн 7 хоног тул 1.1.5 хадгалалтад байгаа хөрөнгийн тоог бөглөнө үү (байхгүй бол 0).","te");return;}
     sv.disabled=true;sv.textContent="⏳ Хадгалж байна...";
-    try{await dbSet("dreg/"+ctx.u+"/wk/"+m,{v:o,ts:Date.now()});toast("✅ "+aWkLab(m)+" 7 хоногийн мэдээ хадгалагдлаа","ts");try{SND.play("send");}catch{}ctx.re();}
+    XS.forEach((x,i)=>{if(x)o["a1x_"+i]=x;});try{await dbSet("dreg/"+ctx.u+"/wk/"+m,{v:o,ts:Date.now()});toast("✅ "+aWkLab(m)+" 7 хоногийн мэдээ хадгалагдлаа","ts");try{SND.play("send");}catch{}ctx.re();}
     catch(e){sv.disabled=false;sv.textContent="💾 Хадгалах";toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}};
   const later=Object.keys(wk).filter(k=>k>m);if(later.length)bar.insertAdjacentHTML("afterbegin","<span class='dz'>Энэ 7 хоногийн тоог засвал дараагийн 7 хоногуудын үлдэгдэл автоматаар дахин тооцогдоно.</span>");
 }
@@ -4766,9 +4772,9 @@ async function aAdmin(w,sec){
   const M=S._aMon=S._aMon||today.slice(0,7),inM=(s)=>(s||"").slice(0,7)===M;
   let cols,rowF;
   if(sec==="1"){const m=S._aWk=S._aWk||aMon(today),me=ymd((()=>{const d=dD(m);d.setDate(d.getDate()+6);return d;})());
-    cols=["7 хоногийн мэдээ","Төлөөлөх эрх","Тайлбарлуулсан","Материал шилжүүлсэн","Онцгой ажиллагаа","Яаралтай","1.3 үлдэгдэл (тоо)","1.3 үлдэгдэл (төгрөг)","1.3 дуусгавар","1.4 үлдэгдэл (тоо)","1.4 үлдэгдэл (төгрөг)","1.4 дуусгавар"];
+    cols=["7 хоногийн мэдээ","Шүүх хуралдаан (гүйцэтгэгч + ахлах)","Төлөөлөх эрх","Тайлбарлуулсан","Материал шилжүүлсэн","Онцгой ажиллагаа","Яаралтай","1.3 үлдэгдэл (тоо)","1.3 үлдэгдэл (төгрөг)","1.3 дуусгавар","1.4 үлдэгдэл (тоо)","1.4 үлдэгдэл (төгрөг)","1.4 дуусгавар"];
     rowF=R=>{const wk=dObj(R.wk),r=wk[m],CH=aChain(wk),ks=Object.keys(wk).filter(k=>k<=m).sort(),lk=ks[ks.length-1],c=lk?CH[lk]:null,sp=aList(R,"spec").filter(x=>x.d>=m&&x.d<=me),v=(r&&r.v)||{};
-      return [r?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>Ирээгүй</span>"].concat(AW11.filter(q=>!q.m).map(q=>r?dqVal(r,q):""),[sp.length,sp.filter(x=>x.urg==1).length,c?c.hi.bn:"",c?aFm(c.hi.ba):"",r?(+v.hi_done_n||0):"",c?c.pl.bn:"",c?aFm(c.pl.ba):"",r?(+v.pl_done_n||0):""]);};}
+      return [r?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>Ирээгүй</span>"].concat([r?aCourt(r):""],AW11.filter(q=>!q.m&&q.k!=="a1").map(q=>r?dqVal(r,q):""),[sp.length,sp.filter(x=>x.urg==1).length,c?c.hi.bn:"",c?aFm(c.hi.ba):"",r?(+v.hi_done_n||0):"",c?c.pl.bn:"",c?aFm(c.pl.ba):"",r?(+v.pl_done_n||0):""]);};}
   else if(sec==="2"){cols=["Шалгаж байгаа","Энэ сард бүртгэсэн","Шийтгэл ногдуулсан (сард)","Шийтгэлтэй алба хаагч","Ёс зүй — хэлэлцэж байгаа","Ёс зүй (сард)","Гэмт хэрэгт (сард)","Зөрчилд (сард)"];
     rowF=R=>{const D=aList(R,"disc"),E=aList(R,"eth"),C=aList(R,"crim");return [D.filter(r=>r.st!=="Шийдвэрлэсэн").length,D.filter(r=>inM(r.d)).length,D.filter(r=>r.out==="Шийтгэл ногдуулсан"&&inM(r.ordd)).length,D.filter(aActive).length,E.filter(r=>r.con==="Хэлэлцэж байгаа").length,E.filter(r=>inM(r.d)).length,C.filter(r=>inM(r.d)&&r.type==="Гэмт хэрэгт холбогдсон").length,C.filter(r=>inM(r.d)&&r.type==="Зөрчилд холбогдсон").length];};}
   else if(sec==="3"){cols=["Шинээр ирсэн","Үүнээс гомдол","Эцэслэн шийдвэрлэсэн","Хянагдаж байгаа","Үндэслэлтэй","Давтан","Хугацаа хэтэрсэн","Сахилга тооцсон","Талархал"];
