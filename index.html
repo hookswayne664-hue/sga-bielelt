@@ -431,7 +431,7 @@ function cycleTheme(){let t="";try{t=localStorage.getItem("sga_theme")||"";}catc
         </div>
         <div class="lbox">
           <div class="logo"><h1>Нэвтрэх</h1><p>Нэгжээ сонгоод нууц үгээ оруулна уу</p></div>
-          <div class="lmode"><button type="button" id="lmU" class="on" onclick="setLMode('unit')">Нэгжээр (ахлах)</button><button type="button" id="lmP" onclick="setLMode('person')">Шийдвэр гүйцэтгэгч</button></div>
+          <div class="lmode"><button type="button" id="lmU" class="on" onclick="setLMode('unit')">Нэгжээр (ахлах шийдвэр гүйцэтгэгч)</button><button type="button" id="lmP" onclick="setLMode('person')">Шийдвэр гүйцэтгэгч</button></div>
           <div class="fg"><label for="lC">Нэгж</label><select id="lC"><option value="">— Нэгжээ сонгоно уу —</option></select></div>
           <div class="fg" id="lNg" hidden><label for="lN">Тойрог</label><select id="lN"><option value="">— Эхлээд нэгжээ сонгоно уу —</option></select></div>
           <div class="fg"><label for="lP">Нууц үг</label><div class="pwwrap"><input type="password" id="lP" autocomplete="new-password" placeholder="Нууц үг" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" class="pweye" title="Нууц үгийг харах" aria-label="Нууц үгийг харах" onclick="togglePw(this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
@@ -448,7 +448,7 @@ function cycleTheme(){let t="";try{t=localStorage.getItem("sga_theme")||"";}catc
       <div class="hd"><span class="eyebrow">Яагаад ШГА Биелэлт гэж</span><h2>Цаас, имэйл, хүлээлтгүй — мэдээ шууд нэгтгэгдэнэ</h2></div>
       <div class="lgrid4">
         <div class="lcard"><span class="ic" style="background:#E6FAF7;color:#0F766E"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M10 10v9"/></svg></span><b>Нэг цонхонд</b><p>Сар, улирлын бүх төлөвлөгөө нэг дэлгэцэнд. Хаана юу бөглөхөө хайх шаардлагагүй.</p></div>
-        <div class="lcard"><span class="ic" style="background:#FEF4E2;color:#B45309"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg></span><b>Тойрог бүрээр</b><p>Өргөдөл, гомдлын судалгааг тойргоор бөглөж, ахлах нь нэг товчоор баталгаажуулна.</p></div>
+        <div class="lcard"><span class="ic" style="background:#FEF4E2;color:#B45309"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg></span><b>Тойрог бүрээр</b><p>Өргөдөл, гомдлын судалгааг тойргоор бөглөж, ахлах шийдвэр гүйцэтгэгч нь нэг товчоор баталгаажуулна.</p></div>
         <div class="lcard"><span class="ic" style="background:#EAF1FE;color:#1D4ED8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg></span><b>Шууд нэгтгэл</b><p>Илгээсэн мэдээ тэр дороо нэгтгэгдэж, нүүр самбарт харагдаж, Excel-ээр татагдана.</p></div>
         <div class="lcard"><span class="ic" style="background:#F1ECFE;color:#6D28D9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2"/></svg></span><b>Утаснаас ч</b><p>Компьютер, утас, таблет — хаанаас ч нэвтэрч бөглөнө.</p></div>
       </div>
@@ -597,7 +597,7 @@ function distKey(unit,freq,period,did){return unit+"_"+freq+"_"+String(period).r
 function hasVal(v){return v!==undefined&&v!==null&&v!=="";}
 function distFilled(rec,pInds){return !!rec&&(!!(rec.status&&rec.status.k)||pInds.some(i=>hasVal((rec.values||{})[i.id])));}
 const DIST_REASONS=["Өвчтэй","Сургуулийн чөлөөтэй","Жирэмсний амралттай","Ээлжийн амралттай","Бусад шалтгаан"];
-function distStatusText(st){if(!st||!st.k)return "";if(st.k==="has")return "Ажиллаж буй гүйцэтгэгч байгаа";return "Байхгүй — "+(st.reason||"")+(st.note?" ("+st.note+")":"");}
+function distStatusText(st){if(!st||!st.k)return "";if(st.k==="has")return "Ажиллаж буй шийдвэр гүйцэтгэгч байгаа";return "Байхгүй — "+(st.reason||"")+(st.note?" ("+st.note+")":"");}
 // Нэгжийн бүх тойргийн утгыг нэгтгэнэ: тоо/мөнгө — нийлбэр, текст — "№дугаар: текст" жагсаалт
 function aggregateDist(unit,freq,period,pInds){
   const ds=unitDists(unit);const values={};let filled=0;
@@ -968,7 +968,7 @@ function doLogout(){
 
 // ===== ХУВИЙН НЭВТРЭХ ЭРХ (Firebase Authentication) =====
 // Шийдвэр гүйцэтгэгчийн эрх тойргоор: config/people/<нэгж>/<тойрог> = {name, email, rev, uid, active, history}
-// Нэвтрэх: нэгж + тойрог + нууц үг. Эрхийг ахлах (нэгжийн нэвтрэлт) нээж, нууц үгийг олгоно. Имэйл нь дотоод (sgaNN-тойрог@...).
+// Нэвтрэх: нэгж + тойрог + нууц үг. Эрхийг ахлах шийдвэр гүйцэтгэгч (нэгжийн нэвтрэлт) нээж, нууц үгийг олгоно. Имэйл нь дотоод (sgaNN-тойрог@...).
 let LMODE="unit";
 // Нууц үгийн талбарт «нүд»: дарахад бичсэн үгээ харна, дахин дарахад нууна
 const EYE_SVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -1024,8 +1024,8 @@ async function doPersonLogin(){
   try{
     let p=null;try{p=await dbGet("config/login/"+code+"/"+no);}catch{}
     if(!p&&S._openDB){try{p=await dbGet("config/people/"+code+"/"+no);}catch{}}
-    if(!p||!p.email){err.textContent="Энэ тойрогт эрх нээгээгүй байна. Ахлахдаа хандана уу.";return;}
-    if(p.active===false){err.textContent="Энэ тойргийн эрх хаалттай байна. Ахлахдаа хандана уу.";return;}
+    if(!p||!p.email){err.textContent="Энэ тойрогт эрх нээгээгүй байна. Ахлах шийдвэр гүйцэтгэгчдээ хандана уу.";return;}
+    if(p.active===false){err.textContent="Энэ тойргийн эрх хаалттай байна. Ахлах шийдвэр гүйцэтгэгчдээ хандана уу.";return;}
     const A=await authMod();let cr;
     try{cr=await A.signIn(A.auth,p.email,pwd);}catch(e){err.textContent=/too-many/.test(e&&e.code||"")?"Олон удаа буруу оруулсан тул түр хүлээгээд дахин оролдоно уу.":"Нууц үг буруу!";return;}
     const base="config/people/"+code+"/"+no;
@@ -1093,7 +1093,7 @@ function staffResult(box,unit,r,reset){
   const un=(S.units.find(x=>x.code===unit)||{}).name||unit;
   const txt="ШГА Биелэлт — "+(reset?"нууц үг шинэчлэгдлээ":"нэвтрэх эрх")+"\n"+r.name+"\nНэгж: "+unit+" · "+un+"\nТойрог: "+r.no+"\nНууц үг: "+r.pw+"\nСайтын «Шийдвэр гүйцэтгэгч» хэсгээр нэвтэрнэ.";
   box.innerHTML="<div class='stres'>✅ <b>"+esc(r.name)+"</b>-д "+(reset?"шинэ нууц үг олголоо":"эрх нээгдлээ")+"<br>Нэгж: <b>"+esc(unit)+"</b> · Тойрог: <b>"+esc(r.no)+"</b> · Нууц үг: <b>"+esc(r.pw)+"</b>"
-    +"<div style='font-size:12.5px;color:#475569;margin-top:6px'>Энэ нууц үгийг дахин харах боломжгүй тул одоо хуулж тухайн гүйцэтгэгчид өгнө үү. Мартвал «🔑 Нууц үг» товчоор шинийг олгоно.</div></div>";
+    +"<div style='font-size:12.5px;color:#475569;margin-top:6px'>Энэ нууц үгийг дахин харах боломжгүй тул одоо хуулж тухайн шийдвэр гүйцэтгэгчид өгнө үү. Мартвал «🔑 Нууц үг» товчоор шинийг олгоно.</div></div>";
   const b=mk("button","btn bp");b.style.marginTop="10px";b.textContent="📋 Заавар хуулах";
   b.onclick=()=>{const done=()=>toast("✅ Хуулагдлаа","ts");try{navigator.clipboard.writeText(txt).then(done,()=>prompt("Хуулна уу:",txt));}catch{prompt("Хуулна уу:",txt);}};
   box.firstChild.appendChild(b);
@@ -1102,7 +1102,7 @@ async function tStaff(c){
   const re=()=>{c.innerHTML="";tStaff(c);};
   const isA=!!S.user.isAdmin;
   const head=mk("div","card");
-  head.innerHTML="<h3 style='margin:0 0 6px'>👥 Шийдвэр гүйцэтгэгчдийн эрх</h3><p style='margin:0;font-size:13.5px;color:#475569;line-height:1.6'>Тойрог бүрт ажиллаж буй шийдвэр гүйцэтгэгчийн нэрийг бүртгээд «Эрх нээх» дарна. Гарсан нууц үгийг тухайн гүйцэтгэгчид өгөхөд тэр «Шийдвэр гүйцэтгэгч» хэсгээр нэвтэрнэ. Нууц үгээ мартвал «👁 Нууц үг харах» дарж хэлж өгнө, шинээр өгөх бол «🔄 Нууц үг солих», тойрогт өөр хүн томилогдвол «✏️ Хүн солих» товчийг дарна.</p>";
+  head.innerHTML="<h3 style='margin:0 0 6px'>👥 Шийдвэр гүйцэтгэгчдийн эрх</h3><p style='margin:0;font-size:13.5px;color:#475569;line-height:1.6'>Тойрог бүрт ажиллаж буй шийдвэр гүйцэтгэгчийн нэрийг бүртгээд «Эрх нээх» дарна. Гарсан нууц үгийг тухайн шийдвэр гүйцэтгэгчид өгөхөд тэр «Шийдвэр гүйцэтгэгч» хэсгээр нэвтэрнэ. Нууц үгээ мартвал «👁 Нууц үг харах» дарж хэлж өгнө, шинээр өгөх бол «🔄 Нууц үг солих», тойрогт өөр хүн томилогдвол «✏️ Хүн солих» товчийг дарна.</p>";
   c.appendChild(head);
   const units=S.units.filter(u=>!u.isAdmin&&!u.disabled);
   let unit=isA?(S._staffUnit||(units.find(u=>unitDists(u.code).length)||units[0]).code):S.user.code;
@@ -1137,7 +1137,7 @@ async function tStaff(c){
     if(!has){
       const inp=mk("input");inp.placeholder="Овог нэр";inp.style.cssText=inS;nameTd.appendChild(inp);
       const b=mk("button","btn bp");b.textContent="Эрх нээх";
-      b.onclick=()=>{const nm=inp.value.trim();if(nm.length<2){toast("Гүйцэтгэгчийн нэрийг оруулна уу","te");inp.focus();return;}run(b,nm,no,false);};
+      b.onclick=()=>{const nm=inp.value.trim();if(nm.length<2){toast("Шийдвэр гүйцэтгэгчийн нэрийг оруулна уу","te");inp.focus();return;}run(b,nm,no,false);};
       inp.onkeydown=e=>{if(e.key==="Enter")b.click();};act.appendChild(b);
     }else{
       nameTd.textContent=p.name||"";
@@ -1150,7 +1150,7 @@ async function tStaff(c){
       act.appendChild(bv);
       const br=mk("button","btn bx");br.textContent="🔄 Нууц үг солих";br.title="Шинэ нууц үг олгоно — хуучин нууц үг хүчингүй болно. Зөвхөн харах бол нэрийн доорх 👁 товчийг дарна";br.onclick=()=>run(br,p.name,no,true);
       const bc=mk("button","btn bx");bc.style.marginLeft="6px";bc.textContent="✏️ Хүн солих";
-      bc.onclick=()=>{nameTd.innerHTML="";const inp=mk("input");inp.placeholder="Шинэ гүйцэтгэгчийн овог нэр";inp.style.cssText=inS;nameTd.appendChild(inp);inp.focus();
+      bc.onclick=()=>{nameTd.innerHTML="";const inp=mk("input");inp.placeholder="Шинэ шийдвэр гүйцэтгэгчийн овог нэр";inp.style.cssText=inS;nameTd.appendChild(inp);inp.focus();
         act.innerHTML="";const ok=mk("button","btn bp");ok.textContent="Солих";const cn=mk("button","btn bx");cn.style.marginLeft="6px";cn.textContent="Болих";
         ok.onclick=()=>{const nm=inp.value.trim();if(nm.length<2){toast("Нэрийг оруулна уу","te");return;}run(ok,nm,no,false);};inp.onkeydown=e=>{if(e.key==="Enter")ok.click();};
         cn.onclick=()=>re();act.appendChild(ok);act.appendChild(cn);};
@@ -1735,7 +1735,7 @@ function renderTabs(){
   const isA=S.user&&S.user.isAdmin,tabs=[];tabs.push({id:"home",l:"🏠 Нүүр"});
   if(isExec()){tabs.push({id:"daily",l:"📝 Өдрийн мэдээ"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
   else if(!isA){tabs.push({id:"data",l:"📋 Мэдээ оруулах"});tabs.push({id:"daily",l:"📝 Өдрийн мэдээ"});tabs.push({id:"mydata",l:"📂 Миний мэдээ"});}
-  if(!isExec()){tabs.push({id:"calendar",l:"🗓️ Хуанли"});tabs.push({id:"chat",l:"💬 Чат"});if(!isA)tabs.push({id:"staff",l:"👥 Гүйцэтгэгчид"});}
+  if(!isExec()){tabs.push({id:"calendar",l:"🗓️ Хуанли"});tabs.push({id:"chat",l:"💬 Чат"});if(!isA)tabs.push({id:"staff",l:"👥 Шийдвэр гүйцэтгэгчид"});}
   if(isA){tabs.push({id:"summary",l:"📊 Нэгдсэн дүн"});tabs.push({id:"daily",l:"📝 Өдрийн мэдээ"});tabs.push({id:"survey",l:"📋 Судалгаа"});tabs.push({id:"ai",l:"✨ AI Тайлан"});tabs.push({id:"files",l:"📎 Файлын сан"});tabs.push({id:"archive",l:"📁 Архив"});tabs.push({id:"gsheets",l:"🔗 Хэргийн бүртгэл"});tabs.push({id:"config",l:"⚙️ Тохиргоо"});}
   const tb=document.getElementById("TB");tb.innerHTML="";
   tabs.forEach(t=>{
@@ -2026,7 +2026,7 @@ function renderDistPanel(sub,pl,pInds,period,dm,locked,mkInp){
   const stale=unitSent&&pInds.some(i=>String(ents.values&&ents.values[i.id]!==undefined?ents.values[i.id]:"")!==String(agg.values[i.id]));
   const missing=ds.filter(d=>!distFilled(recOf(d),pInds));
   const noExec=ds.map(d=>recOf(d)).filter(r=>r&&r.status&&r.status.k==="none");
-  info.innerHTML="📍 Тойрог бүрийг ямар ч дарааллаар, буцаж ирж бөглөж болно (тойрог бүрийг «Хадгалах»). Бүгдийг нь хадгалсны дараа доорх <b>«Нэгжийн мэдээг илгээх»</b> товчоор ахлах баталгаажуулж илгээнэ.<br>Хадгалсан: <b>"+agg.filled+"/"+agg.total+"</b> тойрог"+(missing.length&&missing.length<=12?" · Бөглөөгүй: "+missing.map(d=>"№"+d).join(", "):"")+"<br>Нэгжийн мэдээ: "+(unitSent?(stale?"<b style='color:var(--or)'>⚠️ Илгээсэн, гэхдээ дараа нь өөрчилсөн — дахин илгээнэ үү</b>":"<b style='color:var(--gr)'>✅ Илгээгдсэн</b>"):"<b>○ Илгээгдээгүй</b>")+(noExec.length?"<br>👤 Гүйцэтгэгчгүй тойрог: <b>"+noExec.length+"</b> ("+noExec.map(r=>"№"+r.did+" "+r.status.reason).join(", ")+")":"")+(dm.requireAll?"<br>🔒 Бүх "+agg.total+" тойргийг хадгалсны дараа л илгээх боломжтой.":"");
+  info.innerHTML="📍 Тойрог бүрийг ямар ч дарааллаар, буцаж ирж бөглөж болно (тойрог бүрийг «Хадгалах»). Бүгдийг нь хадгалсны дараа доорх <b>«Нэгжийн мэдээг илгээх»</b> товчоор ахлах шийдвэр гүйцэтгэгч баталгаажуулж илгээнэ.<br>Хадгалсан: <b>"+agg.filled+"/"+agg.total+"</b> тойрог"+(missing.length&&missing.length<=12?" · Бөглөөгүй: "+missing.map(d=>"№"+d).join(", "):"")+"<br>Нэгжийн мэдээ: "+(unitSent?(stale?"<b style='color:var(--or)'>⚠️ Илгээсэн, гэхдээ дараа нь өөрчилсөн — дахин илгээнэ үү</b>":"<b style='color:var(--gr)'>✅ Илгээгдсэн</b>"):"<b>○ Илгээгдээгүй</b>")+(noExec.length?"<br>👤 Шийдвэр гүйцэтгэгчгүй тойрог: <b>"+noExec.length+"</b> ("+noExec.map(r=>"№"+r.did+" "+r.status.reason).join(", ")+")":"")+(dm.requireAll?"<br>🔒 Бүх "+agg.total+" тойргийг хадгалсны дараа л илгээх боломжтой.":"");
   sub.appendChild(info);
   const chips=mk("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px";
   ds.forEach(d=>{
@@ -2042,9 +2042,9 @@ function renderDistPanel(sub,pl,pInds,period,dm,locked,mkInp){
   sub.appendChild(chips);
   const hd=mk("div");hd.style.cssText="font-weight:600;font-size:13px;margin:4px 0 8px";hd.textContent="Тойрог №"+cur+(distFilled(recOf(cur),pInds)?" — ✅ бөглөгдсөн":" — ○ бөглөөгүй");sub.appendChild(hd);
   const rec=recOf(cur)||{values:{}};
-  // Тойрогт одоо ажиллаж буй гүйцэтгэгч байгаа эсэх (заавал сонгоно)
+  // Тойрогт одоо ажиллаж буй шийдвэр гүйцэтгэгч байгаа эсэх (заавал сонгоно)
   const stBox=mk("div");stBox.style.cssText="margin-bottom:12px;padding:8px 10px;border:1px solid var(--br);border-radius:6px";
-  const stLbl=mk("label");stLbl.style.cssText="display:block;font-size:12px;font-weight:600;margin-bottom:6px";stLbl.textContent="👤 Энэ тойрогт одоо ажиллаж буй гүйцэтгэгч байгаа юу?";stBox.appendChild(stLbl);
+  const stLbl=mk("label");stLbl.style.cssText="display:block;font-size:12px;font-weight:600;margin-bottom:6px";stLbl.textContent="👤 Энэ тойрогт одоо ажиллаж буй шийдвэр гүйцэтгэгч байгаа юу?";stBox.appendChild(stLbl);
   const stSel=mk("input");stSel.type="hidden";stSel.id="d_stat";
   const curSt=rec.status&&rec.status.k?(rec.status.k==="has"?"has":"none:"+(rec.status.reason||"")):"";
   stSel.value=curSt;stBox.appendChild(stSel);
@@ -2054,8 +2054,8 @@ function renderDistPanel(sub,pl,pInds,period,dm,locked,mkInp){
     lb.appendChild(rd);const sp=mk("span");sp.textContent=label;lb.appendChild(sp);return {lb,rd};
   };
   const grp1=mk("div");
-  const r1=mkRadio("d_has","has","✅ Хүнтэй — ажиллаж буй гүйцэтгэгч байгаа",curSt==="has");
-  const r2=mkRadio("d_has","none","❌ Хүнгүй — ажиллаж буй гүйцэтгэгч байхгүй",curSt.startsWith("none:"));
+  const r1=mkRadio("d_has","has","✅ Хүнтэй — ажиллаж буй шийдвэр гүйцэтгэгч байгаа",curSt==="has");
+  const r2=mkRadio("d_has","none","❌ Хүнгүй — ажиллаж буй шийдвэр гүйцэтгэгч байхгүй",curSt.startsWith("none:"));
   grp1.appendChild(r1.lb);grp1.appendChild(r2.lb);stBox.appendChild(grp1);
   const reasons=mk("div");reasons.style.cssText="margin:4px 0 0 22px;padding-left:10px;border-left:2px solid var(--rd)";
   const lr=mk("div");lr.style.cssText="font-size:11px;color:var(--tx2);margin-bottom:2px";lr.innerHTML="Шалтгаанаа сонгоно уу: <span style='color:var(--or)'>(Шалтгаантай ч өөр хүн орлож гүйцэтгэдэг тул доорх мэдээг заавал оруулна)</span>";reasons.appendChild(lr);
@@ -2084,7 +2084,7 @@ function renderDistPanel(sub,pl,pInds,period,dm,locked,mkInp){
     const b=mk("button","btn "+(f?"bs":"bp"));b.textContent=(f?"🔄 Тойрог №"+cur+" шинэчлэн хадгалах":"💾 Тойрог №"+cur+" хадгалах");
     b.onclick=function(){saveDistrict(pl,period,cur,pInds);};
     br.appendChild(b);sub.appendChild(br);
-    // Нэгжийн мэдээг баталгаажуулж илгээх (ахлах)
+    // Нэгжийн мэдээг баталгаажуулж илгээх (ахлах шийдвэр гүйцэтгэгч)
     const sb=mk("div","brow");sb.style.margin="14px 0 4px";sb.style.paddingTop="10px";sb.style.borderTop="1px dashed var(--br)";
     const blocked=(dm.requireAll&&agg.filled<agg.total)||agg.filled===0;
     const ub=mk("button","btn "+((unitSent&&!stale)?"bs":"bp"));
@@ -2138,7 +2138,7 @@ async function saveDistrict(plan,period,did,pInds){
   else toast("💾 Тойрог №"+did+" хадгалагдлаа ("+agg.filled+"/"+agg.total+"). Бүгдийг нь хадгалаад «Нэгжийн мэдээг илгээх» дарна уу","ts");
   renderTab("data");
 }
-// Ахлах баталгаажуулж нэгжийн мэдээг илгээнэ
+// Ахлах шийдвэр гүйцэтгэгч баталгаажуулж нэгжийн мэдээг илгээнэ
 async function submitUnitDist(plan,period,pInds,dm){
   const grpLock=getPlanLock(plan);
   if(grpLock&&!S.user.isAdmin){toast("🔒 '"+plan+"' хаалттай — илгээх боломжгүй","te");return;}
@@ -2852,7 +2852,7 @@ function appendDistDetail(sub,ucode,entry,inds){
   let h="<table style='border-collapse:collapse'><tr><th style='text-align:left;padding:4px 8px;font-size:11px;border-bottom:1px solid var(--bd)'>Үзүүлэлт</th>";
   recs.forEach(x=>h+="<th style='padding:4px 8px;font-size:11px;border-bottom:1px solid var(--bd)'>№"+x.d+"</th>");
   h+="</tr>";
-  if(anySt){h+="<tr><td style='padding:4px 8px;font-size:12px;border-bottom:1px solid var(--bd)'><b>👤 Гүйцэтгэгч</b></td>";recs.forEach(x=>{const st=x.r.status;const none=st&&st.k==="none";h+="<td style='padding:4px 8px;font-size:11px;text-align:center;border-bottom:1px solid var(--bd);"+(none?"color:var(--rd)":"color:var(--gr)")+"'>"+(st&&st.k?(none?"❌ "+(st.reason||"")+(st.note?" ("+st.note+")":""):"✅ байгаа"):"")+"</td>";});h+="</tr>";}
+  if(anySt){h+="<tr><td style='padding:4px 8px;font-size:12px;border-bottom:1px solid var(--bd)'><b>👤 Шийдвэр гүйцэтгэгч</b></td>";recs.forEach(x=>{const st=x.r.status;const none=st&&st.k==="none";h+="<td style='padding:4px 8px;font-size:11px;text-align:center;border-bottom:1px solid var(--bd);"+(none?"color:var(--rd)":"color:var(--gr)")+"'>"+(st&&st.k?(none?"❌ "+(st.reason||"")+(st.note?" ("+st.note+")":""):"✅ байгаа"):"")+"</td>";});h+="</tr>";}
   shown.forEach(i=>{h+="<tr><td style='padding:4px 8px;font-size:12px;border-bottom:1px solid var(--bd)'>"+i.name+"</td>";recs.forEach(x=>{const v=(x.r.values||{})[i.id];h+="<td style='padding:4px 8px;font-size:12px;text-align:right;border-bottom:1px solid var(--bd)'>"+(hasVal(v)?(i.type==="text"?String(v):fN(v)):"")+"</td>";});h+="</tr>";});
   h+="</table>";w.innerHTML=h;det.appendChild(w);sub.appendChild(det);
 }
@@ -2971,7 +2971,7 @@ async function exportExcel(){
   // Тойргоор авдаг төлөвлөгөө бүрт 304 тойргийн тусдаа хуудас
   uniquePlans.filter(pl=>distMode(pl)).forEach((plan,pi)=>{
     const pInds=planGroups[plan];
-    const rows=[["Тойрог №","Нэгж код","Нэгж","Ажиллаж буй гүйцэтгэгч","Шалтгаан / тайлбар",...pInds.map(i=>i.name)]];
+    const rows=[["Тойрог №","Нэгж код","Нэгж","Ажиллаж буй шийдвэр гүйцэтгэгч","Шалтгаан / тайлбар",...pInds.map(i=>i.name)]];
     units.forEach(u=>{
       unitDists(u.code).forEach(d=>{
         let best=null;
@@ -3917,12 +3917,12 @@ function buildCfg(c){
     try{localStorage.setItem("sga_p",JSON.stringify(S.pwds));}catch{}
     buildCfg(c);toast("✅ "+code,"ts");
   };sub4.appendChild(b4);c4.appendChild(sub4);
-  // Нэгж, нууц үг, гүйцэтгэгчдийн эрхийг нэг хэсэгт нэгтгэнэ
+  // Нэгж, нууц үг, шийдвэр гүйцэтгэгчдийн эрхийг нэг хэсэгт нэгтгэнэ
   {[c3,c4].forEach(x=>{const h=x.querySelector("h2");if(h)h.remove();});
    const pwHint=mk("div");pwHint.style.cssText="font-size:12.5px;color:#64748B;margin:0 0 10px";pwHint.textContent="Энд шинэ нууц үг оруулж 💾 дарахад тухайн нэгжийн хуучин нууц үг хүчингүй болно. Нэгж 🔑 товчоор өөрөө сольсон нууц үг энд харагдахгүй.";c3.insertBefore(pwHint,c3.firstChild);
    const um=mk("div","card");um.innerHTML="<h2>🏛️ Нэгж, эрхийн удирдлага</h2>";
    const seg=mk("div","lmode");seg.style.maxWidth="620px";
-   const panes={units:c4,pw:c3,staff:mk("div")},labels={units:"🏛️ Нэгжүүд",pw:"🔐 Нэгжийн нууц үг",staff:"👥 Гүйцэтгэгчдийн эрх"};
+   const panes={units:c4,pw:c3,staff:mk("div")},labels={units:"🏛️ Нэгжүүд",pw:"🔐 Нэгжийн нууц үг",staff:"👥 Шийдвэр гүйцэтгэгчдийн эрх"};
    const cur=S._umTab||"units";
    const show=k=>{S._umTab=k;seg.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.k===k));Object.entries(panes).forEach(([kk,pn])=>pn.hidden=kk!==k);if(k==="staff"&&!panes.staff._done){panes.staff._done=1;tStaff(panes.staff);}};
    Object.keys(panes).forEach(k=>{const b=mk("button");b.type="button";b.dataset.k=k;b.textContent=labels[k];b.onclick=()=>show(k);seg.appendChild(b);});
@@ -4069,9 +4069,9 @@ window.addEventListener("DOMContentLoaded",initLogin);
 </script>
 <script>
 // ===== ӨДРИЙН МЭДЭЭ =====
-// Гүйцэтгэгч (тойрог) ажлын өдөр бүр бөглөнө; ахлах тойргоор, админ нэгжээр нэгтгэж харна.
+// Шийдвэр гүйцэтгэгч (тойрог) ажлын өдөр бүр бөглөнө; ахлах шийдвэр гүйцэтгэгч тойргоор, админ нэгжээр нэгтгэж харна.
 // Хадгалалт: daily/<нэгж>/<YYYY-MM-DD>/<тойрог> = {v:{q1_0:..}, ex, ext, note, zero, ts, name}
-//            dreg/<нэгж>/abs/<id> = {no, name, reason, from, to, sub, ts} — ажиллаагүй алба хаагч (ахлах бүртгэнэ)
+//            dreg/<нэгж>/abs/<id> = {no, name, reason, from, to, sub, ts} — ажиллаагүй алба хаагч (ахлах шийдвэр гүйцэтгэгч бүртгэнэ)
 const DPROP=["Хөдлөх: тээврийн хэрэгсэл","Хөдлөх: бусад","Үл хөдлөх: орон сууц","Үл хөдлөх: хашаа байшин, хувийн сууц","Үл хөдлөх: барилга, объект","Үл хөдлөх: газар"];
 // t:1 — «Нийт ажиллагаа»-нд тоологдоно (2-р асуулт нь 1-р асуултын задаргаа тул тоологдохгүй)
 const DCOURT=["Шийдвэр гүйцэтгэгчийн шийдвэр, ажиллагааны талаарх гомдол","Хөрөнгийн үнэлгээний талаарх гомдол","Битүүмжлэлээс хасуулах, чөлөөлүүлэх нэхэмжлэл","Хууль бус ажиллагааны хохирлын нэхэмжлэл","Бусад"];
@@ -4129,9 +4129,9 @@ function dCtl(onCh,extra){ // Өдөр / 7 хоног / Сар + огноо
 }
 function dStat(n,l,cls){return "<div class='sc "+(cls||"")+"'><div class='n'>"+n+"</div><div class='l'>"+l+"</div></div>";}
 
-// tDaily — доорх 2-р шатны скриптэд (ахлахын 1–4 бүлэгтэй)
+// tDaily — доорх 2-р шатны скриптэд (ахлах шийдвэр гүйцэтгэгчийн 1–4 бүлэгтэй)
 
-// ---------- Гүйцэтгэгч: дээр нь сүүлийн өдрүүдийн мэдээ, доор нь тухайн өдрийн маягт ----------
+// ---------- Шийдвэр гүйцэтгэгч: дээр нь сүүлийн өдрүүдийн мэдээ, доор нь тухайн өдрийн маягт ----------
 async function dExec(c){
   const u=S.user.code,no=String(S.user.person.no),nm=S.user.person.name||"",today=ymd(new Date());
   const days=[];{const d=new Date();while(days.length<7){const s=ymd(d);if(dWork(s)||s===today)days.unshift(s);d.setDate(d.getDate()-1);}}
@@ -4174,7 +4174,7 @@ async function dExec(c){
   });
   form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Е. Дотоод ажил</h3><label class='dzero' style='background:#EEF2FF;color:#3730A3'><input type='checkbox' id='diw'"+(r.iw?" checked":"")+"> Өнөөдөр дотоод ажил хийсэн <span style='font-weight:400'>(хавтаст хэрэг бүрдүүлэх, лавлагаа хавсаргах, товъёоглох, өргөдөл, гомдлын хариу бичих гэх мэт)</span></label>");
   form.insertAdjacentHTML("beforeend","<h3 class='dsec'>Ж. Нэмэлт</h3>"
-    +"<div class='dq'><div><div class='dt'><b>"+(DQ.length+1)+".</b>Онцгой тохиолдол гарсан уу?</div><div class='dh'>Эсэргүүцэл, халдлага, хүч хэрэглэсэн гэх мэт. «Тийм» бол ахлахад харагдана.</div></div><div class='din'><label class='dyn'><input type='radio' name='dex' value='0'"+(r.ex?"":" checked")+"> Үгүй</label><label class='dyn'><input type='radio' name='dex' value='1'"+(r.ex?" checked":"")+"> Тийм</label></div></div>"
+    +"<div class='dq'><div><div class='dt'><b>"+(DQ.length+1)+".</b>Онцгой тохиолдол гарсан уу?</div><div class='dh'>Эсэргүүцэл, халдлага, хүч хэрэглэсэн гэх мэт. «Тийм» бол ахлах шийдвэр гүйцэтгэгчид харагдана.</div></div><div class='din'><label class='dyn'><input type='radio' name='dex' value='0'"+(r.ex?"":" checked")+"> Үгүй</label><label class='dyn'><input type='radio' name='dex' value='1'"+(r.ex?" checked":"")+"> Тийм</label></div></div>"
     +"<div class='fi' id='dexw' style='margin-top:8px"+(r.ex?"":";display:none")+"'><textarea id='dext' placeholder='Юу болсон, хэн оролцсон, авсан арга хэмжээг товч бичнэ үү'>"+esc(r.ext||"")+"</textarea></div>"
     +"<div class='fi' style='margin-top:12px'><label><b>"+(DQ.length+2)+".</b> Тэмдэглэл <span class='dz'>(заавал биш)</span></label><textarea id='dnote' placeholder='Тоонд багтаагүй тайлбар'>"+esc(r.note||"")+"</textarea></div>"
     +"<label class='dzero' id='dzw' hidden><input type='checkbox' id='dzc'"+(r.zero?" checked":"")+"> Өнөөдөр ажиллагаа явуулаагүй гэдгийг баталж байна</label>");
@@ -4203,7 +4203,7 @@ async function dExec(c){
     const d=w||mk("div","dalert");d.id="dbig";d.dataset.ok="1";d.innerHTML="⚠️ "+b.map(q=>esc(q.s)).join(", ")+" дээр их тоо бичсэн байна. Зөв бол «Хадгалах» товчийг дахин дарна уу.";if(!w)bar.before(d);return false;}
 }
 
-// ---------- Ахлах: тойрог тойргоор нэгтгэл + ажиллаагүй алба хаагчийн бүртгэл ----------
+// ---------- Ахлах шийдвэр гүйцэтгэгч: тойрог тойргоор нэгтгэл + ажиллаагүй алба хаагчийн бүртгэл ----------
 async function dUnit(c,u,back){
   const re=()=>{c.innerHTML="";dUnit(c,u,back);},today=ymd(new Date());
   const un=(S.units.find(x=>x.code===u)||{}).name||u;
@@ -4224,7 +4224,7 @@ async function dUnit(c,u,back){
   const isDay=S._dMode==="day",sentN=isDay?rows.filter(r=>r.rec).length:rows.reduce((s,r)=>s+r.sent,0),exp=rows.length*wdays.length;
   const abN=isDay?rows.filter(r=>!r.rec&&r.abNow).length:rows.reduce((s,r)=>s+r.ab,0),missN=isDay?rows.filter(r=>!r.rec&&!r.abNow).length:rows.reduce((s,r)=>s+r.miss,0);
   let h="<div class='stats'>"+dStat(rows.length,"Тойрог")+dStat(isDay?sentN:sentN+"/"+exp,isDay?"Бөглөсөн":"Бөглөсөн (тойрог×өдөр)","g")+dStat(abN,"Ажиллаагүй","o")+dStat(missN,isDay&&a===today?"Бөглөөгүй байна":"Бөглөөгүй","r")+dStat(totAll,"Нийт ажиллагаа")+"</div>";
-  h+="<div class='tw'><table class='dtbl' id='dut'><thead><tr><th>Тойрог</th><th>Гүйцэтгэгч</th><th>Төлөв</th><th>Нийт ажиллагаа</th>"+DQ.map((q,i)=>"<th title='"+esc(q.t)+"'>"+(i+1)+". "+esc(q.s)+"</th>").join("")+XQ.map(q=>"<th title='Нэгжийн нэмэлт асуулт'>➕ "+esc(q.t)+"</th>").join("")+"</tr></thead><tbody>";
+  h+="<div class='tw'><table class='dtbl' id='dut'><thead><tr><th>Тойрог</th><th>Шийдвэр гүйцэтгэгч</th><th>Төлөв</th><th>Нийт ажиллагаа</th>"+DQ.map((q,i)=>"<th title='"+esc(q.t)+"'>"+(i+1)+". "+esc(q.s)+"</th>").join("")+XQ.map(q=>"<th title='Нэгжийн нэмэлт асуулт'>➕ "+esc(q.t)+"</th>").join("")+"</tr></thead><tbody>";
   rows.forEach(r=>{let st;
     if(isDay)st=r.rec?(r.rec.zero?"○ Ажиллагаагүй":"✅ "+new Date(r.rec.ts).toTimeString().slice(0,5)):r.abNow?(r.abNow.reason===DVAC?"🚫 Сул тойрог":"🏖 "+esc(r.abNow.reason)):(a===today?"⏳ Бөглөөгүй":"⚠️ Бөглөөгүй");
     else st=r.sent+"/"+wdays.length+" өдөр"+(r.ab?" · 🏖"+r.ab:"")+(r.miss?" · ⚠️"+r.miss:"");
@@ -4257,7 +4257,7 @@ function dAbsCard(ac,u,abs,nos,nameOf,canEdit,re){
   const cur=list.filter(a=>!a.to||a.to>=today),old=list.filter(a=>a.to&&a.to<today).slice(0,15);
   let h="<h2>🏖 Ажиллаагүй алба хаагчийн бүртгэл</h2><p class='dlead' style='margin-bottom:12px'>Эхлэх, дуусах өдрийг нэг удаа бүртгэхэд тэр хугацаанд тухайн тойрог «бөглөөгүй» гэж тооцогдохгүй. Дуусах өдөр тодорхойгүй бол хоосон үлдээгээд, ажилдаа гарахад «Дуусгах» дарна.</p>";
   const row=a=>"<tr><td>"+(a.no?esc(a.no)+"-р тойрог":"")+"</td><td style='text-align:left'>"+esc(a.name||"")+"</td><td style='text-align:left'>"+esc(a.reason||"")+"</td><td>"+ymdMn(a.from)+" – "+(a.to?ymdMn(a.to):"…")+"</td><td>"+(a.sub?esc(a.sub)+"-р тойрог":"")+"</td>"+(canEdit?"<td style='white-space:nowrap'>"+(!a.to||a.to>=today?"<button class='btn bs' data-end='"+a.id+"' style='padding:5px 10px'>Дуусгах</button> ":"")+"<button class='btn bd_' data-del='"+a.id+"' style='padding:5px 10px'>✕</button></td>":"")+"</tr>";
-  const th="<thead><tr><th>Тойрог</th><th>Алба хаагч</th><th>Шалтгаан</th><th>Хугацаа</th><th>Орлон гүйцэтгэгч</th>"+(canEdit?"<th></th>":"")+"</tr></thead>";
+  const th="<thead><tr><th>Тойрог</th><th>Алба хаагч</th><th>Шалтгаан</th><th>Хугацаа</th><th>Орлон шийдвэр гүйцэтгэгч</th>"+(canEdit?"<th></th>":"")+"</tr></thead>";
   h+=cur.length?"<div class='tw'><table class='dtbl'>"+th+"<tbody>"+cur.map(row).join("")+"</tbody></table></div>":"<div class='dz'>Одоогоор ажиллаагүй алба хаагч бүртгэгдээгүй байна.</div>";
   if(old.length)h+="<details style='margin-top:10px'><summary class='dz' style='cursor:pointer'>Өмнөх бүртгэл ("+old.length+")</summary><div class='tw'><table class='dtbl'>"+th+"<tbody>"+old.map(row).join("")+"</tbody></table></div></details>";
   if(canEdit)h+="<div class='brow'><button class='btn bp' id='dabn'>＋ Ажиллаагүй алба хаагч бүртгэх</button></div>";
@@ -4318,9 +4318,9 @@ async function dAdmin(c){
 // dreg/<нэгж>/wk/<Даваа YYYY-MM-DD> = {v:{..},ts}  — 1.1, 1.3, 1.4 долоо хоногийн тоон мэдээ (үлдэгдлийг гинжээр тооцно)
 // dreg/<нэгж>/<spec|disc|eth|crim|comp|appt|trn>/<id> — тохиолдлын бүртгэл
 // dreg/<нэгж>/staff/<YYYY-MM> = {v:{..},ts} — 4.2 орон тоо
-const ASEC=[["d","📝 Өдрийн мэдээ"],["r","🧾 Мэдээ ирүүлэлт"],["1","1. ШГ ажиллагаа"],["2","2. Сахилга, хариуцлага"],["3","3. Өргөдөл, гомдол"],["4","4. Хүний нөөц"]];
+const ASEC=[["h","📋 Миний хийх ажил"],["d","👥 Шийдвэр гүйцэтгэгчдийн мэдээ"],["r","🧾 Мэдээ ирүүлэлт"],["1","1. ШГ ажиллагаа · 7 хоног бүр"],["2","2. Сахилга · тухай бүр"],["3","3. Өргөдөл, гомдол · тухай бүр"],["4","4. Хүний нөөц · сар бүр"]];
 const AW11=[
- {k:"a1",s:"Шүүх хуралдаан",t:"Шүүх хуралдаанд оролцсон — ахлах өөрөө",c:DCOURT,h:"Шийдвэр гүйцэтгэгчдийн оролцсон тоо өдрийн мэдээнээс автоматаар нэмэгдэнэ — энд зөвхөн ахлах өөрөө оролцсоноо бичнэ"},
+ {k:"a1",s:"Шүүх хуралдаан",t:"Шүүх хуралдаанд оролцсон — ахлах шийдвэр гүйцэтгэгч өөрөө",c:DCOURT,h:"Шийдвэр гүйцэтгэгчдийн оролцсон тоо өдрийн мэдээнээс автоматаар нэмэгдэнэ — энд зөвхөн ахлах шийдвэр гүйцэтгэгч өөрөө оролцсоноо бичнэ"},
  {k:"a2",s:"Төлөөлөх эрх",t:"Шүүх, цагдаа, АТГ-д төлөөлөх эрхээ хэрэгжүүлсэн",c:["Шүүх","Цагдаа","АТГ"]},
  {k:"a3",s:"Тайлбарлуулсан",t:"Шийдвэрийг тайлбарлуулахаар шүүхэд хандсан"},
  {k:"a4",s:"Материал шилжүүлсэн",t:"Шийдвэр биелүүлээгүй, саад учруулсан тухай материал шилжүүлсэн",c:["Эрүүгийн хэрэг","Зөрчил"]},
@@ -4337,7 +4337,7 @@ const PEN_LONG=["Цалингийн хэмжээг 3 сар хүртэл хуг�
 const AREG={
  spec:{id:"spec",n:"1.2",icon:"⚡",t:"Онцгой ба тусгай ажиллагааны бүртгэл",h:"Гарсан даруй бүртгэнэ. «Яаралтай» гэж тэмдэглэвэл ШГА-нд Telegram-аар шууд мэдэгдэл очно.",
   f:[{k:"d",l:"Огноо",t:"date",req:1,def:1},
-   {k:"type",l:"Төрөл",t:"sel",req:1,o:["Албадан ирүүлсэн","Ахлахын зөвшөөрлөөр орон байранд нэвтэрсэн","Хүч, тусгай хэрэгсэл хэрэглэсэн (эвдэх, цоож, техник)","Шийдвэр гүйцэтгэгчид халдсан, эсэргүүцсэн","Орон байр, барилга, газар албадан чөлөөлсөн","Ажилд эгүүлэн тогтоолгосон","Хүүхэд шилжүүлсэн","Хүний амь нас, эрүүл мэнд, хүүхэдтэй холбоотой ажиллагаа","Олон нийтийн анхаарал татсан, хэвлэлд гарсан","Томоохон ажиллагаа төлөвлөсөн"],b:"ШШГТХ 44.2.1, 44.2.7, 48.9–48.10, 100, 102, 103"},
+   {k:"type",l:"Төрөл",t:"sel",req:1,o:["Албадан ирүүлсэн","Ахлах шийдвэр гүйцэтгэгчийн зөвшөөрлөөр орон байранд нэвтэрсэн","Хүч, тусгай хэрэгсэл хэрэглэсэн (эвдэх, цоож, техник)","Шийдвэр гүйцэтгэгчид халдсан, эсэргүүцсэн","Орон байр, барилга, газар албадан чөлөөлсөн","Ажилд эгүүлэн тогтоолгосон","Хүүхэд шилжүүлсэн","Хүний амь нас, эрүүл мэнд, хүүхэдтэй холбоотой ажиллагаа","Олон нийтийн анхаарал татсан, хэвлэлд гарсан","Томоохон ажиллагаа төлөвлөсөн"],b:"ШШГТХ 44.2.1, 44.2.7, 48.9–48.10, 100, 102, 103"},
    {k:"gbb",l:"Гүйцэтгэх баримт бичгийн дугаар",t:"text",req:1},
    {k:"no",l:"Тойрог",t:"toj",req:1},
    {k:"sum",l:"Товч агуулга",t:"area",req:1,h:"Юу болсон, хэн оролцсон"},
@@ -4394,7 +4394,7 @@ const AREG={
    {k:"ch",l:"Ирсэн хэлбэр",t:"sel",req:1,o:["Биечлэн","Шуудангаар","Цахим шуудан, аппликейшнээр","Утсаар"]},
    {k:"cont",l:"Агуулга",t:"sel",req:1,o:["Шийдвэр гүйцэтгэх ажиллагаа биелэгдэхгүй удааширсан","Мэдээлэл өгдөггүй, тайлбарладаггүй","Шийдвэр гүйцэтгэгч утсаа авдаггүй, холбогдох боломжгүй","Алба хаагчийн харилцаа, ёс зүй","Шийдвэр гүйцэтгэгчийг солих","Дансны хасалт, нээлт","Цалин, орлогоос суутгал хийсэн","Хилийн хориг","Эд хөрөнгө битүүмжлэх, хураах","Албадан дуудлага худалдаа","Хүүхдийн тэтгэлэг гаргуулах","Шийдвэр гүйцэтгэх ажиллагааг түдгэлзүүлэх","Бусад"]},
    {k:"gbb",l:"Гүйцэтгэх баримт бичгийн дугаар",t:"text",h:"Холбогдох бол бичнэ. Ижил дугаараар өмнө нь бүртгэгдсэн бол «Давтан»-ыг систем санал болгоно."},
-   {k:"rep",l:"Нэг асуудлаар давтан гаргасан эсэх",t:"yn",req:1,h:"Систем санал болгоно, ахлах баталгаажуулна"},
+   {k:"rep",l:"Нэг асуудлаар давтан гаргасан эсэх",t:"yn",req:1,h:"Систем санал болгоно, ахлах шийдвэр гүйцэтгэгч баталгаажуулна"},
    {k:"_h2",l:"Шийдвэрлэлт (шийдвэрлэсэн үед бөглөнө)",t:"hdr"},
    {k:"rd",l:"Эцэслэн шийдвэрлэсэн огноо",t:"date",h:"Шийдвэрлээгүй бол хоосон үлдээнэ — хянагдаж байгаад тооцогдоно"},
    {k:"out",l:"Шийдвэрлэлтийн үр дүн",t:"sel",req:1,o:["Үндэслэлтэй","Үндэслэлгүй","Тайлбар, мэдээлэл, хууль зүйн зөвлөгөө өгч шийдвэрлэсэн","Харьяаллын дагуу шилжүүлсэн, буцаасан"],h:"Үндэслэлгүй бол хангаагүйд тооцогдоно",b:"ШШГТХ 44.4, 44.6",show:v=>!!v.rd},
@@ -4406,7 +4406,7 @@ const AREG={
   cols:[["Огноо",r=>ymdMn(r.d)],["Гаргагч",r=>esc([r.ptype,r.party].filter(Boolean).join(", "))],["Төрөл",r=>esc(r.form||"")],["Агуулга",r=>esc(r.cont||""),1],["ГББ",r=>esc(r.gbb||"")+(r.rep==1?" <span class='badge bwarn'>Давтан</span>":"")],["Төлөв",r=>r.rd?"✅ "+ymdMn(r.rd)+(r.late==1?" <span class='badge bfail'>Хугацаа хэтэрсэн</span>":""):"<span class='badge bwarn'>Хянагдаж байгаа</span>"],["Үр дүн",r=>esc(r.out||"")+(r.sat?" ("+esc(r.sat.toLowerCase())+")":"")+(r.disc==1?" · сахилга тооцсон":""),1]],
   grp:"cont",open:r=>!r.rd,
   stats:(L,M)=>{const a=aCompMonth(L,M);return [[a.nw,"Энэ сард ирсэн"],[a.done,"Эцэслэн шийдвэрлэсэн","g"],[a.open,"Хянагдаж байгаа","o"],[a.base+(a.done?" ("+Math.round(a.base*100/a.done)+"%)":""),"Үндэслэлтэй","r"],[a.rep,"Давтан"]];}},
- appt:{id:"appt",n:"4.3",icon:"🪪",t:"Томилгоо, чөлөөлөлт",h:"Тухай бүр бүртгэнэ. Томилсон, тойрог өөрчилсөн бол «👥 Гүйцэтгэгчид» цэсээр тойргийн нэвтрэх эрхийг шинэчилнэ.",
+ appt:{id:"appt",n:"4.3",icon:"🪪",t:"Томилгоо, чөлөөлөлт",h:"Тухай бүр бүртгэнэ. Томилсон, тойрог өөрчилсөн бол «👥 Шийдвэр гүйцэтгэгчид» цэсээр тойргийн нэвтрэх эрхийг шинэчилнэ.",
   f:[{k:"name",l:"Алба хаагч",t:"text",req:1,h:"Овог, нэр, албан тушаал"},{k:"type",l:"Төрөл",t:"sel",req:1,o:["Томилсон","Чөлөөлсөн","Шилжүүлсэн","Тойрог өөрчилсөн"]},
    {k:"no",l:"Тойрог",t:"toj",show:v=>!!v.type,h:"Шийдвэр гүйцэтгэгч бол тойргийг сонгоно. Томилсон, тойрог өөрчилсөн бол тухайн тойргийн «Сул тойрог» бүртгэл автоматаар хаагдана; чөлөөлсөн, шилжүүлсэн бол тойрог сул гэж автоматаар бүртгэгдэнэ."},
    {k:"ord",l:"Тушаалын дугаар",t:"text",req:1},{k:"d",l:"Тушаалын огноо",t:"date",req:1,def:1}],
@@ -4443,7 +4443,8 @@ function aMonCtl(re,extra){const w=mk("div","dctl");S._aMon=S._aMon||ymd(new Dat
 function aWkSel(re){const w=mk("div","dctl"),sel=mk("select"),cur=aMon(ymd(new Date()));S._aWk=S._aWk||cur;
   const d=dD(cur);for(let i=0;i<10;i++){const m=ymd(d),o=mk("option");o.value=m;o.textContent=aWkLab(m)+(i===0?" (энэ 7 хоног)":"");if(m===S._aWk)o.selected=true;sel.appendChild(o);d.setDate(d.getDate()-7);}
   sel.onchange=()=>{S._aWk=sel.value;re();};w.insertAdjacentHTML("beforeend","<span class='dz'>7 хоног:</span>");w.appendChild(sel);return w;}
-function aSecNav(c,re){const w=mk("div","ptabs");ASEC.filter(([k])=>k!=="r"||S.user.isAdmin).forEach(([k,l])=>{const b=mk("button","pt"+((S._aSec||"d")===k?" on":""));b.type="button";b.textContent=l;b.onclick=()=>{S._aSec=k;re();};w.appendChild(b);});c.appendChild(w);}
+function aSecNav(c,re){const w=mk("div","ptabs");ASEC.filter(([k])=>(k!=="r"||S.user.isAdmin)&&(k!=="h"||!S.user.isAdmin)).forEach(([k,l])=>{const b=mk("button","pt"+(aSecDef()===k?" on":""));b.type="button";b.textContent=l;b.onclick=()=>{S._aSec=k;re();};w.appendChild(b);});c.appendChild(w);}
+function aSecDef(){return S._aSec||(S.user.isAdmin?"d":"h");}
 
 function aVacOn(abs,no,day){return Object.entries(dObj(abs)).find(([,a])=>a&&a.reason===DVAC&&String(a.no)===String(no)&&a.from<=day&&(!a.to||a.to>=day));}
 function aVacList(abs,nos,day){return nos.filter(n=>aVacOn(abs,n,day));}
@@ -4451,17 +4452,17 @@ async function aVacSync(ctx,no,type,d){const abs=dObj(ctx.R.abs),cur=aVacOn(abs,
   if(type==="Томилсон"||type==="Тойрог өөрчилсөн"){if(cur){const x=dD(d);x.setDate(x.getDate()-1);const to=ymd(x)<cur[1].from?cur[1].from:ymd(x);await dbSet("dreg/"+ctx.u+"/abs/"+cur[0]+"/to",to);toast("✅ "+no+"-р тойргийн «Сул тойрог» бүртгэл хаагдлаа","ts");}}
   else if(!cur){await dbSet("dreg/"+ctx.u+"/abs/"+Date.now().toString(36),{no:String(no),name:"",reason:DVAC,from:d,to:"",sub:"",ts:Date.now()});toast("ℹ️ "+no+"-р тойрог сул гэж бүртгэгдлээ","ts");}}
 
-// ---------- Нэгжийн нэмэлт асуулт (ахлах өөрөө нэмнэ; зөвхөн тухайн нэгжид харагдана) ----------
-// dreg/<нэгж>/cq/<id> = {t, c:[задаргаа], to:"exec"|"wk", on, ts}; "exec" асуултыг config/people/<нэгж>/<тойрог>/cq руу хуулна (гүйцэтгэгч зөвхөн өөрийн бүртгэлийг уншдаг)
+// ---------- Нэгжийн нэмэлт асуулт (ахлах шийдвэр гүйцэтгэгч өөрөө нэмнэ; зөвхөн тухайн нэгжид харагдана) ----------
+// dreg/<нэгж>/cq/<id> = {t, c:[задаргаа], to:"exec"|"wk", on, ts}; "exec" асуултыг config/people/<нэгж>/<тойрог>/cq руу хуулна (шийдвэр гүйцэтгэгч зөвхөн өөрийн бүртгэлийг уншдаг)
 function aCqOn(cq,to){return Object.entries(dObj(cq)).filter(([,q])=>q&&q.on!==false&&q.to===to).sort((a,b)=>(a[1].ts||0)-(b[1].ts||0)).map(([id,q])=>({k:"x_"+id,t:q.t,s:q.t,c:q.c&&q.c.length?q.c:undefined}));}
 function aCqInputs(form,v,qs,attr,title){
   form.insertAdjacentHTML("beforeend","<h3 class='dsec'>"+esc(title)+"</h3>");
-  qs.forEach(q=>{const row=mk("div","dq");row.innerHTML="<div><div class='dt'><b>➕</b>"+esc(q.t)+"</div><div class='db'>Нэгжийн ахлахын нэмсэн асуулт</div></div>";
+  qs.forEach(q=>{const row=mk("div","dq");row.innerHTML="<div><div class='dt'><b>➕</b>"+esc(q.t)+"</div><div class='db'>Нэгжийн ахлах шийдвэр гүйцэтгэгчийн нэмсэн асуулт</div></div>";
     const box=mk("div","din");dqKeys(q).forEach((k,j)=>{const lb=mk("label"),inp=mk("input");inp.type="number";inp.min="0";inp.step="1";inp.inputMode="numeric";inp.setAttribute(attr,k);inp.value=v[k]?v[k]:"";inp.placeholder="0";
       if(q.c){lb.appendChild(inp);lb.appendChild(document.createTextNode(q.c[j]));box.appendChild(lb);}else box.appendChild(inp);});
     row.appendChild(box);form.appendChild(row);});
 }
-async function aCqSync(ctx,ppl){ // гүйцэтгэгчийн бүртгэл рүү хуулна (өөрчлөгдсөн үед л)
+async function aCqSync(ctx,ppl){ // шийдвэр гүйцэтгэгчийн бүртгэл рүү хуулна (өөрчлөгдсөн үед л)
   const qs={};Object.entries(dObj(ctx.R.cq)).forEach(([id,q])=>{if(q&&q.to==="exec"&&q.on!==false)qs[id]={t:q.t,c:q.c||[],to:"exec",ts:q.ts||0};});
   const js=JSON.stringify(qs);
   for(const [no,pr] of Object.entries(dObj(ppl))){if(!pr||!pr.email)continue;const cur=JSON.stringify(pr.cq||{});
@@ -4471,7 +4472,7 @@ async function aCqSync(ctx,ppl){ // гүйцэтгэгчийн бүртгэл р
 function aCqCard(w,ctx,ppl){
   const card=mk("div","card");w.appendChild(card);
   const L=Object.entries(dObj(ctx.R.cq)).map(([id,q])=>Object.assign({id},q)).sort((a,b)=>(a.ts||0)-(b.ts||0));
-  const TO={exec:"Шийдвэр гүйцэтгэгчийн өдрийн мэдээнд",wk:"Ахлахын 7 хоногийн мэдээнд"};
+  const TO={exec:"Шийдвэр гүйцэтгэгчийн өдрийн мэдээнд",wk:"Ахлах шийдвэр гүйцэтгэгчийн 7 хоногийн мэдээнд"};
   card.innerHTML="<h2>➕ Нэгжийн нэмэлт асуулт</h2><p class='dlead' style='margin-bottom:12px'>Нэгжийнхээ ажилд хэрэгтэй тоон асуултыг өөрөө нэмнэ. Зөвхөн танай нэгжид харагдах бөгөөд ШГА-ны нэгдсэн мэдээнд орохгүй. Нэмсэн асуултыг шийдвэр гүйцэтгэгчид дараагийн удаа «Өдрийн мэдээ»-гээ нээхэд харна.</p>"
    +(L.length?"<div class='tw'><table class='dtbl'><thead><tr><th>Асуулт</th><th>Задаргаа</th><th>Хаана</th><th>Төлөв</th><th></th></tr></thead><tbody>"+L.map(q=>"<tr><td style='white-space:normal'>"+esc(q.t)+"</td><td style='text-align:left'>"+esc((q.c||[]).join(" / ")||"—")+"</td><td style='text-align:left'>"+TO[q.to]+"</td><td>"+(q.on===false?"<span class='badge bwarn'>Түр зогсоосон</span>":"<span class='badge bok'>Идэвхтэй</span>")+"</td><td style='white-space:nowrap'><button class='btn bs' data-tg='"+q.id+"' style='padding:5px 10px'>"+(q.on===false?"Идэвхжүүлэх":"Түр зогсоох")+"</button> <button class='btn bd_' data-dl='"+q.id+"' style='padding:5px 10px'>✕</button></td></tr>").join("")+"</tbody></table></div>":"<div class='dz'>Нэмэлт асуулт алга.</div>")
    +"<div class='brow'><button class='btn bp' id='cqa'>＋ Асуулт нэмэх</button></div><p class='dz' style='margin-top:6px'>«Түр зогсоох» дарвал асуулт маягтаас нуугдана, өмнө бөглөсөн тоо хадгалагдаж үлдэнэ. «✕» дарвал асуултыг бүр мөсөн устгана.</p>";
@@ -4490,11 +4491,11 @@ function aCqCard(w,ctx,ppl){
 }
 
 // ---------- Туршилтын мэдээ цэвэрлэх (зөвхөн админ, 2027.01.31 хүртэл харагдана) ----------
-// Зөвхөн daily/ (гүйцэтгэгчийн өдрийн мэдээ) ба dreg/ (ахлахын 1–4 бүлэг, ажиллаагүй, сул тойрог, нэмэлт асуулт)-ийг устгана.
+// Зөвхөн daily/ (шийдвэр гүйцэтгэгчийн өдрийн мэдээ) ба dreg/ (ахлах шийдвэр гүйцэтгэгчийн 1–4 бүлэг, ажиллаагүй, сул тойрог, нэмэлт асуулт)-ийг устгана.
 // Төлөвлөгөөний мэдээ, эрх, тохиргоонд хүрэхгүй. Устгахын өмнө JSON нөөц татна.
 function aTestReset(c){
   const card=mk("div","card");card.style.borderLeft="4px solid #F43F5E";c.appendChild(card);
-  card.innerHTML="<h2>🧪 Туршилтын мэдээ цэвэрлэх</h2><p class='dlead' style='margin-bottom:10px'>Туршилтын үед оруулсан бүх тоог нэг дор устгана: <b>гүйцэтгэгчийн өдрийн мэдээ</b> болон <b>ахлахын 1–4 бүлгийн мэдээ</b> (7 хоногийн тоо, тохиолдлын бүртгэл, ажиллаагүй алба хаагч, сул тойрог, орон тоо, нэмэлт асуулт). Төлөвлөгөөний мэдээ, гүйцэтгэгчийн эрх, тохиргоонд хүрэхгүй. Устгахын өмнө нөөц файл автоматаар татагдана. Энэ хэсэг 2027.01.31 хүртэл харагдана.</p>"
+  card.innerHTML="<h2>🧪 Туршилтын мэдээ цэвэрлэх</h2><p class='dlead' style='margin-bottom:10px'>Туршилтын үед оруулсан бүх тоог нэг дор устгана: <b>шийдвэр гүйцэтгэгчийн өдрийн мэдээ</b> болон <b>ахлах шийдвэр гүйцэтгэгчийн 1–4 бүлгийн мэдээ</b> (7 хоногийн тоо, тохиолдлын бүртгэл, ажиллаагүй алба хаагч, сул тойрог, орон тоо, нэмэлт асуулт). Төлөвлөгөөний мэдээ, шийдвэр гүйцэтгэгчийн эрх, тохиргоонд хүрэхгүй. Устгахын өмнө нөөц файл автоматаар татагдана. Энэ хэсэг 2027.01.31 хүртэл харагдана.</p>"
    +"<div class='brow'><button class='btn bd_' id='trs'>🧹 Туршилтын бүх мэдээг устгах</button></div>";
   card.querySelector("#trs").onclick=()=>{const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(460px,94vw)";ov.appendChild(bx);ov.onclick=e=>{if(e.target===ov)ov.remove();};
     bx.innerHTML="<h3 style='margin:0 0 12px'>🧹 Туршилтын мэдээ устгах</h3><div class='dz' id='trc'>⏳ Тоолж байна...</div><div class='fi' style='margin:12px 0'><label>Баталгаажуулахын тулд <b>УСТГАХ</b> гэж бичнэ үү</label><input id='trt' autocomplete='off'></div><div class='brow'><button class='btn bd_' id='trok' disabled>Нөөцлөөд устгах</button><button class='btn bx' id='trcl'>Болих</button></div>";
@@ -4503,7 +4504,7 @@ function aTestReset(c){
     (async()=>{try{[D,G]=await Promise.all([dbGet("daily"),dbGet("dreg")]);
       let nd=0;Object.values(D||{}).forEach(u=>Object.values(u||{}).forEach(d=>{nd+=Object.keys(d||{}).length;}));
       let ng=0;Object.values(G||{}).forEach(u=>Object.values(u||{}).forEach(k=>{ng+=Object.keys(k||{}).length;}));
-      bx.querySelector("#trc").innerHTML="Гүйцэтгэгчийн өдрийн мэдээ: <b>"+nd+"</b> бичлэг ("+Object.keys(D||{}).length+" нэгж)<br>Ахлахын мэдээ, бүртгэл: <b>"+ng+"</b> бичлэг ("+Object.keys(G||{}).length+" нэгж)";
+      bx.querySelector("#trc").innerHTML="Шийдвэр гүйцэтгэгчийн өдрийн мэдээ: <b>"+nd+"</b> бичлэг ("+Object.keys(D||{}).length+" нэгж)<br>Ахлах шийдвэр гүйцэтгэгчийн мэдээ, бүртгэл: <b>"+ng+"</b> бичлэг ("+Object.keys(G||{}).length+" нэгж)";
       bx.querySelector("#trok").disabled=false;}catch(e){bx.querySelector("#trc").textContent="Уншиж чадсангүй: "+(e&&e.message||e);}})();
     bx.querySelector("#trok").onclick=async()=>{if(bx.querySelector("#trt").value.trim().toUpperCase()!=="УСТГАХ"){toast("«УСТГАХ» гэж бичнэ үү","te");return;}
       const b=bx.querySelector("#trok");b.disabled=true;b.textContent="⏳ Нөөцөлж байна...";
@@ -4517,17 +4518,18 @@ function aTestReset(c){
 async function tDaily(c){
   if(!fbDB||!window._get){c.innerHTML="<div class='card'>Сервертэй холбогдож чадсангүй.</div>";return;}
   if(isExec())return dExec(c);
-  const re=()=>{c.innerHTML="";tDaily(c);},sec=S._aSec||"d";
+  const re=()=>{c.innerHTML="";tDaily(c);},sec=aSecDef();
   if(S.user.isAdmin&&S._daUnit){const u=S._daUnit;aSecNav(c,re);const w=mk("div");c.appendChild(w);
     if(sec==="d")return dUnit(w,u,true);
     const bar=mk("div","dctl"),b=mk("button","btn bx");b.textContent="← Бүх нэгж";b.onclick=()=>{S._daUnit=null;re();};bar.appendChild(b);bar.insertAdjacentHTML("beforeend","<b>"+esc(u+" · "+unitNm(u))+"</b>");w.appendChild(bar);
     const w2=mk("div");w.appendChild(w2);return aUnit(w2,u,sec,false);}
   aSecNav(c,re);const w=mk("div");c.appendChild(w);
   if(S.user.isAdmin){const r=sec==="d"?dAdmin(w):sec==="r"?aAudit(w).then(()=>aW2M(w)):aAdmin(w,sec);if(ymd(new Date())<"2027-02-01")aTestReset(c);return r;}
+  if(sec==="h")return aTodo(w,S.user.code);
   return sec==="d"?dUnit(w,S.user.code,false):aUnit(w,S.user.code,sec,true);
 }
 
-// ---------- Нэгж (ахлах) ----------
+// ---------- Нэгж (ахлах шийдвэр гүйцэтгэгч) ----------
 async function aUnit(w,u,sec,canEdit){
   const re=()=>{w.innerHTML="";aUnit(w,u,sec,canEdit);};
   w.innerHTML="<div class='card'><div class='dz'>⏳ Ачаалж байна...</div></div>";
@@ -4655,7 +4657,7 @@ async function aWeekCard(w,ctx){
   // түүх
   const hw=Object.keys(wk).sort().slice(-8);
   if(hw.length){let h="<details"+(ctx.canEdit?"":" open")+" style='margin-bottom:12px'><summary class='dz' style='cursor:pointer'>Сүүлийн 7 хоногуудын мэдээ ("+hw.length+")</summary><div class='tw'><table class='dtbl' id='awh'><thead><tr><th>Үзүүлэлт</th>"+hw.map(x=>"<th class='clk"+(x===m?" cur":"")+"' data-m='"+x+"'>"+aWkLab(x)+"</th>").join("")+"</tr></thead><tbody>";
-    AW11.filter(q=>!q.m).forEach((q,i)=>{h+="<tr><td>1.1."+(i+1)+" "+esc(q.s)+(q.k==="a1"?" (гүйцэтгэгч + ахлах)":"")+"</td>"+hw.map(x=>"<td>"+(q.k==="a1"?aCourt(wk[x]):dqVal(wk[x],q))+"</td>").join("")+"</tr>";});
+    AW11.filter(q=>!q.m).forEach((q,i)=>{h+="<tr><td>1.1."+(i+1)+" "+esc(q.s)+(q.k==="a1"?" (шийдвэр гүйцэтгэгч + ахлах шийдвэр гүйцэтгэгч)":"")+"</td>"+hw.map(x=>"<td>"+(q.k==="a1"?aCourt(wk[x]):dqVal(wk[x],q))+"</td>").join("")+"</tr>";});
     if(ctx.canEdit)aCqOn(ctx.R.cq,"wk").forEach(q=>{h+="<tr><td>➕ "+esc(q.t)+"</td>"+hw.map(x=>"<td>"+dqVal(wk[x],q)+"</td>").join("")+"</tr>";});
     ABAL.forEach(B=>{h+="<tr><td>"+B.n+" үлдэгдэл (тоо)</td>"+hw.map(x=>"<td>"+CH[x][B.k].bn+"</td>").join("")+"</tr><tr><td>"+B.n+" үлдэгдэл (төгрөг)</td>"+hw.map(x=>"<td>"+aFm(CH[x][B.k].ba)+"</td>").join("")+"</tr>";});
     h+="</tbody></table></div></details>";card.insertAdjacentHTML("beforeend",h);
@@ -4671,7 +4673,7 @@ async function aWeekCard(w,ctx){
     const box=mk("div","din");dqKeys(q).forEach((k,j)=>{const lb=mk("label"),inp=mk("input");inp.type="number";inp.min="0";inp.inputMode="numeric";inp.dataset.w=k;inp.value=v[k]!=null&&(v[k]!==0||q.m)?v[k]:"";inp.placeholder="0";
       if(q.c){lb.appendChild(inp);lb.appendChild(document.createTextNode(q.c[j]));box.appendChild(lb);}else box.appendChild(inp);});
     row.appendChild(box);form.appendChild(row);
-    if(q.k==="a1")form.insertAdjacentHTML("beforeend","<div class='dalert' style='border-left-color:#14B8A6;background:#F0FDFA;margin:4px 0 8px'>⚖️ Шийдвэр гүйцэтгэгчид энэ 7 хоногт өдрийн мэдээгээр нийт <b>"+XS.reduce((a,b)=>a+b,0)+"</b> шүүх хуралдаанд оролцсон (автомат)"+(XS.some(x=>x)?": "+DCOURT.map((c,i)=>XS[i]?esc(c.toLowerCase())+" "+XS[i]:"").filter(Boolean).join(", "):"")+". Ахлахын бичсэн тоо үүн дээр нэмэгдэнэ.</div>");});
+    if(q.k==="a1")form.insertAdjacentHTML("beforeend","<div class='dalert' style='border-left-color:#14B8A6;background:#F0FDFA;margin:4px 0 8px'>⚖️ Шийдвэр гүйцэтгэгчид энэ 7 хоногт өдрийн мэдээгээр нийт <b>"+XS.reduce((a,b)=>a+b,0)+"</b> шүүх хуралдаанд оролцсон (автомат)"+(XS.some(x=>x)?": "+DCOURT.map((c,i)=>XS[i]?esc(c.toLowerCase())+" "+XS[i]:"").filter(Boolean).join(", "):"")+". Ахлах шийдвэр гүйцэтгэгчийн бичсэн тоо үүн дээр нэмэгдэнэ.</div>");});
   if(ctx.canEdit){const XW=aCqOn(ctx.R.cq,"wk");if(XW.length)aCqInputs(form,v,XW,"data-w","Нэгжийн нэмэлт асуулт");}
   ABAL.forEach(B=>{const p=prevBal(B);
     let h="<h3 class='dsec'>"+B.n+". "+esc(B.t)+"</h3><div class='dz' style='margin-bottom:6px'>"+esc(B.h)+"</div><div class='tw'><table class='dtbl'><thead><tr><th>Үзүүлэлт</th><th>Тоо</th><th>Дүн (төгрөг)</th></tr></thead><tbody>";
@@ -4703,7 +4705,7 @@ async function aWeekCard(w,ctx){
     catch(e){sv.disabled=false;sv.textContent="💾 Хадгалах";toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}};
   const later=Object.keys(wk).filter(k=>k>m);if(later.length)bar.insertAdjacentHTML("afterbegin","<span class='dz'>Энэ 7 хоногийн тоог засвал дараагийн 7 хоногуудын үлдэгдэл автоматаар дахин тооцогдоно.</span>");
 }
-// Гүйцэтгэгчийн «онцгой тохиолдол»-ыг 1.2 бүртгэлд оруулах
+// Шийдвэр гүйцэтгэгчийн «онцгой тохиолдол»-ыг 1.2 бүртгэлд оруулах
 async function aExecEx(w,ctx){
   const t=ymd(new Date()),d0=new Date();d0.setDate(d0.getDate()-14);let D={};
   try{D=await dQuery("daily/"+ctx.u,ymd(d0),t);}catch{return;}
@@ -4711,7 +4713,7 @@ async function aExecEx(w,ctx){
   Object.keys(D).sort().reverse().forEach(d=>Object.entries(dObj(D[d])).forEach(([no,r])=>{if(r&&r.ex&&!done.has(d+"/"+no))it.push({d,no,r});}));
   if(!it.length)return;
   const card=mk("div","card");w.appendChild(card);
-  card.innerHTML="<h2>🚨 Гүйцэтгэгчийн мэдээлсэн онцгой тохиолдол</h2><p class='dlead' style='margin-bottom:10px'>Сүүлийн 14 хоногийн өдрийн мэдээнд «Онцгой тохиолдол гарсан» гэж бичсэн. "+(ctx.canEdit?"Шалгаад 1.2 бүртгэлд оруулна уу.":"")+"</p>"
+  card.innerHTML="<h2>🚨 Шийдвэр гүйцэтгэгчийн мэдээлсэн онцгой тохиолдол</h2><p class='dlead' style='margin-bottom:10px'>Сүүлийн 14 хоногийн өдрийн мэдээнд «Онцгой тохиолдол гарсан» гэж бичсэн. "+(ctx.canEdit?"Шалгаад 1.2 бүртгэлд оруулна уу.":"")+"</p>"
     +it.map((x,i)=>"<div class='dalert r' style='display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap'><span><b>"+esc(x.no)+"-р тойрог</b> "+esc(x.r.name||"")+" ("+dLab(x.d)+"): "+esc(x.r.ext||"")+"</span>"+(ctx.canEdit?"<button class='btn bs' data-i='"+i+"' style='padding:5px 10px'>＋ 1.2 бүртгэлд оруулах</button>":"")+"</div>").join("");
   card.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{const x=it[+b.dataset.i];aForm(AREG.spec,null,{d:x.d,no:x.no,sum:x.r.ext||"",src:x.d+"/"+x.no},ctx);});
 }
@@ -4734,7 +4736,7 @@ function aComp33(w,ctx){
   const prev=L.filter(r=>(r.d||"")<=pe&&(!r.rd||r.rd>pe)).length;
   const by=(arr,k)=>{const g={};arr.forEach(r=>{const v=r[k]||"—";g[v]=(g[v]||0)+1;});return Object.keys(g).sort((x,y)=>g[y]-g[x]).map(x=>esc(x)+": <b>"+g[x]+"</b>").join(" · ")||"—";};
   const card=mk("div","card");w.appendChild(card);
-  card.innerHTML="<h2>🧮 3.3. Автоматаар гарах тоо — "+M.replace("-",".")+"</h2><p class='dlead' style='margin-bottom:10px'>Ахлах бөглөхгүй. Нэгжийн сарын өргөдөл, гомдлын судалгааны «нэгжид шууд гаргасан» хэсгийг эндээс бөглөнө. Шийдвэрлэх хугацааг систем тоолохгүй.</p>"
+  card.innerHTML="<h2>🧮 3.3. Автоматаар гарах тоо — "+M.replace("-",".")+"</h2><p class='dlead' style='margin-bottom:10px'>Ахлах шийдвэр гүйцэтгэгч бөглөхгүй. Нэгжийн сарын өргөдөл, гомдлын судалгааны «нэгжид шууд гаргасан» хэсгийг эндээс бөглөнө. Шийдвэрлэх хугацааг систем тоолохгүй.</p>"
    +"<div class='tw'><table class='dtbl' id='a33'><tbody>"
    +"<tr><td>Өмнөх сараас шилжсэн (хянагдаж байгаа)</td><td><b>"+prev+"</b></td><td></td></tr>"
    +"<tr><td>3.3.1. Шинээр ирсэн</td><td><b>"+a.nw+"</b></td><td style='text-align:left;white-space:normal'>Төрлөөр: "+by(a.m,"form")+"<br>Гаргагчаар: "+by(a.m,"ptype")+"<br>Хэн гаргасан: "+by(a.m,"party")+"<br>Ирсэн хэлбэрээр: "+by(a.m,"ch")+"<br>Агуулгаар: "+by(a.m,"cont")+"</td></tr>"
@@ -4797,7 +4799,7 @@ async function aAdmin(w,sec){
   const M=S._aMon=S._aMon||today.slice(0,7),inM=(s)=>(s||"").slice(0,7)===M;
   let cols,rowF;
   if(sec==="1"){const m=S._aWk=S._aWk||aMon(today),me=ymd((()=>{const d=dD(m);d.setDate(d.getDate()+6);return d;})());
-    cols=["7 хоногийн мэдээ","Шүүх хуралдаан (гүйцэтгэгч + ахлах)","Төлөөлөх эрх","Тайлбарлуулсан","Материал шилжүүлсэн","Онцгой ажиллагаа","Яаралтай","1.3 үлдэгдэл (тоо)","1.3 үлдэгдэл (төгрөг)","1.3 дуусгавар","1.4 үлдэгдэл (тоо)","1.4 үлдэгдэл (төгрөг)","1.4 дуусгавар"];
+    cols=["7 хоногийн мэдээ","Шүүх хуралдаан (шийдвэр гүйцэтгэгч + ахлах шийдвэр гүйцэтгэгч)","Төлөөлөх эрх","Тайлбарлуулсан","Материал шилжүүлсэн","Онцгой ажиллагаа","Яаралтай","1.3 үлдэгдэл (тоо)","1.3 үлдэгдэл (төгрөг)","1.3 дуусгавар","1.4 үлдэгдэл (тоо)","1.4 үлдэгдэл (төгрөг)","1.4 дуусгавар"];
     rowF=R=>{const wk=dObj(R.wk),r=wk[m],CH=aChain(wk),ks=Object.keys(wk).filter(k=>k<=m).sort(),lk=ks[ks.length-1],c=lk?CH[lk]:null,sp=aList(R,"spec").filter(x=>x.d>=m&&x.d<=me),v=(r&&r.v)||{};
       const dlT=aWkDeadline(m),late=r&&r.ts>dlT.getTime(),over=Date.now()>dlT.getTime();
       return [r?(late?"<span class='badge bwarn' title='Хугацаа: "+dlT.toLocaleString("mn-MN")+"'>✅ Хоцорч ирсэн "+new Date(r.ts).toLocaleString("mn-MN").slice(5,16)+"</span>":"<span class='badge bok'>✅ Хугацаандаа</span>"):(over?"<span class='badge bfail'>Ирээгүй — хоцорсон</span>":"<span class='badge bwarn'>Хүлээгдэж байна</span>")].concat([r?aCourt(r):""],AW11.filter(q=>!q.m&&q.k!=="a1").map(q=>r?dqVal(r,q):""),[sp.length,sp.filter(x=>x.urg==1).length,c?c.hi.bn:"",c?aFm(c.hi.ba):"",r?(+v.hi_done_n||0):"",c?c.pl.bn:"",c?aFm(c.pl.ba):"",r?(+v.pl_done_n||0):""]);};}
@@ -4818,7 +4820,7 @@ async function aAdmin(w,sec){
   body.querySelectorAll("tr.dclk").forEach(tr=>tr.onclick=()=>{S._daUnit=tr.dataset.u;renderTab("daily");});
 }
 
-// ---------- Гүйцэтгэгчийн «Миний мэдээ»: өөрийн өдрийн мэдээний 7 хоног, сарын нэгтгэл ----------
+// ---------- Шийдвэр гүйцэтгэгчийн «Миний мэдээ»: өөрийн өдрийн мэдээний 7 хоног, сарын нэгтгэл ----------
 async function tExecMine(c){
   const u=S.user.code,no=String(S.user.person.no),t=ymd(new Date());S._xmM=S._xmM||t.slice(0,7);
   const re=()=>{c.innerHTML="";tExecMine(c);};
@@ -4844,7 +4846,7 @@ async function tExecMine(c){
   h+="<tr class='tot'><td>Нийт ажиллагаа</td>"+W.map(w=>"<td>"+sum(w.ds)+"</td>").join("")+"<td>"+sum(days)+"</td></tr>";
   Q.forEach((q,i)=>{h+="<tr><td>"+(i<DQ.length?(i+1)+". ":"➕ ")+esc(q.s)+"</td>"+W.map(w=>"<td>"+sum(w.ds,q)+"</td>").join("")+"<td><b>"+sum(days,q)+"</b></td></tr>";});
   h+="</tbody></table></div>";
-  if(miss.length)h+="<div class='dalert' style='margin-top:12px'>⚠️ Бөглөөгүй ажлын өдөр: "+miss.map(d=>dLab(d)).join(", ")+". Ажиллаагүй (чөлөө, амралт) бол ахлахдаа хэлж бүртгүүлнэ үү.</div>";
+  if(miss.length)h+="<div class='dalert' style='margin-top:12px'>⚠️ Бөглөөгүй ажлын өдөр: "+miss.map(d=>dLab(d)).join(", ")+". Ажиллаагүй (чөлөө, амралт) бол ахлах шийдвэр гүйцэтгэгчдээ хэлж бүртгүүлнэ үү.</div>";
   body.innerHTML=h;
   xb.onclick=()=>dXlsx(body.querySelector("#xmt"),"Миний мэдээ "+u+" "+no+"-р тойрог "+M);
 }
@@ -4966,7 +4968,7 @@ async function planFollow(pl,fromF,toF){
   toast(bad.length?"❌ «"+pl+"»: "+bad.length+" нэгжийн өмнөх мэдээг шилжүүлж чадсангүй ("+bad.join(", ")+")":"✅ «"+pl+"»: өмнөх мэдээ шинэ давтамж руу шилжлээ ("+ok+" бичлэг). Нөөц файл татагдсан.",bad.length?"te":"ts");
 }
 
-// ---------- Хугацааны сануулга: ахлахын 7 хоногийн мэдээ — дараагийн Даваа 09:00; орон тоо — сар бүр ----------
+// ---------- Хугацааны сануулга: ахлах шийдвэр гүйцэтгэгчийн 7 хоногийн мэдээ — дараагийн Даваа 09:00; орон тоо — сар бүр ----------
 function aWkDeadline(m){const d=dD(m);d.setDate(d.getDate()+7);d.setHours(9,0,0,0);return d;}
 function aLeft(ms){const h=Math.floor(ms/36e5),mi=Math.floor(ms%36e5/6e4);return h>=24?Math.floor(h/24)+" хоног "+(h%24)+" цаг":h?h+" цаг "+mi+" мин":mi+" мин";}
 async function aDeadlineBanner(box,u){
@@ -4974,8 +4976,8 @@ async function aDeadlineBanner(box,u){
   const now=new Date(),t=ymd(now),cur=aMon(t),prev=(()=>{const d=dD(cur);d.setDate(d.getDate()-7);return ymd(d);})(),wk=dObj(R.wk),st=dObj(R.staff),out=[];
   const go=(sec,txt)=>"<button class='btn bp' data-go='"+sec+"' style='padding:6px 12px;margin-left:auto'>"+txt+"</button>";
   const dl=aWkDeadline(prev);
-  if(!wk[prev]){const left=dl-now;out.push(left>0?"<div class='dalert' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>⏰ <span>Өнгөрсөн 7 хоногийн (<b>"+aWkLab(prev)+"</b>) ахлахын мэдээг <b>Даваа гарагийн 09:00</b>-аас өмнө илгээнэ — <b>"+aLeft(left)+"</b> үлдлээ.</span>"+go("1","Илгээх")+"</div>"
-    :"<div class='dalert r' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>🔴 <span>Өнгөрсөн 7 хоногийн (<b>"+aWkLab(prev)+"</b>) ахлахын мэдээ <b>хоцорсон</b> — "+aLeft(-left)+" өнгөрлөө. Яаралтай илгээнэ үү.</span>"+go("1","Илгээх")+"</div>");}
+  if(!wk[prev]){const left=dl-now;out.push(left>0?"<div class='dalert' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>⏰ <span>Өнгөрсөн 7 хоногийн (<b>"+aWkLab(prev)+"</b>) ахлах шийдвэр гүйцэтгэгчийн мэдээг <b>Даваа гарагийн 09:00</b>-аас өмнө илгээнэ — <b>"+aLeft(left)+"</b> үлдлээ.</span>"+go("1","Илгээх")+"</div>"
+    :"<div class='dalert r' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>🔴 <span>Өнгөрсөн 7 хоногийн (<b>"+aWkLab(prev)+"</b>) ахлах шийдвэр гүйцэтгэгчийн мэдээ <b>хоцорсон</b> — "+aLeft(-left)+" өнгөрлөө. Яаралтай илгээнэ үү.</span>"+go("1","Илгээх")+"</div>");}
   const M=t.slice(0,7),pM=(()=>{const d=new Date(now.getFullYear(),now.getMonth()-1,1);return ymd(d).slice(0,7);})();
   if(Object.keys(st).length&&!st[pM])out.push("<div class='dalert r' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>🏢 <span>"+pM.replace("-",".")+" сарын орон тооны мэдээ баталгаажаагүй байна.</span>"+go("4","Баталгаажуулах")+"</div>");
   if(now.getDate()>=25&&!st[M])out.push("<div class='dalert' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>🏢 <span>Энэ сарын (<b>"+M.replace("-",".")+"</b>) орон тоог сарын эцэс хүртэл баталгаажуулна уу.</span>"+go("4","Баталгаажуулах")+"</div>");
@@ -4984,7 +4986,7 @@ async function aDeadlineBanner(box,u){
   box.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{S._aSec=b.dataset.go;if(b.dataset.go==="1")S._aWk=prev;renderTab("daily");});
 }
 
-// ---------- Нүүр: «Энэ 7 хоногт» — өдрийн мэдээнээс шууд (админ: улс, ахлах: нэгж, гүйцэтгэгч: өөрийн тойрог) ----------
+// ---------- Нүүр: «Энэ 7 хоногт» — өдрийн мэдээнээс шууд (админ: улс, ахлах шийдвэр гүйцэтгэгч: нэгж, шийдвэр гүйцэтгэгч: өөрийн тойрог) ----------
 async function homeLive(sec){
   const t=ymd(new Date()),cur=aMon(t),pm=(()=>{const d=dD(cur);d.setDate(d.getDate()-7);return ymd(d);})(),ex=isExec(),adm=S.user.isAdmin;
   const scope=adm?"Улсын дүн":ex?(S.user.person.no+"-р тойрог"):unitNm(S.user.code);
@@ -5034,6 +5036,37 @@ async function homeLive(sec){
       +"<div><div class='dz' style='margin-bottom:6px'>Шийдвэр гүйцэтгэгч — нийт ажиллагаагаар</div>"+(top.execs||[]).map((x,i)=>"<div style='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #EEF2F6'><span>"+md[i]+" "+esc(x.name||"")+" <span class='dz'>· "+esc(x.un||x.u)+", "+esc(x.no)+"-р тойрог</span></span><b>"+x.t+"</b></div>").join("")+"</div></div></div>";}
   h+="<p class='dz' style='margin-top:8px'>Шийдвэр гүйцэтгэгчдийн өдрийн мэдээнээс автоматаар тооцов. Албан ёсны биелэлтийн тоо дээрх хэсэгт (7 хоногийн танилцуулгаас) байна.</p>";
   sec.innerHTML=sec.querySelector(".hsec-h").outerHTML+h;
+}
+
+// ---------- Ахлах шийдвэр гүйцэтгэгч: «📋 Миний хийх ажил» — юуг хэзээ бөглөх, одоогийн төлөв ----------
+async function aTodo(w,u){
+  w.innerHTML="<div class='card'><div class='dz'>⏳ Ачаалж байна...</div></div>";
+  const t=ymd(new Date()),now=new Date(),cur=aMon(t),prev=(()=>{const d=dD(cur);d.setDate(d.getDate()-7);return ymd(d);})();
+  let R={},D={};try{[R,D]=await Promise.all([dbGet("dreg/"+u).then(x=>x||{}),dLoad(u,t,t)]);}catch{}
+  const nos=unitDists(u).map(String),day=dObj(D[t]),abs=dObj(R.abs);
+  const filled=nos.filter(n=>day[n]).length,absN=nos.filter(n=>!day[n]&&dAbsOn(abs,n,t)).length,miss=nos.length-filled-absN;
+  const wk=dObj(R.wk),dl=aWkDeadline(prev),M=t.slice(0,7),st=dObj(R.staff);
+  const exPend=(()=>{let n=0;const done=new Set(aList(R,"spec").map(r=>r.src).filter(Boolean));Object.entries(day).forEach(([no,r])=>{if(r&&r.ex&&!done.has(t+"/"+no))n++;});return n;})();
+  const discOpen=aList(R,"disc").filter(r=>r.st!=="Шийдвэрлэсэн").length,ethOpen=aList(R,"eth").filter(r=>r.con==="Хэлэлцэж байгаа").length,compOpen=aList(R,"comp").filter(r=>!r.rd).length;
+  const S1=(ok,txt)=>ok==="ok"?"<span class='badge bok'>✅ "+txt+"</span>":ok==="late"?"<span class='badge bfail'>🔴 "+txt+"</span>":ok==="info"?"<span class='badge' style='background:#EEF2F6;color:#334155'>"+txt+"</span>":"<span class='badge bwarn'>⏰ "+txt+"</span>";
+  const row=(icon,title,desc,status,sec,btn)=>"<div style='display:flex;gap:12px;align-items:center;padding:12px 4px;border-bottom:1px solid #EEF2F6;flex-wrap:wrap'><span style='font-size:22px'>"+icon+"</span><div style='flex:1;min-width:220px'><div style='font-weight:700'>"+title+"</div><div class='dz' style='margin-top:2px'>"+desc+"</div></div><div>"+status+"</div><button class='btn "+(/bok/.test(status)?"bx":"bp")+"' data-sec='"+sec+"' style='padding:6px 14px'>"+btn+"</button></div>";
+  const grp=(label,color,rows)=>"<div class='card' style='border-left:4px solid "+color+";border-radius:0 14px 14px 0'><h2 style='margin-bottom:4px'>"+label+"</h2>"+rows+"</div>";
+  let h="<div class='card' style='padding:16px 20px'><h2 style='margin:0 0 4px'>📋 Миний хийх ажил</h2><p class='dlead'>Ахлах шийдвэр гүйцэтгэгчийн бөглөх мэдээ давтамжаараа доор байна. Ажил бүрийн төлөв харагдана — дарж тухайн маягт руу орно.</p></div>";
+  h+=grp("🔁 Өдөр бүр","#14B8A6",
+     row("👥","Шийдвэр гүйцэтгэгчдийн өдрийн мэдээг хянах","Шийдвэр гүйцэтгэгчид өөрсдөө бөглөнө — ахлах шийдвэр гүйцэтгэгч бөглөсөн эсэхийг хянаж, бөглөөгүйг сануулна.",miss>0?S1(now.getHours()>=17?"late":"wait",filled+"/"+nos.length+" бөглөсөн"):S1("ok","Бүгд бөглөсөн"),"d","Хянах")
+    +row("🏖","Ажиллаагүй алба хаагч, сул тойрог бүртгэх","Чөлөө, амралт, томилолт, сул тойргийг огноогоор нь бүртгэнэ — тэр хугацаанд «бөглөөгүй» гэж тооцогдохгүй.",S1("info",absN+" тойрог өнөөдөр ажиллаагүй"),"4","Бүртгэх"));
+  h+=grp("📅 7 хоног бүр — Даваа гарагийн 09:00-аас өмнө","#3B82F6",
+     row("📊","1.1, 1.3, 1.4. Долоо хоногийн тоон мэдээ","Шүүх хуралдаан, төлөөлөх эрх, өндөр дүнтэй болон барьцаатай ГББ-ын хөдөлгөөн.",wk[prev]?S1("ok",aWkLab(prev)+" илгээсэн"):now>dl?S1("late",aWkLab(prev)+" хоцорсон"):S1("wait",aWkLab(prev)+" · "+aLeft(dl-now)+" үлдлээ"),"1","Бөглөх"));
+  h+=grp("⚡ Тухай бүр — гарсан даруй","#F59E0B",
+     row("🚨","1.2. Онцгой ба тусгай ажиллагаа","Албадан ирүүлэх, халдлага, хүч хэрэглэсэн, албадан чөлөөлөх гэх мэт.",exPend?S1("wait","Шийдвэр гүйцэтгэгч "+exPend+" тохиолдол мэдээлсэн — бүртгэнэ үү"):S1("ok","Хүлээгдэж буй зүйлгүй"),"1","Бүртгэх")
+    +row("⚖️","2. Сахилга, ёс зүй, гэмт хэрэг","Зөрчил гарвал бүртгэж, шийдвэрлэгдтэл төлөвийг шинэчилнэ.",discOpen+ethOpen?S1("wait",(discOpen+ethOpen)+" хянагдаж байна"):S1("ok","Хянагдаж буй зүйлгүй"),"2","Нээх")
+    +row("📨","3. Өргөдөл, гомдол (нэгжид шууд)","Ирсэн даруй бүртгэж, шийдвэрлэсэн үед шийдвэрлэлтийг нэмнэ.",compOpen?S1("wait",compOpen+" хянагдаж байна"):S1("ok","Хянагдаж буй зүйлгүй"),"3","Нээх")
+    +row("🪪","4.3, 4.4. Томилгоо, сургалт","Томилсон, чөлөөлсөн, тойрог өөрчилсөн, сургалт зохион байгуулсан үед.",S1("info","Тухай бүр"),"4","Нээх"));
+  h+=grp("🗓 Сар бүр","#8B5CF6",
+     row("🏢","4.2. Орон тоо","Батлагдсан, ажиллаж буй орон тоог сарын эцэс хүртэл баталгаажуулна.",st[M]?S1("ok",M.replace("-",".")+" баталгаажсан"):now.getDate()>=25?S1("late",M.replace("-",".")+" баталгаажаагүй"):S1("wait",M.replace("-",".")+" — сарын эцэс хүртэл"),"4","Баталгаажуулах"));
+  h+="<div class='card' style='padding:14px 20px'><div class='dz'>🧮 <b>Автоматаар гардаг</b> (бөглөхгүй): өргөдөл, гомдлын сарын тоо, сахилгын шийтгэлтэй алба хаагчид, сул орон тоо, нийт ажиллагаа, ирц.</div></div>";
+  w.innerHTML=h;
+  w.querySelectorAll("[data-sec]").forEach(b=>b.onclick=()=>{S._aSec=b.dataset.sec;if(b.dataset.sec==="1")S._aWk=wk[prev]?cur:prev;renderTab("daily");});
 }
 </script>
 </body>
