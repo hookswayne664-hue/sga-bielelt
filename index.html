@@ -1652,7 +1652,7 @@ function kpiEditor(){
   ov.querySelector("#k_save").onclick=async()=>{
     const g=id=>(ov.querySelector("#"+id).value||"").trim();
     const old=kpiObj();
-    const nk={asOf:g("k_asof"),cats:KPI_CATS.map((n,i)=>({name:n,done:g("k_d"+i),all:g("k_a"+i),money:g("k_m"+i)})),
+    const nk={asOf:g("k_asof"),cats:KPI_CATS.map((n,i)=>({name:n,done:g("k_d"+i),all:g("k_a"+i),money:g("k_m"+i),pct:((old.cats||[])[i]||{}).pct||""})),totPct:(S.kpi||{}).totPct||"",totMoney:(S.kpi||{}).totMoney||"",
       weekly:{range:g("k_wr"),items:KPI_WK_DEF.map((l,i)=>({label:g("k_wl"+i)||l,value:g("k_wv"+i),delta:g("k_wd"+i)}))},updated:new Date().toISOString()};
     const changed=JSON.stringify(old.cats)!==JSON.stringify(nk.cats);
     nk.prev=changed&&old.cats.some(c=>num(c.done)!=null)?old.cats:(old.prev||null);
@@ -1677,13 +1677,13 @@ function tHome(c){
     let h="<div class='hsec-h'><div><span class='eyebrow'>Бодит биелэлт</span><h2>Шийдвэр гүйцэтгэлийн 6 төрлөөр</h2></div><div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap'>"+(k.asOf?"<span class='asof'>"+esc(k.asOf)+"</span>":"")+(isA?"<button class='btn bx' id='h_kedit'>✏️ Үзүүлэлт оруулах</button>":"")+"</div></div>";
     if(!hasK){h+="<div class='hcard' style='text-align:center;color:var(--tx2)'>Албаны үзүүлэлт хараахан оруулаагүй байна. «✏️ Үзүүлэлт оруулах» товчоор 7 хоногийн танилцуулга, ШГБХС-ийн тоог оруулна уу. Нэгжүүдэд зөвхөн оруулсны дараа харагдана.</div>";}
     else{
-      let sd=0,sa=0,sm=0,smn=0;k.cats.forEach(x=>{const d=num(x.done),a=num(x.all),m=num(x.money);if(d!=null&&a){sd+=d;sa+=a;}if(m!=null){sm+=m;smn++;}});
-      const tp=sa?sd/sa*100:0;
+      let sd=0,sa=0,sm=0,smn=0;k.cats.forEach((x,ci)=>{if(ci>=5)return;const d=num(x.done),a=num(x.all),m=num(x.money);if(d!=null&&a){sd+=d;sa+=a;}if(m!=null){sm+=m;smn++;}}); // Хүүхдийн тэтгэлэг нэгдсэн дүнд ордоггүй
+      const tp=num((S.kpi||{}).totPct)!=null?num(S.kpi.totPct):(sa?sd/sa*100:0);if(num((S.kpi||{}).totMoney)!=null){sm=num(S.kpi.totMoney);smn=1;}
       h+="<div class='total'><div style='display:flex;flex-direction:column;gap:6px'><span class='lab'>Нийт бодит биелэлт (тоогоор)</span><span class='big'><span data-count='"+tp.toFixed(1)+"' data-dec='1'>0</span><span style='font-size:.5em;color:#0F766E'>%</span></span><div class='bar' style='margin-top:8px;background:rgba(255,255,255,.8)'><i data-w='"+tp.toFixed(1)+"%' style='width:0;background:linear-gradient(90deg,#14B8A6,#3B82F6)'></i></div></div>"
-        +"<div style='display:flex;flex-direction:column;gap:6px;justify-content:center'><span class='lab'>Мөнгөн дүнгээр (дундаж)</span><span class='mid'>"+(smn?"<span data-count='"+(sm/smn).toFixed(1)+"' data-dec='1' data-suf='%'>0</span>":"—")+"</span></div>"
+        +"<div style='display:flex;flex-direction:column;gap:6px;justify-content:center'><span class='lab'>Мөнгөн дүнгээр"+(num((S.kpi||{}).totMoney)!=null?"":" (дундаж)")+"</span><span class='mid'>"+(smn?"<span data-count='"+(sm/smn).toFixed(1)+"' data-dec='1' data-suf='%'>0</span>":"—")+"</span></div>"
         +"<div style='display:flex;flex-direction:column;gap:6px;justify-content:center'><span class='lab'>Дуусгавар болгосон ГББ</span><span class='mid' data-count='"+sd+"'>0</span><span class='sm'>нийт "+fmtN(sa)+" ГББ-аас</span></div></div>";
       h+="<div class='cat-grid'>";
-      k.cats.forEach((x,i)=>{const d=num(x.done),a=num(x.all),m=num(x.money);const st=KPI_CAT_STYLE[i];const p=(d!=null&&a)?d/a*100:null;
+      k.cats.forEach((x,i)=>{const d=num(x.done),a=num(x.all),m=num(x.money);const st=KPI_CAT_STYLE[i];const p=num(x.pct)!=null?num(x.pct):((d!=null&&a)?d/a*100:null);
         let delta="";if(k.prev&&k.prev[i]){const pd=num(k.prev[i].done),pa=num(k.prev[i].all);if(pd!=null&&pa&&p!=null){const df=p-pd/pa*100;delta="<span style='font-size:13px;font-weight:700;color:"+(df>=0?"#047857":"#BE123C")+"'>"+(df>=0?"▲ ":"▼ ")+fmtN(Math.abs(df),1)+"%</span>";}}
         h+="<div class='hcard' style='display:flex;flex-direction:column;gap:14px'><div style='display:flex;justify-content:space-between;align-items:center;gap:10px'><span style='font-family:Montserrat,Inter,sans-serif;font-size:17px;font-weight:800;display:flex;align-items:center;gap:10px'><span style='width:12px;height:12px;border-radius:4px;background:"+st[0]+"'></span>"+esc(x.name)+"</span>"+delta+"</div>"
           +"<div style='display:flex;align-items:center;gap:18px'>"+ringSVG(112,48,11,p||0,st[0],p==null?"—":fmtN(p,1)+"%","тоогоор")
@@ -1702,6 +1702,7 @@ function tHome(c){
         +(w.delta?"<span style='font-size:13px;font-weight:700;color:"+(up?"#047857":dn?"#BE123C":"#475569")+"'>"+esc(w.delta)+" <span style='font-weight:400;color:#64748B'>өмнөх 7 хоногоос</span></span>":"")+"</div>";});
     h+="</div>";sec.innerHTML=h;
   }
+  if(typeof homeLive==="function"){const hs=mk("section","hsec rise d3");wrap.appendChild(hs);homeLive(hs);}
   // --- Мэдээ ирүүлэлтийн явц ---
   const ps=mk("section","hsec rise d4");wrap.appendChild(ps);
   ps.innerHTML="<div class='hsec-h'><div><span class='eyebrow' style='color:#B45309'>Шууд</span><h2>Мэдээ ирүүлэлтийн явц</h2></div><span class='asof'><span class='live' style='margin-right:6px'></span>Ачаалж байна…</span></div><div class='hcard empty'>⏳ Ачаалж байна…</div>";
@@ -4981,6 +4982,45 @@ async function aDeadlineBanner(box,u){
   if(!out.length)return;
   box.className="rise d1";box.style.margin="0 0 16px";box.innerHTML=out.join("");
   box.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{S._aSec=b.dataset.go;if(b.dataset.go==="1")S._aWk=prev;renderTab("daily");});
+}
+
+// ---------- Нүүр: «Энэ 7 хоногт» — өдрийн мэдээнээс шууд (админ: улс, ахлах: нэгж, гүйцэтгэгч: өөрийн тойрог) ----------
+async function homeLive(sec){
+  const t=ymd(new Date()),cur=aMon(t),pm=(()=>{const d=dD(cur);d.setDate(d.getDate()-7);return ymd(d);})(),ex=isExec(),adm=S.user.isAdmin;
+  const scope=adm?"Улсын дүн":ex?(S.user.person.no+"-р тойрог"):unitNm(S.user.code);
+  sec.innerHTML="<div class='hsec-h'><div><span class='eyebrow' style='color:#0F766E'>Шууд · өдрийн мэдээнээс</span><h2>Энэ 7 хоногт</h2></div><span class='asof'>"+aWkLab(cur)+" · "+esc(scope)+"</span></div><div class='hcard empty'>⏳ Ачаалж байна…</div>";
+  const recs=[];let exp=0,R={comp:[],disc:[]};
+  const wd=(a,b)=>dDays(a,b).filter(dWork);
+  const curDays=(()=>{const ds=wd(cur,t).filter(d=>d<t);return ds.length?ds:[t];})();
+  try{
+    if(ex){const u=S.user.code,no=String(S.user.person.no);
+      await Promise.all(dDays(pm,t).map(async d=>{try{const r=await dbGet("daily/"+u+"/"+d+"/"+no);if(r)recs.push({d,r,u,no});}catch{}}));exp=curDays.length;}
+    else{
+      const units=adm?S.units.filter(x=>!x.isAdmin&&!x.disabled&&unitDists(x.code).length):[{code:S.user.code}];
+      if(adm&&S._hlC&&Date.now()-S._hlC.ts<300000){recs.push(...S._hlC.recs);exp=S._hlC.exp;R=S._hlC.R;}
+      else{await Promise.all(units.map(async x=>{let D={},G={};try{[D,G]=await Promise.all([dQuery("daily/"+x.code,pm,t),dbGet("dreg/"+x.code).then(v=>v||{})]);}catch{}
+          Object.entries(D||{}).forEach(([d,day])=>Object.entries(dObj(day)).forEach(([no,r])=>{if(r&&r.v!==undefined)recs.push({d,r,u:x.code,no});}));
+          const nos=unitDists(x.code).map(String);curDays.forEach(d=>nos.forEach(n=>{if(!dAbsOn(G.abs,n,d))exp++;}));
+          R.comp.push(...aList(G,"comp"));R.disc.push(...aList(G,"disc"));}));
+        if(adm)S._hlC={ts:Date.now(),recs:recs.slice(),exp,R};}
+    }
+  }catch(e){sec.querySelector(".hcard").textContent="Уншиж чадсангүй";return;}
+  const C=recs.filter(x=>x.d>=cur),P=recs.filter(x=>x.d<cur);
+  const q=k=>DQ.find(x=>x.k===k),S_=(L,k)=>L.reduce((s,x)=>s+dqVal(x.r,q(k)),0),K=(L,key)=>L.reduce((s,x)=>s+(+((x.r.v||{})[key])||0),0),T=L=>L.reduce((s,x)=>s+dTotal(x.r),0);
+  const tc=T(C),tp=T(P),filled=new Set(C.filter(x=>curDays.includes(x.d)).map(x=>x.u+"|"+x.no+"|"+x.d)).size,pct=exp?Math.min(100,Math.round(filled*100/exp)):0;
+  const exN=C.filter(x=>x.r.ex).length;
+  const card=(icon,title,big,sub,col)=>"<div class='hcard' style='display:flex;flex-direction:column;gap:8px;padding:18px'><span style='font-size:13px;color:var(--tx2)'>"+icon+" "+title+"</span><span style='font-family:Montserrat,Inter,sans-serif;font-size:28px;font-weight:800;color:"+(col||"var(--tx)")+"'>"+big+"</span><span style='font-size:12.5px;color:var(--tx2);line-height:1.5'>"+sub+"</span></div>";
+  const dl=tp?Math.round((tc-tp)*100/tp):null,dTxt=dl==null?"өмнөх 7 хоногт мэдээ алга":"<b style='color:"+(dl>=0?"#047857":"#BE123C")+"'>"+(dl>=0?"▲ ":"▼ ")+Math.abs(dl)+"%</b> өмнөх 7 хоногоос ("+tp+")";
+  let h="<div class='wk-grid'>";
+  h+=card("📋","Нийт ажиллагаа",tc,dTxt);
+  h+=card("🗓","Мэдээ бөглөлтийн ирц",ex?filled+"/"+exp+" өдөр":pct+"%",ex?"энэ 7 хоногийн ажлын өдрүүдээс":filled+" / "+exp+" (ажиллаагүй алба хаагчийг хасаад)",pct>=90||ex?"":pct>=60?"#B45309":"#BE123C");
+  h+=card("🏠","Хөрөнгө","<span style='font-size:20px'>"+S_(C,"n8")+" · "+S_(C,"n11")+" · "+S_(C,"n12")+"</span>","тогтоосон · битүүмжилсэн · хураасан");
+  h+=card("⛓","Албадлага","<span style='font-size:20px'>"+K(C,"n9_0")+" · "+S_(C,"n10")+" · "+S_(C,"n14")+"</span>","данс хаасан · суутгал · эрх түдгэлзүүлэх хүсэлт");
+  h+=card(exN?"🚨":"✅","Онцгой тохиолдол",exN,exN?"халдлага, эсэргүүцэл гэх мэт — анхааралтай":"энэ 7 хоногт гараагүй",exN?"#BE123C":"#047857");
+  if(ex)h+=card("⚖️","Шүүх хуралдаан",S_(C,"n19"),"энэ 7 хоногт оролцсон");
+  else{const oc=R.comp.filter(r=>!r.rd).length,od=R.disc.filter(r=>r.st!=="Шийдвэрлэсэн").length;h+=card("📨","Хянагдаж буй",oc+" · "+od,"өргөдөл, гомдол (нэгжид шууд) · сахилгын шалгалт",oc+od?"#B45309":"");}
+  h+="</div><p class='dz' style='margin-top:8px'>Шийдвэр гүйцэтгэгчдийн өдрийн мэдээнээс автоматаар тооцов. Албан ёсны биелэлтийн тоо дээрх хэсэгт (7 хоногийн танилцуулгаас) байна.</p>";
+  sec.innerHTML=sec.querySelector(".hsec-h").outerHTML+h;
 }
 </script>
 </body>
