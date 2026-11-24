@@ -1668,6 +1668,7 @@ function tHome(c){
   wrap.insertAdjacentHTML("beforeend","<div class='hm-top rise d1'><div><small>"+now.getFullYear()+" оны "+MN[now.getMonth()]+" дүгээр сарын "+now.getDate()+", "+WD[now.getDay()]+"</small><h1>Амрыг эрье, "+esc(uname)+"</h1></div>"
     +"<div style='display:flex;gap:10px;flex-wrap:wrap;align-items:center'><span class='chipw'>⏱ Сарын мэдээ илгээхэд <b>"+(dl===0?"өнөөдөр":dl+" хоног")+"</b>"+(dl===0?" эцсийн өдөр":" үлдлээ")+"</span>"
     +(isA?"":"<button class='btn bp' id='h_go'>Мэдээ оруулах</button>")+"</div></div>");
+  if(!isA&&!isExec()&&typeof aDeadlineBanner==="function"){const db=mk("div");wrap.appendChild(db);aDeadlineBanner(db,S.user.code);}
   const go=wrap.querySelector("#h_go");if(go)go.onclick=()=>renderTab("data");
   // --- Албаны үзүүлэлт ---
   const k=kpiObj();const hasK=k.cats.some(x=>num(x.done)!=null&&num(x.all));const hasW=k.weekly.items.some(x=>x.value!=="");
@@ -4797,7 +4798,8 @@ async function aAdmin(w,sec){
   if(sec==="1"){const m=S._aWk=S._aWk||aMon(today),me=ymd((()=>{const d=dD(m);d.setDate(d.getDate()+6);return d;})());
     cols=["7 хоногийн мэдээ","Шүүх хуралдаан (гүйцэтгэгч + ахлах)","Төлөөлөх эрх","Тайлбарлуулсан","Материал шилжүүлсэн","Онцгой ажиллагаа","Яаралтай","1.3 үлдэгдэл (тоо)","1.3 үлдэгдэл (төгрөг)","1.3 дуусгавар","1.4 үлдэгдэл (тоо)","1.4 үлдэгдэл (төгрөг)","1.4 дуусгавар"];
     rowF=R=>{const wk=dObj(R.wk),r=wk[m],CH=aChain(wk),ks=Object.keys(wk).filter(k=>k<=m).sort(),lk=ks[ks.length-1],c=lk?CH[lk]:null,sp=aList(R,"spec").filter(x=>x.d>=m&&x.d<=me),v=(r&&r.v)||{};
-      return [r?"<span class='badge bok'>✅</span>":"<span class='badge bfail'>Ирээгүй</span>"].concat([r?aCourt(r):""],AW11.filter(q=>!q.m&&q.k!=="a1").map(q=>r?dqVal(r,q):""),[sp.length,sp.filter(x=>x.urg==1).length,c?c.hi.bn:"",c?aFm(c.hi.ba):"",r?(+v.hi_done_n||0):"",c?c.pl.bn:"",c?aFm(c.pl.ba):"",r?(+v.pl_done_n||0):""]);};}
+      const dlT=aWkDeadline(m),late=r&&r.ts>dlT.getTime(),over=Date.now()>dlT.getTime();
+      return [r?(late?"<span class='badge bwarn' title='Хугацаа: "+dlT.toLocaleString("mn-MN")+"'>✅ Хоцорч ирсэн "+new Date(r.ts).toLocaleString("mn-MN").slice(5,16)+"</span>":"<span class='badge bok'>✅ Хугацаандаа</span>"):(over?"<span class='badge bfail'>Ирээгүй — хоцорсон</span>":"<span class='badge bwarn'>Хүлээгдэж байна</span>")].concat([r?aCourt(r):""],AW11.filter(q=>!q.m&&q.k!=="a1").map(q=>r?dqVal(r,q):""),[sp.length,sp.filter(x=>x.urg==1).length,c?c.hi.bn:"",c?aFm(c.hi.ba):"",r?(+v.hi_done_n||0):"",c?c.pl.bn:"",c?aFm(c.pl.ba):"",r?(+v.pl_done_n||0):""]);};}
   else if(sec==="2"){cols=["Шалгаж байгаа","Энэ сард бүртгэсэн","Шийтгэл ногдуулсан (сард)","Шийтгэлтэй алба хаагч","Ёс зүй — хэлэлцэж байгаа","Ёс зүй (сард)","Гэмт хэрэгт (сард)","Зөрчилд (сард)"];
     rowF=R=>{const D=aList(R,"disc"),E=aList(R,"eth"),C=aList(R,"crim");return [D.filter(r=>r.st!=="Шийдвэрлэсэн").length,D.filter(r=>inM(r.d)).length,D.filter(r=>r.out==="Шийтгэл ногдуулсан"&&inM(r.ordd)).length,D.filter(aActive).length,E.filter(r=>r.con==="Хэлэлцэж байгаа").length,E.filter(r=>inM(r.d)).length,C.filter(r=>inM(r.d)&&r.type==="Гэмт хэрэгт холбогдсон").length,C.filter(r=>inM(r.d)&&r.type==="Зөрчилд холбогдсон").length];};}
   else if(sec==="3"){cols=["Шинээр ирсэн","Үүнээс гомдол","Эцэслэн шийдвэрлэсэн","Хянагдаж байгаа","Үндэслэлтэй","Давтан","Хугацаа хэтэрсэн","Сахилга тооцсон","Талархал"];
@@ -4961,6 +4963,24 @@ async function planFollow(pl,fromF,toF){
     if(await fbSaveEntry(entry,[]))ok++;else bad.push(u);}
   S._all=null;S._allTs=0;
   toast(bad.length?"❌ «"+pl+"»: "+bad.length+" нэгжийн өмнөх мэдээг шилжүүлж чадсангүй ("+bad.join(", ")+")":"✅ «"+pl+"»: өмнөх мэдээ шинэ давтамж руу шилжлээ ("+ok+" бичлэг). Нөөц файл татагдсан.",bad.length?"te":"ts");
+}
+
+// ---------- Хугацааны сануулга: ахлахын 7 хоногийн мэдээ — дараагийн Даваа 09:00; орон тоо — сар бүр ----------
+function aWkDeadline(m){const d=dD(m);d.setDate(d.getDate()+7);d.setHours(9,0,0,0);return d;}
+function aLeft(ms){const h=Math.floor(ms/36e5),mi=Math.floor(ms%36e5/6e4);return h>=24?Math.floor(h/24)+" хоног "+(h%24)+" цаг":h?h+" цаг "+mi+" мин":mi+" мин";}
+async function aDeadlineBanner(box,u){
+  let R={};try{R=(await dbGet("dreg/"+u))||{};}catch{return;}
+  const now=new Date(),t=ymd(now),cur=aMon(t),prev=(()=>{const d=dD(cur);d.setDate(d.getDate()-7);return ymd(d);})(),wk=dObj(R.wk),st=dObj(R.staff),out=[];
+  const go=(sec,txt)=>"<button class='btn bp' data-go='"+sec+"' style='padding:6px 12px;margin-left:auto'>"+txt+"</button>";
+  const dl=aWkDeadline(prev);
+  if(!wk[prev]){const left=dl-now;out.push(left>0?"<div class='dalert' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>⏰ <span>Өнгөрсөн 7 хоногийн (<b>"+aWkLab(prev)+"</b>) ахлахын мэдээг <b>Даваа гарагийн 09:00</b>-аас өмнө илгээнэ — <b>"+aLeft(left)+"</b> үлдлээ.</span>"+go("1","Илгээх")+"</div>"
+    :"<div class='dalert r' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>🔴 <span>Өнгөрсөн 7 хоногийн (<b>"+aWkLab(prev)+"</b>) ахлахын мэдээ <b>хоцорсон</b> — "+aLeft(-left)+" өнгөрлөө. Яаралтай илгээнэ үү.</span>"+go("1","Илгээх")+"</div>");}
+  const M=t.slice(0,7),pM=(()=>{const d=new Date(now.getFullYear(),now.getMonth()-1,1);return ymd(d).slice(0,7);})();
+  if(Object.keys(st).length&&!st[pM])out.push("<div class='dalert r' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>🏢 <span>"+pM.replace("-",".")+" сарын орон тооны мэдээ баталгаажаагүй байна.</span>"+go("4","Баталгаажуулах")+"</div>");
+  if(now.getDate()>=25&&!st[M])out.push("<div class='dalert' style='display:flex;gap:10px;align-items:center;flex-wrap:wrap'>🏢 <span>Энэ сарын (<b>"+M.replace("-",".")+"</b>) орон тоог сарын эцэс хүртэл баталгаажуулна уу.</span>"+go("4","Баталгаажуулах")+"</div>");
+  if(!out.length)return;
+  box.className="rise d1";box.style.margin="0 0 16px";box.innerHTML=out.join("");
+  box.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{S._aSec=b.dataset.go;if(b.dataset.go==="1")S._aWk=prev;renderTab("daily");});
 }
 </script>
 </body>
