@@ -2156,6 +2156,17 @@ async function submitUnitDist(plan,period,pInds,dm){
 }
 // Нэгжийн entry-д нэг төлөвлөгөөний нэгтгэсэн утгыг бичнэ (subDataForPlan-тай ижил дүрэм)
 // Сервер дээрх тухайн нэгжийн entry-г уншиж, өөр төхөөрөмжөөс илгээсэн бусад төлөвлөгөөний утгыг дарж устгахгүйн тулд нэгтгэнэ.
+// Firebase руу бичээд буцааж уншиж баталгаажуулна — хүрээгүй бол false
+async function fbSaveEntry(entry,plans){
+  if(!fbDB||!window._set)return false;
+  const path="data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_");
+  try{await Promise.race([window._set(window._r(fbDB,path),entry),new Promise((_,j)=>setTimeout(()=>j(new Error("timeout")),20000))]);
+    const chk=await dbGet(path);const ok=!!(chk&&chk.date===entry.date);
+    if(ok&&plans&&plans.length){const t=new Date().toISOString(),k=path.slice(5);for(const pl of plans){try{await dbSet("dreg/"+entry.unit+"/sent/"+k+"/"+String(pl).replace(/[.#$\[\]\/]/g,"_"),{plan:pl,t});}catch(e){console.warn("[SGA receipt]",e);}}}
+    return ok;}
+  catch(e){console.error("[SGA fbSaveEntry] FAIL:",e);return false;}
+}
+function fbFailMsg(){toast("❌ Мэдээ Ерөнхий газарт ХҮРСЭНГҮЙ. Интернэтээ шалгаад «Илгээх» товчийг дахин дарна уу. Хуудсаа хаавал мэдээ алга болно.","te");}
 async function withServer(local,unit,period,freq){
   let srv=null;
   if(fbDB&&window._get){try{const s=await window._get(window._r(fbDB,"data/"+unit+"_"+freq+"_"+period.replace(/[.\s]/g,"_")));if(s&&s.exists&&s.exists())srv=s.val();}catch(e){}}
@@ -2172,7 +2183,7 @@ async function commitUnitPlan(plan,period,vals,hasAny){
   const mergedPlans=hasAny?Array.from(new Set([...prevPlans,plan])):prevPlans.filter(p=>p!==plan);
   const entry={unit:S.user.code,unitName:S.user.name,period,freq,values:mergedValues,plans:mergedPlans,date:new Date().toLocaleString("mn-MN")};
   if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
-  if(fbDB&&window._set){try{await window._set(window._r(fbDB,"data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_")),entry);}catch(e){console.error("[SGA commitUnitPlan] Firebase FAIL:",e);}}
+  if(!(await fbSaveEntry(entry,hasAny?[plan]:[])))fbFailMsg();
   try{api("saveData",{data:JSON.stringify(entry)});}catch{}
   try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
 }
@@ -2194,14 +2205,10 @@ async function subDataForPlan(plan,period){
   const mergedPlans=hasAny?Array.from(new Set([...prevPlans,plan])):prevPlans.filter(p=>p!==plan);
   const entry={unit:S.user.code,unitName:S.user.name,period,freq:dFreq,values:mergedValues,plans:mergedPlans,date:new Date().toLocaleString("mn-MN")};
   if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
-  let fbOk=false;
-  if(fbDB&&window._set){
-    try{await window._set(window._r(fbDB,"data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_")),entry);fbOk=true;}
-    catch(e){console.error("[SGA subDataForPlan] Firebase FAIL:",e);}
-  }
+  const fbOk=await fbSaveEntry(entry,hasAny?[plan]:[]);
   try{api("saveData",{data:JSON.stringify(entry)});}catch{}
   try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
-  if(!checkAllSent()){toast((fbOk?"✅ ":"✅ (local) ")+"«"+plan+"» мэдээ хадгалагдлаа","ts");SND.play("send");}
+  if(!fbOk)fbFailMsg();else if(!checkAllSent()){toast("✅ «"+plan+"» мэдээ Ерөнхий газарт хүрлээ ("+new Date().toTimeString().slice(0,5)+")","ts");SND.play("send");}
   const keepUnsent={};document.querySelectorAll("[id^='v_']").forEach(el=>{if(!Object.prototype.hasOwnProperty.call(vals,el.id.slice(2))&&el.value)keepUnsent[el.id]=el.value;});
   renderTab("data");
   Object.entries(keepUnsent).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&!el.value&&!el.disabled)el.value=v;});
@@ -2236,14 +2243,11 @@ async function subData(){
     const mergedPlans=Array.from(new Set([...(prev&&prev.plans||[]),...byPeriodPlans[period]]));
     const entry={unit:S.user.code,unitName:S.user.name,period,freq:dFreq,values:mergedValues,plans:mergedPlans,date:new Date().toLocaleString("mn-MN")};
     if(idx>=0)S.data[idx]=entry;else S.data.push(entry);
-    if(fbDB&&window._set){
-      try{await window._set(window._r(fbDB,"data/"+entry.unit+"_"+entry.freq+"_"+entry.period.replace(/[.\s]/g,"_")),entry);}
-      catch(e){console.error("[SGA subData] Firebase FAIL:",e);fbOkAll=false;}
-    } else fbOkAll=false;
+    if(!(await fbSaveEntry(entry,[...byPeriodPlans[period]])))fbOkAll=false;
     api("saveData",{data:JSON.stringify(entry)});
   }
   try{localStorage.setItem("sga_data",JSON.stringify(S.data));}catch{}
-  if(!checkAllSent()){toast(fbOkAll?"✅ Мэдээ хадгалагдлаа!":"✅ Мэдээ хадгалагдлаа (local)","ts");SND.play("send");}
+  if(!fbOkAll)fbFailMsg();else if(!checkAllSent()){toast("✅ Мэдээ Ерөнхий газарт хүрлээ ("+new Date().toTimeString().slice(0,5)+")","ts");SND.play("send");}
   renderTab("data");
 }
 
@@ -3791,6 +3795,7 @@ function buildCfg(c){
       S.inds.forEach(i=>{if((i.plans||[]).some(pl=>pl&&pl.trim()===plan.trim())&&i.freq!==newFreq){i.freq=newFreq;changed++;}});
       savePlanFreqs();saveInds();
       toast("✅ '"+plan+"' — "+changed+" асуултын давтамж шинэчлэгдлээ","ts");
+      if(typeof planFollow==="function")planFollow(plan,curFreq,newFreq);
       buildCfg(c);
     };})(p);
     row.appendChild(freqSel);
@@ -4311,7 +4316,7 @@ async function dAdmin(c){
 // dreg/<нэгж>/wk/<Даваа YYYY-MM-DD> = {v:{..},ts}  — 1.1, 1.3, 1.4 долоо хоногийн тоон мэдээ (үлдэгдлийг гинжээр тооцно)
 // dreg/<нэгж>/<spec|disc|eth|crim|comp|appt|trn>/<id> — тохиолдлын бүртгэл
 // dreg/<нэгж>/staff/<YYYY-MM> = {v:{..},ts} — 4.2 орон тоо
-const ASEC=[["d","📝 Өдрийн мэдээ"],["1","1. ШГ ажиллагаа"],["2","2. Сахилга, хариуцлага"],["3","3. Өргөдөл, гомдол"],["4","4. Хүний нөөц"]];
+const ASEC=[["d","📝 Өдрийн мэдээ"],["r","🧾 Мэдээ ирүүлэлт"],["1","1. ШГ ажиллагаа"],["2","2. Сахилга, хариуцлага"],["3","3. Өргөдөл, гомдол"],["4","4. Хүний нөөц"]];
 const AW11=[
  {k:"a1",s:"Шүүх хуралдаан",t:"Шүүх хуралдаанд оролцсон — ахлах өөрөө",c:DCOURT,h:"Шийдвэр гүйцэтгэгчдийн оролцсон тоо өдрийн мэдээнээс автоматаар нэмэгдэнэ — энд зөвхөн ахлах өөрөө оролцсоноо бичнэ"},
  {k:"a2",s:"Төлөөлөх эрх",t:"Шүүх, цагдаа, АТГ-д төлөөлөх эрхээ хэрэгжүүлсэн",c:["Шүүх","Цагдаа","АТГ"]},
@@ -4436,7 +4441,7 @@ function aMonCtl(re,extra){const w=mk("div","dctl");S._aMon=S._aMon||ymd(new Dat
 function aWkSel(re){const w=mk("div","dctl"),sel=mk("select"),cur=aMon(ymd(new Date()));S._aWk=S._aWk||cur;
   const d=dD(cur);for(let i=0;i<10;i++){const m=ymd(d),o=mk("option");o.value=m;o.textContent=aWkLab(m)+(i===0?" (энэ 7 хоног)":"");if(m===S._aWk)o.selected=true;sel.appendChild(o);d.setDate(d.getDate()-7);}
   sel.onchange=()=>{S._aWk=sel.value;re();};w.insertAdjacentHTML("beforeend","<span class='dz'>7 хоног:</span>");w.appendChild(sel);return w;}
-function aSecNav(c,re){const w=mk("div","ptabs");ASEC.forEach(([k,l])=>{const b=mk("button","pt"+((S._aSec||"d")===k?" on":""));b.type="button";b.textContent=l;b.onclick=()=>{S._aSec=k;re();};w.appendChild(b);});c.appendChild(w);}
+function aSecNav(c,re){const w=mk("div","ptabs");ASEC.filter(([k])=>k!=="r"||S.user.isAdmin).forEach(([k,l])=>{const b=mk("button","pt"+((S._aSec||"d")===k?" on":""));b.type="button";b.textContent=l;b.onclick=()=>{S._aSec=k;re();};w.appendChild(b);});c.appendChild(w);}
 
 function aVacOn(abs,no,day){return Object.entries(dObj(abs)).find(([,a])=>a&&a.reason===DVAC&&String(a.no)===String(no)&&a.from<=day&&(!a.to||a.to>=day));}
 function aVacList(abs,nos,day){return nos.filter(n=>aVacOn(abs,n,day));}
@@ -4516,7 +4521,7 @@ async function tDaily(c){
     const bar=mk("div","dctl"),b=mk("button","btn bx");b.textContent="← Бүх нэгж";b.onclick=()=>{S._daUnit=null;re();};bar.appendChild(b);bar.insertAdjacentHTML("beforeend","<b>"+esc(u+" · "+unitNm(u))+"</b>");w.appendChild(bar);
     const w2=mk("div");w.appendChild(w2);return aUnit(w2,u,sec,false);}
   aSecNav(c,re);const w=mk("div");c.appendChild(w);
-  if(S.user.isAdmin){const r=sec==="d"?dAdmin(w):aAdmin(w,sec);if(ymd(new Date())<"2027-02-01")aTestReset(c);return r;}
+  if(S.user.isAdmin){const r=sec==="d"?dAdmin(w):sec==="r"?aAudit(w).then(()=>aW2M(w)):aAdmin(w,sec);if(ymd(new Date())<"2027-02-01")aTestReset(c);return r;}
   return sec==="d"?dUnit(w,S.user.code,false):aUnit(w,S.user.code,sec,true);
 }
 
@@ -4893,6 +4898,69 @@ function uProgHTML(pr,entries,me,periodsTxt,mine){
   left+=grid+"</div>";
   return "<div class='hsec-h'><div><span class='eyebrow' style='color:#B45309'>Шууд</span><h2>Манай нэгжийн мэдээ ирүүлэлт</h2></div><span class='asof'><span class='live' style='margin-right:6px;vertical-align:middle'></span>"+esc(periodsTxt)+"</span></div>"
     +"<div class='prog-grid'>"+left+"<div style='display:flex;flex-direction:column;gap:18px;min-width:0'>"+mine+"</div></div>";
+}
+
+// ---------- Админ: мэдээ ирүүлэлтийн хяналт — Firebase-д бодитоор хадгалагдсан бүх бичлэг ----------
+async function aAudit(w){
+  const re=()=>{w.innerHTML="";aAudit(w).then(()=>aW2M(w));};
+  const card=mk("div","card");w.appendChild(card);
+  const units=S.units.filter(x=>!x.isAdmin&&!x.disabled);S._auU=S._auU||(units[0]||{}).code;
+  card.innerHTML="<h2>🧾 Мэдээ ирүүлэлтийн хяналт</h2><p class='dlead' style='margin-bottom:12px'>Сонгосон нэгжийн Firebase-д <b>бодитоор хадгалагдсан</b> бүх мэдээ. Нэгж «илгээсэн» гэж хэлж байгаа ч энд байхгүй бол Ерөнхий газарт хүрээгүй гэсэн үг. 7 хоногийн мэдээ өдөр бүрээр тусдаа бичлэг болж хадгалагддаг.</p>";
+  const ctl=mk("div","dctl"),sel=mk("select");units.forEach(u=>{const o=mk("option");o.value=u.code;o.textContent=u.code+" · "+unitNm(u.code);if(u.code===S._auU)o.selected=true;sel.appendChild(o);});
+  sel.onchange=()=>{S._auU=sel.value;re();};const xb=mk("button","btn bx");xb.textContent="⬇ Excel";ctl.appendChild(sel);ctl.appendChild(xb);card.appendChild(ctl);
+  const body=mk("div");card.appendChild(body);body.innerHTML="<div class='dz'>⏳ Firebase-ээс уншиж байна...</div>";
+  let all={},RC={};try{[all,RC]=await Promise.all([dbGet("data").then(x=>x||{}),dbGet("dreg/"+S._auU+"/sent").then(x=>x||{})]);}catch(e){body.innerHTML="<div class='dalert r'>Уншиж чадсангүй: "+esc(e&&e.message||e)+"</div>";return;}
+  const L=Object.entries(all).filter(([,e])=>e&&e.unit===S._auU).map(([k,e])=>Object.assign({_k:k},e));
+  const FN={week:"7 хоног",month:"Сар",quarter:"Улирал",year:"Жил"};
+  const pd=s=>{const m=/(\d{4})\.(\d{2})\.(\d{2})/.exec(s||"");return m?m[1]+m[2]+m[3]:(s||"");};
+  L.sort((a,b)=>((b.freq||"")+pd(b.period)).localeCompare((a.freq||"")+pd(a.period)));
+  if(!L.length){body.innerHTML="<div class='dalert r'>Энэ нэгжийн мэдээ Firebase-д огт алга.</div>";return;}
+  const nv=e=>Object.values(e.values||{}).filter(v=>v!==""&&v!=null).length;
+  const sentTxt=e=>Object.values(RC[e._k]||{}).map(x=>esc(x.plan)+" — "+new Date(x.t).toLocaleString("mn-MN")).join("<br>");
+  let h="<div class='stats'>"+dStat(L.length,"Нийт бичлэг")+dStat(L.filter(e=>e.freq==="week").length,"7 хоногийн")+dStat(L.filter(e=>e.freq==="month").length,"Сарын")+dStat(L.filter(e=>e.freq==="quarter").length,"Улирлын")+"</div>";
+  h+="<div class='tw'><table class='dtbl' id='aut'><thead><tr><th>Давтамж</th><th>Хугацаа</th><th>Төлөвлөгөө</th><th>Бөглөсөн үзүүлэлт</th><th>Сүүлд хадгалсан</th><th>Төлөвлөгөө бүрийг илгээсэн цаг</th></tr></thead><tbody>"
+   +L.map(e=>"<tr><td>"+(FN[e.freq]||esc(e.freq||""))+"</td><td style='text-align:left'>"+esc(e.period||"")+"</td><td style='text-align:left;white-space:normal'>"+esc((e.plans||[]).join(", ")||"—")+"</td><td>"+nv(e)+"</td><td>"+esc(e.date||"")+"</td><td style='text-align:left;white-space:normal;font-size:12px'>"+(sentTxt(e)||"<span class='dz'>— (шинэчлэлээс өмнө)</span>")+"</td></tr>").join("")+"</tbody></table></div>";
+  body.innerHTML=h;xb.onclick=()=>dXlsx(body.querySelector("#aut"),"Мэдээ ирүүлэлт "+S._auU);
+}
+// ---------- 7 хоногоос сар руу шилжүүлэх (төлөвлөгөөний давтамж өөрчлөгдсөн үед) ----------
+function aW2Mlab(d){const m=/(\d{4})\.(\d{2})\.\d{2}/.exec(d||"");return m?m[1]+" оны "+(+m[2])+"-р сар":null;}
+async function aW2M(w){
+  const card=mk("div","card");w.appendChild(card);
+  const plans=[...new Set((S.activePlans||[]).concat(S.plans||[]))];S._w2p=S._w2p||(plans.find(p=>/ХЗДХС 01/.test(p))||plans[0]);
+  const FN={week:"7 хоног",month:"Сар бүр",quarter:"Улирал бүр",year:"Жил бүр"};
+  card.innerHTML="<h2>🔁 Өмнөх мэдээг төлөвлөгөөний одоогийн давтамж руу шилжүүлэх</h2><p class='dlead' style='margin-bottom:12px'>Төлөвлөгөөний давтамжийг «⚙️ Тохиргоо»-нд солиход өмнөх мэдээ автоматаар шилждэг. Давтамж өмнө нь солигдсон төлөвлөгөөнд (жишээ нь ХЗДХС 01: 7 хоног → сар) энэ товчийг нэг удаа дарна. Нөөц файл татагдаж, 7 хоногийн мэдээ сарын бичлэгт нэмэгдэнэ — сүүлийн утгыг авна, сарын бичлэгт байгаа утгыг дарж бичихгүй, хуучин бичлэг устахгүй.</p>";
+  const ctl=mk("div","dctl"),sp=mk("select");plans.forEach(x=>{const o=mk("option");o.value=x;o.textContent=x+" — "+(FN[planFreq(x)]||planFreq(x));if(x===S._w2p)o.selected=true;sp.appendChild(o);});
+  const go=mk("button","btn bp");go.textContent="🔁 Шилжүүлэх";ctl.appendChild(sp);ctl.appendChild(go);card.appendChild(ctl);
+  go.onclick=async()=>{S._w2p=sp.value;const pl=sp.value,to=planFreq(pl);
+    if(go.dataset.ok!=="1"){go.dataset.ok="1";go.textContent="«"+pl+"»-ийн өмнөх мэдээг «"+(FN[to]||to)+"» руу шилжүүлэх үү? Дахин дарна уу";return;}
+    go.disabled=true;go.textContent="⏳ Шилжүүлж байна...";
+    for(const f of Object.keys(FRANK).filter(f=>FRANK[f]<FRANK[to]))await planFollow(pl,f,to);
+    go.disabled=false;go.dataset.ok="";go.textContent="🔁 Шилжүүлэх";};
+}
+
+// ---------- Төлөвлөгөөний давтамж солигдоход өмнөх мэдээг шинэ давтамж руу автоматаар дагуулах ----------
+// Зөвхөн нарийнаас бүдүүн рүү (7 хоног→сар→улирал→жил) нэгтгэнэ. Сүүлийн хугацааны утгыг авна; шинэ бичлэгт байгаа утгыг дарж бичихгүй; хуучин бичлэг устахгүй.
+const FRANK={week:0,month:1,quarter:2,year:3};
+function perDate(f,s){let m;s=s||"";if(f==="week"&&(m=/(\d{4})\.(\d{2})\.(\d{2})/.exec(s)))return [+m[1],+m[2]];if(f==="month"&&(m=/(\d{4}) оны (\d+)-р сар/.exec(s)))return [+m[1],+m[2]];if(f==="quarter"&&(m=/(\d{4}) оны (\d)-р улирал/.exec(s)))return [+m[1],(+m[2])*3];if(f==="year"&&(m=/(\d{4}) оны/.exec(s)))return [+m[1],12];return null;}
+function perLabel(f,ym){const [y,mo]=ym;return f==="month"?y+" оны "+mo+"-р сар":f==="quarter"?y+" оны "+Math.ceil(mo/3)+"-р улирал":y+" оны жилийн эцэс";}
+async function planFollow(pl,fromF,toF){
+  if(!fromF||fromF===toF)return;
+  if(FRANK[toF]<=FRANK[fromF]){toast("ℹ️ «"+pl+"»-ийн өмнөх мэдээ хуучин давтамжаараа хэвээр үлдэнэ (жижиг хугацаа руу хуваах боломжгүй).","ts");return;}
+  let all={};try{all=(await dbGet("data"))||{};}catch{toast("Өмнөх мэдээг уншиж чадсангүй — шилжүүлэлт хийгдсэнгүй","te");return;}
+  const ids=new Set(S.inds.filter(i=>(i.plans||[]).includes(pl)).map(i=>i.id)),has=v=>v!==""&&v!=null;
+  const grp={};Object.values(all).forEach(e=>{if(!e||e.freq!==fromF||!(e.plans||[]).includes(pl))return;const d=perDate(fromF,e.period);if(!d)return;const lab=perLabel(toF,d);(grp[e.unit+"|"+lab]=grp[e.unit+"|"+lab]||[]).push(e);});
+  const keys=Object.keys(grp);if(!keys.length)return;
+  const blob=new Blob([JSON.stringify({at:new Date().toISOString(),plan:pl,from:fromF,to:toF,data:all},null,1)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ШГА мэдээ нөөц ("+pl+" "+fromF+"→"+toF+") "+ymd(new Date())+".json";document.body.appendChild(a);a.click();a.remove();
+  let ok=0,bad=[];
+  for(const k of keys){const [u,lab]=k.split("|"),es=grp[k].sort((x,y)=>{const a=perDate(fromF,x.period),b=perDate(fromF,y.period);return (x.period||"").localeCompare(y.period||"");});
+    const vals={};es.forEach(e=>Object.entries(e.values||{}).forEach(([i,v])=>{if(ids.has(i)&&has(v))vals[i]=v;}));
+    const cur=Object.values(all).find(e=>e&&e.unit===u&&e.freq===toF&&e.period===lab)||{unit:u,unitName:(S.units.find(x=>x.code===u)||{}).name||u,period:lab,freq:toF,values:{},plans:[]};
+    const add={};Object.entries(vals).forEach(([i,v])=>{if(!has((cur.values||{})[i]))add[i]=v;});
+    if(!Object.keys(add).length&&(cur.plans||[]).includes(pl))continue;
+    const entry=Object.assign({},cur,{values:Object.assign({},cur.values||{},add),plans:[...new Set([...(cur.plans||[]),pl])],date:new Date().toLocaleString("mn-MN")});
+    if(await fbSaveEntry(entry,[]))ok++;else bad.push(u);}
+  S._all=null;S._allTs=0;
+  toast(bad.length?"❌ «"+pl+"»: "+bad.length+" нэгжийн өмнөх мэдээг шилжүүлж чадсангүй ("+bad.join(", ")+")":"✅ «"+pl+"»: өмнөх мэдээ шинэ давтамж руу шилжлээ ("+ok+" бичлэг). Нөөц файл татагдсан.",bad.length?"te":"ts");
 }
 </script>
 </body>
