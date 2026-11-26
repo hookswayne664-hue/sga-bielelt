@@ -4082,9 +4082,10 @@ const DPROP=["Хөдлөх: тээврийн хэрэгсэл","Хөдлөх: б
 // t:1 — «Нийт ажиллагаа»-нд тоологдоно (2-р асуулт нь 1-р асуултын задаргаа тул тоологдохгүй)
 const DCOURT=["Шийдвэр гүйцэтгэгчийн шийдвэр, ажиллагааны талаарх гомдол","Хөрөнгийн үнэлгээний талаарх гомдол","Битүүмжлэлээс хасуулах, чөлөөлүүлэх нэхэмжлэл","Хууль бус ажиллагааны хохирлын нэхэмжлэл","Бусад"];
 const DQ=[
- {k:"n20",g:"А. Хаягаар ажилласан, мэдэгдэл, дуудлага",s:"Хаягаар",t:"Хаягаар очиж ажилласан гүйцэтгэх баримт бичиг",c:["Мэдэгдэл гардуулсан","Үзлэг хийсэн","Тайлбар авсан","Битүүмжилсэн","Хураасан","Хаягт байгаагүй (олдоогүй)"],h:"Хаягт очиж юу хийснийг тус бүрт нь бичнэ. Мэдэгдэл, үзлэг, тайлбарын тоо доорх асуултуудад автоматаар нэмэгдэнэ. Битүүмжилсэн, хураасан хөрөнгийг төрлөөр нь 12, 13-р асуултад бичнэ.",b:"ШШГТХ 44.2"},
+ {k:"n20",g:"А. Хаягаар ажилласан, мэдэгдэл, дуудлага",s:"Хаягаар",t:"Хаягаар очиж ажилласан гүйцэтгэх баримт бичиг",auto:["n2_0","n3_2","n6_1","n11_","n12_","n21"],h:"Бөглөхгүй — доорх асуултуудад «хаягаар» гэж бичсэн тооноос автоматаар бодогдоно: хаягт очсон боловч олдоогүй (2), мэдэгдэл хаягаар очиж гардуулсан (4), хаягаар очиж тайлбар авсан (5), орон байр, эд хөрөнгөнд үзлэг хийсэн (8), битүүмжилсэн (13), хураасан (14).",b:"ШШГТХ 44.2"},
+ {k:"n21",g:"А. Хаягаар ажилласан, мэдэгдэл, дуудлага",s:"Хаягт олдоогүй",t:"Хаягт очсон боловч төлбөр төлөгч олдоогүй",h:"Хаягаар очсон ч төлбөр төлөгч, хөрөнгө байгаагүй тохиолдол",b:"ШШГТХ 44.2"},
  {k:"n1",g:"А. Хаягаар ажилласан, мэдэгдэл, дуудлага",s:"Мэдэгдэл",t:"Мэдэгдэл хүргүүлсэн гүйцэтгэх баримт бичиг",c:["Мэдэгдэх хуудас","Зарлан дуудах хуудас","Биелүүлэх мэдэгдэл"],b:"ШШГТХ 14, 44.2.1, 44.2.5",tt:1},
- {k:"n2",g:"А. Хаягаар ажилласан, мэдэгдэл, дуудлага",s:"Хүргүүлсэн хэлбэр",t:"Мэдэгдлийг хүргүүлсэн хэлбэр",c:["Хаягаар очиж гардуулсан","Баталгаат шуудангаар","Утас, цахимаар"],h:"2-р асуултад бичсэн мэдэгдлийг хэрхэн хүргүүлснээр задална",b:"ШШГТХ 14.3, 14.4"},
+ {k:"n2",g:"А. Хаягаар ажилласан, мэдэгдэл, дуудлага",s:"Хүргүүлсэн хэлбэр",t:"Мэдэгдлийг хүргүүлсэн хэлбэр",c:["Хаягаар очиж гардуулсан","Баталгаат шуудангаар","Утас, цахимаар"],h:"3-р асуултад бичсэн мэдэгдлийг хэрхэн хүргүүлснээр задална",b:"ШШГТХ 14.3, 14.4"},
  {k:"n3",g:"А. Хаягаар ажилласан, мэдэгдэл, дуудлага",s:"Тайлбар авсан",t:"Тайлбар авсан гүйцэтгэх баримт бичиг",c:["Дуудан ирүүлсэн","Хүлээн авч уулзсан","Хаягаар очиж"],b:"ШШГТХ 44.2.1",tt:1},
  {k:"n4",g:"А. Хаягаар ажилласан, мэдэгдэл, дуудлага",s:"Хөрөнгийн мэдүүлэг",t:"Төлбөр төлөгчөөс хөрөнгийн мэдүүлэг авсан",b:"ШШГТХ 44.2.3",tt:1},
  {k:"n5",g:"Б. Хөрөнгө тогтоох",s:"Лавлагаа",t:"Лавлагаа авсан гүйцэтгэх баримт бичиг",h:"Улсын бүртгэл, банк, тээврийн хэрэгсэл, нийгмийн даатгал, татвар; баримт гаргуулсан",b:"ШШГТХ 44.2.2, 44.2.11",tt:1},
@@ -4106,8 +4107,8 @@ const DQ=[
 const DVAC="Сул тойрог (алба хаагч томилогдоогүй)";
 const DABS=[DVAC,"Ээлжийн амралт","Өвчтэй","Албан томилолт","Сургалт","Цалинтай чөлөө","Цалингүй чөлөө","Жирэмсний болон амаржсаны амралт","Хүүхэд асрах чөлөө","Ажил тасалсан","Бусад"];
 const DWD=["Ня","Да","Мя","Лх","Пү","Ба","Бя"];
-function dqKeys(q){return q.c?q.c.map((_,i)=>q.k+"_"+i):[q.k];}
-function dqVal(r,q){if(!r||!r.v)return 0;return dqKeys(q).concat(q.c&&q.lk?[q.k]:[]).reduce((a,k)=>a+(+r.v[k]||0),0);}
+function dqKeys(q){if(q.auto)return [];return q.c?q.c.map((_,i)=>q.k+"_"+i):[q.k];}
+function dqVal(r,q){if(!r||!r.v)return 0;if(q.auto)return q.auto.reduce((a,k)=>a+(k.endsWith("_")?Object.keys(r.v).filter(x=>x.startsWith(k)).reduce((t,x)=>t+(+r.v[x]||0),0):(+r.v[k]||0)),0);return dqKeys(q).concat(q.c&&q.lk?[q.k]:[]).reduce((a,k)=>a+(+r.v[k]||0),0);}
 function dTotal(r){return DQ.filter(q=>q.tt).reduce((a,q)=>a+dqVal(r,q),0);} // Нийт ажиллагаа = tt тэмдэгтэй асуултуудын нийлбэр
 function dD(s){return new Date(s+"T00:00:00");}
 function dWork(s){const w=dD(s).getDay();return w!==0&&w!==6;}
@@ -4175,6 +4176,7 @@ async function dExec(c){
     const row=mk("div","dq");
     row.innerHTML="<div><div class='dt'><b>"+(i+1)+".</b>"+esc(q.t)+"</div>"+(q.h?"<div class='dh'>"+esc(q.h)+"</div>":"")+(q.b?"<div class='db'>"+esc(q.b)+"</div>":"")+"</div>";
     const box=mk("div","din");
+    if(q.auto)box.innerHTML="<div style='text-align:center;min-width:120px'><b class='dauto' data-q='"+q.k+"' style='font-size:26px;color:#0F766E'>0</b><div class='dz'>автоматаар</div></div>";
     dqKeys(q).forEach((k,j)=>{const lb=mk("label");const inp=mk("input");inp.type="number";inp.min="0";inp.step="1";inp.inputMode="numeric";inp.dataset.k=k;inp.value=v[k]!=null&&v[k]!==0?v[k]:"";inp.placeholder="0";
       if(q.c){lb.appendChild(inp);lb.appendChild(document.createTextNode(q.c[j]));box.appendChild(lb);}else box.appendChild(inp);});
     row.appendChild(box);form.appendChild(row);
@@ -4193,13 +4195,8 @@ async function dExec(c){
     dl.onclick=async()=>{if(dl.dataset.ok!=="1"){dl.dataset.ok="1";dl.textContent="Устгах уу? Дахин дарна уу";return;}
       try{await dbSet("daily/"+u+"/"+day+"/"+no,null);toast("🗑 "+dLab(day)+"-ны мэдээ устгагдлаа","ts");c.innerHTML="";dExec(c);}catch(e){toast("Устгаж чадсангүй: "+(e&&e.message||e),"te");}};}
   const read=()=>{const o={};form.querySelectorAll("input[data-k]").forEach(x=>{const n=Math.max(0,Math.floor(+x.value||0));if(n)o[x.dataset.k]=n;});return o;};
-  const upd=()=>{const o=read();form.querySelector("#dtv").textContent=dTotal({v:o});const z=!Object.keys(o).length&&!form.querySelector("#diw").checked;form.querySelector("#dzw").hidden=!z;};form.querySelector("#diw").onchange=()=>upd();
+  const upd=()=>{const o=read();form.querySelector("#dtv").textContent=dTotal({v:o});form.querySelectorAll(".dauto").forEach(e=>e.textContent=dqVal({v:o},DQ.find(q=>q.k===e.dataset.q)));const z=!Object.keys(o).length&&!form.querySelector("#diw").checked;form.querySelector("#dzw").hidden=!z;};form.querySelector("#diw").onchange=()=>upd();
   form.querySelectorAll("input[data-k]").forEach(x=>x.oninput=upd);
-  // Хаягаар ажилласан → холбогдох асуултад автоматаар нэмэгдэнэ (зөрүүгээр нь)
-  const ADDR={n20_0:"n2_0",n20_1:"n6_1",n20_2:"n3_2"};
-  Object.entries(ADDR).forEach(([a,t])=>{const ia=form.querySelector("input[data-k='"+a+"']"),it=form.querySelector("input[data-k='"+t+"']");if(!ia||!it)return;
-    ia.dataset.p=+ia.value||0;it.closest("label").title="«Хаягаар» асуултаас автоматаар нэмэгдэнэ";
-    ia.addEventListener("input",()=>{const nv=Math.max(0,Math.floor(+ia.value||0)),d=nv-(+ia.dataset.p||0);ia.dataset.p=nv;if(!d)return;const tv=Math.max(0,(+it.value||0)+d);it.value=tv||"";it.style.transition="background .2s";it.style.background="#FEF3C7";setTimeout(()=>it.style.background="",900);upd();});});
   upd();
   sv.onclick=async()=>{
     const o=read(),ex=form.querySelector("input[name=dex]:checked").value==="1",ext=form.querySelector("#dext").value.trim(),note=form.querySelector("#dnote").value.trim();
