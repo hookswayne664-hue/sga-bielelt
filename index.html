@@ -923,7 +923,7 @@ async function doLogin(){
   enterApp(u);
 }
 function enterApp(u){
-  S.user=u;
+  S.user=u;setTimeout(()=>{try{bioOffer();}catch{}},2500);
   document.getElementById("LP").style.display="none";
   document.getElementById("AP").style.display="block";
   document.getElementById("nU").textContent=u.code+" · "+u.name+(u.person?" · "+u.person.name:"");
@@ -964,8 +964,10 @@ function enterApp(u){
 }
 
 function doLogout(){
+  const _bio=(()=>{try{return JSON.parse(localStorage.getItem("sga_bio")||"null");}catch{return null;}})(),_cu=_authMod&&_authMod.auth.currentUser;
   S.user=null;stopChat();
-  if(_authMod){try{_authMod.signOut(_authMod.auth);}catch{}}
+  if(_authMod&&!(_bio&&_cu&&_cu.email===_bio.email)){try{_authMod.signOut(_authMod.auth);}catch{}}
+  setTimeout(()=>{try{bioBtn();}catch{}},50);
   document.getElementById("LP").style.display="flex";
   document.getElementById("AP").style.display="none";
   document.getElementById("lP").value="";
@@ -5195,6 +5197,58 @@ setInterval(()=>{try{const cu=window._authMod&&_authMod.auth&&_authMod.auth.curr
   if(bad&&!b){b=document.createElement("div");b.id="authwarn";b.style.cssText="position:fixed;left:0;right:0;top:0;z-index:100005;background:#B91C1C;color:#fff;padding:12px 16px;font:600 14px system-ui;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.3)";
     b.innerHTML="⚠️ Энэ хөтчийн өөр цонхонд <b>өөр эрхээр нэвтэрсэн</b> тул энэ цонхонд хадгалах, мэдэгдэл авах боломжгүй боллоо. Нэг хөтөч дээр нэг л эрхээр ажиллана (өөр эрхийг өөр хөтөч, утсаар нээнэ үү). <button style='margin-left:10px;padding:5px 12px;border-radius:8px;border:0;font-weight:700;cursor:pointer' onclick='location.reload()'>🔄 Дахин ачаалах</button>";document.body.appendChild(b);}
   else if(!bad&&b)b.remove();}catch{}},3000);
+// ---------- 👆 Хурууны хээ / нүүрээр нэвтрэх (WebAuthn, төхөөрөмж дээрх түгжээ) ----------
+// Анх нууц үгээр нэвтэрсний дараа тохируулна. Firebase нэвтрэлт утсанд хадгалагдаж, апп нээх бүрт хурууны хээгээр баталгаажуулна.
+const BIO_K="sga_bio";
+function bioGet(){try{return JSON.parse(localStorage.getItem(BIO_K)||"null");}catch{return null;}}
+const b64e=b=>btoa(String.fromCharCode(...new Uint8Array(b))),b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function bioAvail(){try{return !!(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());}catch{return false;}}
+async function bioSetup(){
+  const cu=_authMod&&_authMod.auth.currentUser;if(!cu||!S.user)return;
+  const label=S.user.code+(S.user.person?"-"+S.user.person.no:"");
+  try{const c=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:"ШГА Биелэлт"},user:{id:crypto.getRandomValues(new Uint8Array(16)),name:label,displayName:label+(S.user.person?" · "+S.user.person.name:"")},
+      pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"discouraged"},timeout:60000,attestation:"none"}});
+    localStorage.setItem(BIO_K,JSON.stringify({cid:b64e(c.rawId),code:S.user.code,person:S.user.person||null,email:cu.email,name:S.user.person?S.user.person.name:S.user.name,at:Date.now()}));
+    toast("✅ Дараагийн удаа хурууны хээгээр нэвтэрнэ","ts");}
+  catch(e){toast("Хурууны хээ тохируулж чадсангүй — дараа дахин оролдоно уу","tw");}
+}
+async function bioOffer(){
+  if(!S.user||S.user.isAdmin||bioGet()||!(await bioAvail()))return;
+  try{if(localStorage.getItem("sga_bio_no")==="1")return;}catch{}
+  const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(400px,94vw)";ov.appendChild(bx);
+  bx.innerHTML="<div style='text-align:center;font-size:46px'>👆</div><h3 style='text-align:center;margin:4px 0 8px'>Хурууны хээгээр нэвтрэх үү?</h3><p class='dz' style='text-align:center;margin:0 0 14px'>Дараагийн удаа нууц үг бичихгүй, утасныхаа хурууны хээ (эсвэл нүүр таних)-гаар шууд орно. Нууц үг тань хэвээр хүчинтэй.</p><div class='brow' style='justify-content:center'><button class='btn bx' id='bioN'>Дараа</button><button class='btn bp' id='bioY'>👆 Тийм, тохируулах</button></div><div style='text-align:center;margin-top:8px'><a href='#' id='bioNever' class='dz'>Дахиж бүү асуу</a></div>";
+  document.body.appendChild(ov);
+  bx.querySelector("#bioN").onclick=()=>ov.remove();
+  bx.querySelector("#bioNever").onclick=e=>{e.preventDefault();try{localStorage.setItem("sga_bio_no","1");}catch{}ov.remove();};
+  bx.querySelector("#bioY").onclick=async()=>{ov.remove();await bioSetup();};
+}
+async function bioLogin(){
+  const B=bioGet();if(!B)return;const err=document.getElementById("lE");if(err)err.textContent="";
+  try{await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:b64d(B.cid)}],userVerification:"required",timeout:60000}});}
+  catch(e){if(err)err.textContent="Хурууны хээ баталгаажсангүй. Дахин оролдох эсвэл нууц үгээр нэвтэрнэ үү.";return;}
+  const bb=document.getElementById("bioB");if(bb){bb.disabled=true;bb.textContent="⏳ Нэвтэрч байна...";}
+  try{const A=await authMod();if(A.auth.authStateReady)await A.auth.authStateReady();
+    const cu=A.auth.currentUser;
+    if(!cu||cu.email!==B.email){localStorage.removeItem(BIO_K);if(err)err.textContent="Нэвтрэлтийн хугацаа дууссан байна. Нууц үгээр нэг удаа нэвтэрч, хурууны хээгээ дахин тохируулна уу.";bioBtn();return;}
+    for(let i=0;i<40&&!(S.units&&S.units.length);i++)await new Promise(r=>setTimeout(r,250));
+    const u=S.units.find(x=>x.code===B.code&&!x.disabled);if(!u){if(err)err.textContent="Нэгж олдсонгүй";return;}
+    if(!S._openDB){S._openDB=await bootLoad();}
+    if(B.person){let p=null;try{p=await dbGet("config/people/"+B.code+"/"+B.person.no);}catch{}
+      if(!p||p.active===false){try{await A.signOut(A.auth);}catch{}localStorage.removeItem(BIO_K);if(err)err.textContent="Энэ тойргийн эрх хаалттай эсвэл устгагдсан байна.";bioBtn();return;}
+      try{await window._set(window._r(fbDB,"config/people/"+B.code+"/"+B.person.no+"/lastLogin"),new Date().toISOString());}catch{}}
+    enterApp(B.person?Object.assign({},u,{person:B.person}):u);
+  }catch(e){if(err)err.textContent="Алдаа гарлаа: "+(e&&e.message||e);}
+  finally{if(bb){bb.disabled=false;bb.textContent="👆 Хурууны хээгээр нэвтрэх";}}
+}
+async function bioBtn(){
+  const lb=document.getElementById("lB");if(!lb)return;let w=document.getElementById("bioW");const B=bioGet();
+  if(!B||!(await bioAvail())){if(w)w.remove();return;}
+  if(!w){w=document.createElement("div");w.id="bioW";w.style.cssText="margin:4px 0 14px";const par=lb.parentElement,first=[...par.children].find(e=>!/^H\d$|^P$/.test(e.tagName)&&!e.classList.contains("lsub"));par.insertBefore(w,first||lb);}
+  w.innerHTML="<button type='button' class='lbtn' id='bioB' style='background:linear-gradient(135deg,#7C3AED,#4F46E5)'>👆 Хурууны хээгээр нэвтрэх</button><div class='lhint' style='margin-top:6px'>"+esc(B.code+(B.person?" · "+B.person.no+"-р тойрог":"")+(B.name?" · "+B.name:""))+" · <a href='#' id='bioOff' style='color:#64748B'>унтраах</a></div><div class='lhint' style='margin:10px 0 2px'>эсвэл нууц үгээр:</div>";
+  w.querySelector("#bioB").onclick=bioLogin;
+  w.querySelector("#bioOff").onclick=async e=>{e.preventDefault();localStorage.removeItem(BIO_K);try{const A=await authMod();await A.signOut(A.auth);}catch{}bioBtn();toast("Хурууны хээгээр нэвтрэх унтарлаа","ts");};
+}
+setTimeout(bioBtn,300);
 </script>
 </body>
 </html>
