@@ -5213,7 +5213,7 @@ async function bioSetup(){
   catch(e){toast("Хурууны хээ тохируулж чадсангүй — дараа дахин оролдоно уу","tw");}
 }
 async function bioOffer(){
-  if(!S.user||S.user.isAdmin||bioGet()||!(await bioAvail()))return;
+  if(!S.user||bioGet()||!(await bioAvail()))return;
   try{if(localStorage.getItem("sga_bio_no")==="1")return;}catch{}
   const ov=mk("div","modal-overlay"),bx=mk("div","modal-box");bx.style.width="min(400px,94vw)";ov.appendChild(bx);
   bx.innerHTML="<div style='text-align:center;font-size:46px'>👆</div><h3 style='text-align:center;margin:4px 0 8px'>Хурууны хээгээр нэвтрэх үү?</h3><p class='dz' style='text-align:center;margin:0 0 14px'>Дараагийн удаа нууц үг бичихгүй, утасныхаа хурууны хээ (эсвэл нүүр таних)-гаар шууд орно. Нууц үг тань хэвээр хүчинтэй.</p><div class='brow' style='justify-content:center'><button class='btn bx' id='bioN'>Дараа</button><button class='btn bp' id='bioY'>👆 Тийм, тохируулах</button></div><div style='text-align:center;margin-top:8px'><a href='#' id='bioNever' class='dz'>Дахиж бүү асуу</a></div>";
