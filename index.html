@@ -4335,12 +4335,20 @@ const AW11=[
  {k:"a4",s:"Материал шилжүүлсэн",t:"Шийдвэр биелүүлээгүй, саад учруулсан тухай материал шилжүүлсэн",c:["Эрүүгийн хэрэг","Зөрчил"]},
  {k:"a5",s:"Хадгалалтад",t:"Хадгалалтад байгаа хураагдсан хөрөнгө (сарын эцсээр)",c:DPROP,h:"Сарын сүүлийн 7 хоногийн мэдээнд бөглөнө",b:"ШШГТХ 56",m:1}
 ];
+// 1.3, 1.4 — ХЗДХС-ын 2018.02.13-ны А/24 тушаалын 3-ШГА-1.1 маягтын хөдөлгөөний бүтцээр
+// төрөл: "+" нэмэгдсэн, "-" хасагдсан, "g" гүйцэтгэсэн, "gp" хэсэгчлэн гүйцэтгэсэн (зөвхөн дүнгээс хасна), "i" ажиллагаа (үлдэгдэлд нөлөөлөхгүй)
+const ABF=[["+","Нэмэгдсэн"],["-","Хасагдсан"],["g","Гүйцэтгэсэн"],["i","Ажиллагаа"]];
+const ABROW=[["new","Шүүхээс шинээр ирсэн","+"],["trin","Харьяаллын дагуу шилжиж ирсэн","+"],["rdone","Дууссаныг сэргээсэн","+"],["rret","Буцаасныг сэргээсэн","+"],["rsusp","Түдгэлзүүлснийг сэргээсэн","+"],
+ ["ret","Төлбөр авагчид буцаасан","-"],["void","Хэрэгсэхгүй буюу хүчингүй болсон","-"],["trout","Харьяаллын дагуу шилжүүлсэн","-"],["susp","Түдгэлзүүлсэн","-"],
+ ["done","Дуусгавар болсон","g"],["recon","Талууд эвлэрсэн","g"],["refuse","Төлбөр авахаас татгалзсан","g"],["part","Хэсэгчлэн гүйцэтгэсэн","gp"],["oth","Бусад","g"],
+ ["act","Ажиллагаа явуулсан","i"]];
 const ABAL=[
- {k:"hi",n:"1.3",t:"Өндөр үнийн дүнтэй гүйцэтгэх баримт бичиг (50 сая төгрөгөөс дээш)",h:"Баримт бичиг тус бүрээр биш, нэгжийн нийт тоо, дүнгээр бөглөнө.",
-  f:[["new","Шинээр ирсэн",1],["act","Ажиллагаа явуулсан",0],["part","Хэсэгчлэн төлүүлсэн",1],["done","Дуусгавар болсон",1],["susp","Түдгэлзүүлсэн, шилжүүлсэн",1]]},
- {k:"pl",n:"1.4",t:"Барьцаатай гүйцэтгэх баримт бичиг",h:"Барьцаа хөрөнгөөр төлбөр барагдуулах баримт бичгийг нэгжийн нийт тоо, дүнгээр бөглөнө.",
-  f:[["new","Шинээр ирсэн",1],["act","Ажиллагаа явуулсан",0],["seal","Барьцаа хөрөнгийг битүүмжилсэн",0],["seize","Барьцаа хөрөнгийг хураан авсан",0],["part","Хэсэгчлэн төлүүлсэн",1],["done","Дуусгавар болсон",1],["susp","Түдгэлзүүлсэн, шилжүүлсэн",1]]}
+ {k:"hi",n:"1.3",t:"Өндөр үнийн дүнтэй гүйцэтгэх баримт бичиг (50 сая төгрөгөөс дээш)",h:"Нэгжийн нийт тоо, дүнгээр бөглөнө. Бүтэц нь ХЗДХС-ын 2018 оны А/24 тушаалын 3-ШГА-1.1 маягтын дагуу.",f:ABROW},
+ {k:"pl",n:"1.4",t:"Барьцаатай гүйцэтгэх баримт бичиг",h:"Барьцаа хөрөнгөөр төлбөр барагдуулах баримт бичгийг нэгжийн нийт тоо, дүнгээр бөглөнө. Бүтэц нь 3-ШГА-1.1 маягтын дагуу.",f:ABROW.concat([["seal","Барьцаа хөрөнгийг битүүмжилсэн","i"],["seize","Барьцаа хөрөнгийг хураан авсан","i"]])}
 ];
+function aBalc(B,g,pn,pa){const s=(t,x)=>B.f.filter(f=>f[2]===t).reduce((a,f)=>a+g(f[0]+"_"+x),0);
+  const pl_n=s("+","n"),pl_a=s("+","a"),mi_n=s("-","n"),mi_a=s("-","a"),gn=s("g","n"),ga=s("g","a"),gp=s("gp","a");
+  const tn=pn+pl_n-mi_n,ta=pa+pl_a-mi_a;return {pn,pa,pl_n,pl_a,mi_n,mi_a,gn,ga:ga+gp,tn,ta,bn:tn-gn,ba:ta-ga-gp,act:g("act_n"),idle:tn-g("act_n"),pc:tn?Math.round(gn*100/tn):0,pa_:ta?Math.round((ga+gp)*100/ta):0};}
 const AYN=v=>v==1?"Тийм":"Үгүй";
 const PEN_LONG=["Цалингийн хэмжээг 3 сар хүртэл хугацаагаар 20 хүртэл хувиар бууруулах","Цолны мөнгийг 3 сар хүртэл хугацаагаар хасах"];
 const AREG={
@@ -4652,7 +4660,7 @@ function aChain(wk){ // үлдэгдлийг долоо хоног бүрээр 
   const out={},last={};
   Object.keys(wk).sort().forEach(m=>{const v=(wk[m]&&wk[m].v)||{};out[m]={};
     ABAL.forEach(B=>{const g=k=>+v[B.k+"_"+k]||0;const pn=last[B.k]?last[B.k].bn:g("p_n"),pa=last[B.k]?last[B.k].ba:g("p_a");
-      const bn=pn+g("new_n")-g("done_n")-g("susp_n"),ba=pa+g("new_a")-g("done_a")-g("susp_a");
+      const {bn,ba}=aBalc(B,g,pn,pa);
       out[m][B.k]={pn,pa,bn,ba,man:!last[B.k]};last[B.k]={bn,ba};});});
   return out;
 }
@@ -4687,16 +4695,18 @@ async function aWeekCard(w,ctx){
   ABAL.forEach(B=>{const p=prevBal(B);
     let h="<h3 class='dsec'>"+B.n+". "+esc(B.t)+"</h3><div class='dz' style='margin-bottom:6px'>"+esc(B.h)+"</div><div class='tw'><table class='dtbl'><thead><tr><th>Үзүүлэлт</th><th>Тоо</th><th>Дүн (төгрөг)</th></tr></thead><tbody>";
     h+="<tr><td>Өмнөх 7 хоногийн үлдэгдэл"+(p?" <span class='dz'>(автомат)</span>":" <span class='dz'>(эхний мэдээ — гараар)</span>")+"</td>"+(p?"<td>"+p.bn+"</td><td>"+aFm(p.ba)+"</td>":"<td><input type='number' min='0' data-w='"+B.k+"_p_n' value='"+(v[B.k+"_p_n"]||"")+"' placeholder='0' style='width:90px'></td><td><input type='number' min='0' data-w='"+B.k+"_p_a' value='"+(v[B.k+"_p_a"]||"")+"' placeholder='0' style='width:150px'></td>")+"</tr>";
-    B.f.forEach(([k,l,am])=>{h+="<tr><td>"+esc(l)+"</td><td><input type='number' min='0' data-w='"+B.k+"_"+k+"_n' value='"+(v[B.k+"_"+k+"_n"]||"")+"' placeholder='0' style='width:90px'></td><td>"+(am?"<input type='number' min='0' data-w='"+B.k+"_"+k+"_a' value='"+(v[B.k+"_"+k+"_a"]||"")+"' placeholder='0' style='width:150px'>":"")+"</td></tr>";});
+    ABF.forEach(([t,gl])=>{h+="<tr class='tot'><td>"+gl+(t==="i"?" <span class='dz'>(үлдэгдэлд нөлөөлөхгүй)</span>":" <span class='dz'>(автомат)</span>")+"</td><td id='"+B.k+"_s"+t+"n'></td><td id='"+B.k+"_s"+t+"a'></td></tr>";
+      B.f.filter(f=>f[2]===t||(t==="g"&&f[2]==="gp")).forEach(([k,l,tp])=>{const am=tp!=="i";h+="<tr><td style='padding-left:22px'>"+esc(l)+(tp==="gp"?" <span class='dz'>(тоо нь үлдэгдлээс хасагдахгүй)</span>":"")+"</td><td><input type='number' min='0' data-w='"+B.k+"_"+k+"_n' value='"+(v[B.k+"_"+k+"_n"]||"")+"' placeholder='0' style='width:90px'></td><td>"+(am?"<input type='number' min='0' data-w='"+B.k+"_"+k+"_a' value='"+(v[B.k+"_"+k+"_a"]||"")+"' placeholder='0' style='width:150px'>":"")+"</td></tr>";});});
     h+="<tr class='tot'><td>Үлдэгдэл <span class='dz'>(автомат)</span></td><td id='"+B.k+"_bn'></td><td id='"+B.k+"_ba'></td></tr><tr><td colspan='3' class='dz' id='"+B.k+"_ex' style='text-align:left'></td></tr></tbody></table></div>";
     form.insertAdjacentHTML("beforeend",h);});
   form.querySelectorAll("table input").forEach(i=>i.style.cssText+=";padding:7px;border:1px solid #CBD5E1;border-radius:8px;font:inherit;text-align:right");
   const bar=mk("div","dsum");form.appendChild(bar);
   const read=()=>{const o={};form.querySelectorAll("input[data-w]").forEach(x=>{if(x.value==="")return;const n=Math.max(0,Math.floor(+x.value||0));if(n||x.dataset.w.startsWith("a5"))o[x.dataset.w]=n;});return o;};
   const calc=o=>{const r={};ABAL.forEach(B=>{const p=prevBal(B),g=k=>+o[B.k+"_"+k]||0,pn=p?p.bn:g("p_n"),pa=p?p.ba:g("p_a");
-    const tn=pn+g("new_n"),ta=pa+g("new_a");r[B.k]={pn,pa,tn,ta,bn:tn-g("done_n")-g("susp_n"),ba:ta-g("done_a")-g("susp_a"),act:g("act_n"),idle:tn-g("act_n"),pc:tn?Math.round(g("done_n")*100/tn):0,pa_:ta?Math.round((g("done_a")+g("part_a"))*100/ta):0};});return r;};
+    r[B.k]=aBalc(B,g,pn,pa);});return r;};
   const upd=()=>{const r=calc(read());ABAL.forEach(B=>{const x=r[B.k];form.querySelector("#"+B.k+"_bn").innerHTML=x.bn<0?"<span style='color:var(--rd)'>"+x.bn+"</span>":x.bn;form.querySelector("#"+B.k+"_ba").innerHTML=x.ba<0?"<span style='color:var(--rd)'>"+aFm(x.ba)+"</span>":aFm(x.ba);
-    form.querySelector("#"+B.k+"_ex").innerHTML="Ажиллагаа явуулаагүй: <b>"+Math.max(0,x.idle)+"</b> · Гүйцэтгэл: тоогоор <b>"+x.pc+"%</b>, дүнгээр <b>"+x.pa_+"%</b> (дуусгавар болсон ба хэсэгчлэн төлүүлсэн дүн)";});};
+    [["+",x.pl_n,x.pl_a],["-",x.mi_n,x.mi_a],["g",x.gn,x.ga],["i",x.act,""]].forEach(([t,n,a])=>{const e1=form.querySelector("#"+B.k+"_s"+t+"n"),e2=form.querySelector("#"+B.k+"_s"+t+"a");if(e1)e1.textContent=t==="i"?"":n;if(e2)e2.textContent=a===""?"":aFm(a);});
+    form.querySelector("#"+B.k+"_ex").innerHTML="Гүйцэтгэвэл зохих: <b>"+x.tn+"</b> баримт бичиг, <b>"+aFm(x.ta)+"</b> төгрөг · Ажиллагаа явуулаагүй: <b>"+Math.max(0,x.idle)+"</b> · Гүйцэтгэл (гүйцэтгэсэн / гүйцэтгэвэл зохих): тоогоор <b>"+x.pc+"%</b>, дүнгээр <b>"+x.pa_+"%</b>";});};
   form.querySelectorAll("input[data-w]").forEach(x=>x.oninput=upd);upd();
   if(!ctx.canEdit){form.querySelectorAll("input").forEach(e=>e.disabled=true);return;}
   const sv=mk("button","btn bp");sv.textContent=rec.ts?"💾 Шинэчилж хадгалах":"💾 7 хоногийн мэдээ хадгалах";bar.appendChild(sv);
@@ -4849,7 +4859,7 @@ async function tExecMine(c){
   const Q=DQ.concat(XQ),sum=(ds,q)=>ds.reduce((s,d)=>s+(R[d]?(q?dqVal(R[d],q):dTotal(R[d])):0),0);
   const wd=ds=>ds.filter(d=>dWork(d)),filled=ds=>ds.filter(d=>R[d]).length;
   const allWd=wd(days),miss=allWd.filter(d=>!R[d]&&d!==t);
-  let h="<div class='stats'>"+dStat(filled(days)+"/"+allWd.length,"Бөглөсөн өдөр","g")+dStat(miss.length,"Бөглөөгүй өдөр",miss.length?"r":"")+dStat(sum(days),"Нийт ажиллагаа")+dStat(sum(days,DQ.find(q=>q.k==="n8")),"Хөрөнгө тогтоосон")+"</div>";
+  let h="<div class='stats'>"+dStat(filled(days)+"/"+allWd.length,"Бөглөсөн өдөр","g")+dStat(miss.length,"Бөглөөгүй өдөр",miss.length?"r":"")+dStat(sum(days),"Нийт ажиллагаа")+dStat(sum(days,DQ[5]),"Хөрөнгө тогтоосон")+"</div>";
   h+="<div class='tw'><table class='dtbl' id='xmt'><thead><tr><th>Ажиллагаа</th>"+W.map(w=>"<th>"+lab(w)+"</th>").join("")+"<th>Сарын дүн</th></tr></thead><tbody>";
   h+="<tr><td class='dz'>Бөглөсөн өдөр</td>"+W.map(w=>"<td>"+filled(w.ds)+"/"+wd(w.ds).length+"</td>").join("")+"<td>"+filled(days)+"/"+allWd.length+"</td></tr>";
   h+="<tr class='tot'><td>Нийт ажиллагаа</td>"+W.map(w=>"<td>"+sum(w.ds)+"</td>").join("")+"<td>"+sum(days)+"</td></tr>";
