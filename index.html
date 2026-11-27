@@ -1176,7 +1176,15 @@ async function tStaff(c){
 // Нэгжийн нууц үг 4 оронтой ч байж болох тул Firebase-д "sga-u:" угтвартайгаар хадгална.
 function uPw(p){return "sga-u:"+String(p);}
 function uEmail(code,rev){return "sga"+(String(code).replace(/\D/g,"")||"00")+"-u"+(rev?"-r"+rev:"")+"@shga-bilelt.firebaseapp.com";}
-async function dbGet(path){const s=await window._get(window._r(fbDB,path));return s&&s.exists&&s.exists()?s.val():null;}
+function dSosStrip(path,v){ // SOS дохио нь өдрийн мэдээ биш — зөвхөн «sos» агуулсан бичлэгийг бөглөсөнд тооцохгүй
+  if(!v||typeof v!=="object"||!/^daily(\/|$)/.test(path))return v;const only=r=>r&&typeof r==="object"&&Object.keys(r).length&&Object.keys(r).every(k=>k==="sos");
+  const depth=path.split("/").filter(Boolean).length; // 1 daily, 2 unit, 3 date, 4 тойрог
+  const fixDay=d=>{if(!d||typeof d!=="object")return d;const o={};Object.entries(d).forEach(([n,x])=>{if(!only(x))o[n]=x;});return Object.keys(o).length?o:null;};
+  if(depth>=4)return only(v)?null:v;
+  if(depth===3)return fixDay(v);
+  if(depth===2){const o={};Object.entries(v).forEach(([dt,d])=>{const f=fixDay(d);if(f)o[dt]=f;});return o;}
+  const o={};Object.entries(v).forEach(([u,uu])=>{o[u]=dSosStrip("daily/"+u,uu)||{};});return o;}
+async function dbGet(path){const s=await window._get(window._r(fbDB,path));return dSosStrip(path,s&&s.exists&&s.exists()?s.val():null);}
 async function dbSet(path,v){await window._set(window._r(fbDB,path),v);}
 function effPwd(u){return S.pwds.hasOwnProperty(u.code)&&S.pwds[u.code]!==0&&S.pwds[u.code]!==""?String(S.pwds[u.code]):String(u.pwd||"");}
 async function createUnitAuth(u,pwd){
@@ -4120,7 +4128,7 @@ function dRange(mode,day){const t=ymd(new Date());let a=day,b=day;
 function dLab(s){return s.slice(5).replace("-",".")+" "+DWD[dD(s).getDay()];}
 function dObj(x){const o={};if(x)Object.keys(x).forEach(k=>{if(x[k]!=null)o[k]=x[k];});return o;}
 function dAbsOn(abs,no,day){return Object.values(abs||{}).find(a=>a&&String(a.no)===String(no)&&a.from<=day&&(!a.to||a.to>=day));}
-async function dQuery(path,a,b){if(window.fbEnsure)await fbEnsure();const M=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");const s=await M.get(M.query(M.ref(fbDB,path),M.orderByKey(),M.startAt(a),M.endAt(b)));return s.exists()?s.val():{};}
+async function dQuery(path,a,b){if(window.fbEnsure)await fbEnsure();const M=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");const s=await M.get(M.query(M.ref(fbDB,path),M.orderByKey(),M.startAt(a),M.endAt(b)));return s.exists()?(dSosStrip(path,s.val())||{}):{};}
 async function dLoad(u,a,b){if(a===b){const v=await dbGet("daily/"+u+"/"+a);const o={};if(v)o[a]=v;return o;}return dQuery("daily/"+u,a,b);}
 async function dXlsx(tbl,name){try{await loadSheetJS();XLSX.writeFile(XLSX.utils.table_to_book(tbl,{sheet:"Өдрийн мэдээ"}),name+".xlsx");}catch(e){toast("Excel гаргаж чадсангүй","te");}}
 function dCtl(onCh,extra){ // Өдөр / 7 хоног / Сар + огноо
@@ -5141,13 +5149,14 @@ async function sosFire(){
   const map=rec.lat?"https://maps.google.com/?q="+rec.lat+","+rec.lng:"";
   const sm=ov.querySelector("#sos_sms");if(sm)sm.href="sms:"+ph+"?body="+encodeURIComponent("🚨 SOS! "+no+"-р тойрог, "+nm+". Тусламж хэрэгтэй."+(map?" Байршил: "+map:""));
   const st=ov.querySelector("#sos_st");
-  try{await dbSet("daily/"+u+"/"+SOS_K+"/"+no,rec);st.innerHTML="✅ <b>Ахлах шийдвэр гүйцэтгэгчид дохио илгээгдлээ</b>"+(map?"<br><a href='"+map+"' target='_blank'>📍 байршил</a>":"<br><span style='font-size:13px'>(байршил тодорхойлогдсонгүй)</span>")+"<br><span style='font-size:13px'>Ахлах сайтаа нээгээгүй байж магадгүй — заавал залгана уу.</span>";}
+  try{await dbSet("daily/"+u+"/"+ymd(new Date())+"/"+no+"/sos",rec);st.innerHTML="✅ <b>Ахлах шийдвэр гүйцэтгэгчид дохио илгээгдлээ</b>"+(map?"<br><a href='"+map+"' target='_blank'>📍 байршил</a>":"<br><span style='font-size:13px'>(байршил тодорхойлогдсонгүй)</span>")+"<br><span style='font-size:13px'>Ахлах сайтаа нээгээгүй байж магадгүй — заавал залгана уу.</span>";}
   catch(e){st.innerHTML="⚠️ <b>Сайтаар илгээж чадсангүй</b> — доорх товчоор шууд залгана уу.";}
 }
 // Ахлах: 40 секунд тутам шалгана, шинэ дохио ирвэл дуут дохио + том цонх + утасны мэдэгдэл
 let _sosLast=null;
 async function sosPoll(){
-  if(!S.user||S.user.isAdmin||(typeof isExec==="function"&&isExec()))return;const u=S.user.code;let d=null;try{d=await dbGet("daily/"+u+"/"+SOS_K);}catch{return;}
+  if(!S.user||S.user.isAdmin||(typeof isExec==="function"&&isExec()))return;const u=S.user.code,d={};
+  for(const dt of [ymd(new Date()),ymd(new Date(Date.now()-864e5))]){try{const s=await window._get(window._r(fbDB,"daily/"+u+"/"+dt));const v=s&&s.exists&&s.exists()?s.val():null;Object.entries(v||{}).forEach(([no,x])=>{if(x&&x.sos&&(!d[no]||x.sos.ts>d[no].ts))d[no]=x.sos;});}catch{return;}}
   let ack={};try{ack=JSON.parse(localStorage.getItem("sga_sos_ack")||"{}");}catch{}
   Object.entries(dObj(d)).forEach(([no,r])=>{if(!r||!r.ts||Date.now()-r.ts>6*3600e3)return;const id=no+"_"+r.ts;if(ack[id]||document.getElementById("sosal_"+id))return;
     const map=r.lat?"https://maps.google.com/?q="+r.lat+","+r.lng:"";
@@ -5163,12 +5172,12 @@ async function sosPoll(){
       toast("Тохиолдлыг «1.2. Онцгой ба тусгай ажиллагааны бүртгэл»-д бүртгэнэ үү","tw");};});
 }
 setInterval(()=>{try{sosUI();}catch{}},1500);
-setInterval(()=>{sosPoll();},40000);setTimeout(()=>{sosPoll();},5000);
+setInterval(()=>{sosPoll();},25000);setTimeout(()=>{sosPoll();},5000);
 // Ахлах: «Миний хийх ажил» дээрх SOS утасны карт
 function aSosCard(w,u,R,ppl){
   const s=dObj(R.sos),card=mk("div","card");card.style.cssText+=";border-left:4px solid #DC2626;border-radius:0 14px 14px 0";w.appendChild(card);
   let np="denied";try{np="Notification"in window?Notification.permission:"unsupported";}catch{}
-  card.innerHTML="<h2 style='margin-bottom:4px'>🚨 SOS — яаралтай дохио</h2><p class='dlead'>Шийдвэр гүйцэтгэгч утасныхаа улаан SOS товчийг дарахад энд дуут дохио, байршил ирж, <b>доорх утас руу шууд залгах</b> товч гарна. Сайт нээлттэй байх үед 40 секунд тутам шалгана.</p>"
+  card.innerHTML="<h2 style='margin-bottom:4px'>🚨 SOS — яаралтай дохио</h2><p class='dlead'>Шийдвэр гүйцэтгэгч утасныхаа улаан SOS товчийг дарахад энд дуут дохио, байршил ирж, <b>доорх утас руу шууд залгах</b> товч гарна. Сайт нээлттэй байх үед 25 секунд тутам шалгана.</p>"
    +"<div style='display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px'><input id='sos_nm' placeholder='Нэр (жишээ нь Б.Бат)' value='"+esc(s.nm||"")+"' style='flex:1;min-width:160px'><input id='sos_ph' inputmode='tel' placeholder='Утасны дугаар' value='"+esc(s.ph||"")+"' style='width:170px'><button class='btn bp' id='sos_sv'>💾 Хадгалах</button></div>"
    +(np==="default"?"<button class='btn bx' id='sos_np' style='margin-top:10px'>🔔 Энэ компьютерт мэдэгдэл зөвшөөрөх</button>":np==="granted"?"<div class='dz' style='margin-top:8px'>🔔 Мэдэгдэл зөвшөөрөгдсөн</div>":"");
   card.querySelectorAll("input").forEach(i=>i.style.cssText+=";padding:9px;border:1px solid #CBD5E1;border-radius:8px;font:inherit");
