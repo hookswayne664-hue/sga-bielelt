@@ -5089,6 +5089,7 @@ async function aTodo(w,u){
   h+="<div class='card' style='padding:14px 20px'><div class='dz'>🧮 <b>Автоматаар гардаг</b> (бөглөхгүй): өргөдөл, гомдлын сарын тоо, сахилгын шийтгэлтэй алба хаагчид, сул орон тоо, нийт ажиллагаа, ирц.</div></div>";
   w.innerHTML=h;
   w.querySelectorAll("[data-sec]").forEach(b=>b.onclick=()=>{S._aSec=b.dataset.sec;if(b.dataset.sec==="1")S._aWk=wk[prev]?cur:prev;renderTab("daily");});
+  try{const ppl=await loadPeople(u);aSosCard.re=()=>{renderTab("daily");};aSosCard(w,u,R,ppl);}catch(e){console.warn("[SGA] sos card",e);}
 }
 
 // ---------- Нүүр: «📱 Гар утсандаа суулгах» заавар ----------
@@ -5107,6 +5108,77 @@ function homeInstall(box){
   box.innerHTML="<div class='hd'><span class='eyebrow'>Заавар</span><h2>📱 Гар утсандаа апп шиг суулгах</h2></div><div style='background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 6px 24px rgba(15,23,42,.06)'>"+body+"</div>";
 }
 try{homeInstall(document.getElementById("linst"));}catch(e){}
+// ---------- 🚨 SOS: шийдвэр гүйцэтгэгч → ахлах шийдвэр гүйцэтгэгч ----------
+// Дохио: daily/<нэгж>/~sos/<тойрог> = {ts,name,lat,lng,acc} (шийдвэр гүйцэтгэгч зөвхөн өөрийн зангилаанд бичнэ)
+// Ахлахын утас: dreg/<нэгж>/sos {ph,nm} → config/people/<нэгж>/<тойрог>/sos руу хуулагдана
+const SOS_K="~sos";
+async function aSosSync(u,sos,ppl){const js=JSON.stringify(sos&&sos.ph?{ph:sos.ph,nm:sos.nm||""}:null);
+  for(const [no,pr] of Object.entries(dObj(ppl))){if(!pr||!pr.email)continue;if(JSON.stringify(pr.sos||null)!==js){try{await dbSet("config/people/"+u+"/"+no+"/sos",sos&&sos.ph?{ph:sos.ph,nm:sos.nm||""}:null);}catch(e){console.warn("[SGA] sos sync",no,e);}}}}
+function sosTel(p){return String(p||"").replace(/[^\d+]/g,"");}
+function sosUI(){
+  const ex=typeof isExec==="function"&&isExec();let b=document.getElementById("sosbtn");
+  if(!ex){if(b)b.remove();return;}if(b)return;
+  b=document.createElement("button");b.id="sosbtn";b.type="button";b.innerHTML="SOS";b.title="Аюултай нөхцөлд 2 секунд дарж байна";
+  b.style.cssText="position:fixed;right:18px;bottom:88px;z-index:99990;width:66px;height:66px;border-radius:50%;border:4px solid #fff;background:radial-gradient(circle at 35% 30%,#F87171,#DC2626 60%,#991B1B);color:#fff;font:900 18px/1 system-ui;letter-spacing:1px;box-shadow:0 6px 20px rgba(220,38,38,.55);touch-action:none;user-select:none;-webkit-user-select:none";
+  const ring=document.createElement("div");ring.style.cssText="position:absolute;inset:-8px;border-radius:50%;border:4px solid #DC2626;opacity:0;transform:scale(.8);transition:none;pointer-events:none";b.appendChild(ring);
+  let tm=null;const start=e=>{e.preventDefault();ring.style.transition="transform 1.5s linear,opacity .2s";ring.style.opacity="1";ring.style.transform="scale(1.25)";tm=setTimeout(()=>{stop();sosFire();},1500);};
+  const stop=()=>{clearTimeout(tm);tm=null;ring.style.transition="none";ring.style.opacity="0";ring.style.transform="scale(.8)";};
+  b.addEventListener("pointerdown",start);["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,stop));
+  b.addEventListener("click",()=>{if(!tm)toast("🚨 SOS илгээхийн тулд товчийг 2 секунд дарж байна уу","tw");});
+  b.addEventListener("contextmenu",e=>e.preventDefault());document.body.appendChild(b);
+}
+async function sosFire(){
+  const u=S.user.code,p=S.user.person||{},no=String(p.no),nm=p.name||"";let sos=null;try{sos=await dbGet("config/people/"+u+"/"+no+"/sos");}catch{}
+  const ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;z-index:100001;background:rgba(127,29,29,.92);display:flex;align-items:center;justify-content:center;padding:18px";
+  const ph=sosTel(sos&&sos.ph),A="display:block;text-decoration:none;text-align:center;padding:16px;border-radius:14px;font:800 18px system-ui;margin:10px 0;";
+  ov.innerHTML="<div style='background:#fff;border-radius:20px;max-width:420px;width:100%;padding:22px;text-align:center'><div style='font-size:44px'>🚨</div><h2 style='margin:4px 0 6px;color:#B91C1C'>SOS дохио</h2><div id='sos_st' style='font-size:15px;color:#475569;margin-bottom:8px'>⏳ Ахлах шийдвэр гүйцэтгэгчид илгээж байна...</div>"
+   +(ph?"<a href='tel:"+ph+"' style='"+A+"background:#16A34A;color:#fff'>📞 Ахлах руу залгах<br><span style='font-size:13px;font-weight:600'>"+esc((sos.nm?sos.nm+" · ":"")+sos.ph)+"</span></a><a id='sos_sms' href='sms:"+ph+"' style='"+A+"background:#2563EB;color:#fff'>💬 SMS илгээх (байршилтай)</a>":"<div class='dalert' style='text-align:left'>Ахлах шийдвэр гүйцэтгэгчийн утас бүртгэгдээгүй байна.</div>")
+   +"<a href='tel:102' style='"+A+"background:#1E293B;color:#fff'>🚓 102 — Цагдаа</a><button id='sos_x' class='btn bx' style='margin-top:6px;width:100%'>Хаах</button></div>";
+  document.body.appendChild(ov);ov.querySelector("#sos_x").onclick=()=>ov.remove();try{navigator.vibrate&&navigator.vibrate([200,100,200]);}catch{}
+  const rec={ts:Date.now(),name:nm};
+  const pos=await new Promise(r=>{if(!navigator.geolocation)return r(null);navigator.geolocation.getCurrentPosition(x=>r(x),()=>r(null),{enableHighAccuracy:true,timeout:8000,maximumAge:60000});});
+  if(pos){rec.lat=+pos.coords.latitude.toFixed(6);rec.lng=+pos.coords.longitude.toFixed(6);rec.acc=Math.round(pos.coords.accuracy);}
+  const map=rec.lat?"https://maps.google.com/?q="+rec.lat+","+rec.lng:"";
+  const sm=ov.querySelector("#sos_sms");if(sm)sm.href="sms:"+ph+"?body="+encodeURIComponent("🚨 SOS! "+no+"-р тойрог, "+nm+". Тусламж хэрэгтэй."+(map?" Байршил: "+map:""));
+  const st=ov.querySelector("#sos_st");
+  try{await dbSet("daily/"+u+"/"+SOS_K+"/"+no,rec);st.innerHTML="✅ <b>Ахлах шийдвэр гүйцэтгэгчид дохио илгээгдлээ</b>"+(map?"<br><a href='"+map+"' target='_blank'>📍 байршил</a>":"<br><span style='font-size:13px'>(байршил тодорхойлогдсонгүй)</span>")+"<br><span style='font-size:13px'>Ахлах сайтаа нээгээгүй байж магадгүй — заавал залгана уу.</span>";}
+  catch(e){st.innerHTML="⚠️ <b>Сайтаар илгээж чадсангүй</b> — доорх товчоор шууд залгана уу.";}
+}
+// Ахлах: 40 секунд тутам шалгана, шинэ дохио ирвэл дуут дохио + том цонх + утасны мэдэгдэл
+let _sosLast=null;
+async function sosPoll(){
+  if(!S.user||S.user.isAdmin||(typeof isExec==="function"&&isExec()))return;const u=S.user.code;let d=null;try{d=await dbGet("daily/"+u+"/"+SOS_K);}catch{return;}
+  let ack={};try{ack=JSON.parse(localStorage.getItem("sga_sos_ack")||"{}");}catch{}
+  Object.entries(dObj(d)).forEach(([no,r])=>{if(!r||!r.ts||Date.now()-r.ts>6*3600e3)return;const id=no+"_"+r.ts;if(ack[id]||document.getElementById("sosal_"+id))return;
+    const map=r.lat?"https://maps.google.com/?q="+r.lat+","+r.lng:"";
+    try{if("Notification"in window&&Notification.permission==="granted")new Notification("🚨 SOS — "+no+"-р тойрог",{body:(r.name||"")+" · "+new Date(r.ts).toLocaleTimeString("mn-MN"),requireInteraction:true});}catch{}
+    let beep=null;try{const ac=new (window.AudioContext||window.webkitAudioContext)();beep=setInterval(()=>{const o=ac.createOscillator(),g=ac.createGain();o.type="square";o.frequency.value=880;g.gain.value=.15;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.35);},700);}catch{}
+    const ov=document.createElement("div");ov.id="sosal_"+id;ov.style.cssText="position:fixed;inset:0;z-index:100002;background:rgba(127,29,29,.9);display:flex;align-items:center;justify-content:center;padding:18px";
+    ov.innerHTML="<div style='background:#fff;border-radius:20px;max-width:460px;width:100%;padding:24px;text-align:center'><div style='font-size:52px'>🚨</div><h2 style='color:#B91C1C;margin:4px 0'>SOS дохио ирлээ</h2><div style='font-size:18px;margin:8px 0'><b>"+esc(no)+"-р тойрог</b> · "+esc(r.name||"")+"</div><div class='dz'>"+new Date(r.ts).toLocaleString("mn-MN")+"</div>"
+      +(map?"<a href='"+map+"' target='_blank' class='btn bp' style='display:block;margin:14px 0;padding:14px;font-size:16px'>📍 Байршлыг газрын зургаар харах"+(r.acc?" (±"+r.acc+" м)":"")+"</a>":"<div class='dalert'>Байршил тодорхойлогдоогүй</div>")
+      +"<div class='dz' style='margin:6px 0 12px'>Шийдвэр гүйцэтгэгч рүү нэн даруй холбогдоно уу. Шаардлагатай бол 102-т мэдэгдэнэ.</div><button class='btn bx' style='width:100%;padding:12px'>✅ Хүлээн авлаа</button></div>";
+    document.body.appendChild(ov);
+    ov.querySelector("button").onclick=async()=>{clearInterval(beep);ack[id]=Date.now();try{localStorage.setItem("sga_sos_ack",JSON.stringify(ack));}catch{}ov.remove();
+      try{await dbSet("dreg/"+u+"/sosLog/"+id,{no,name:r.name||"",ts:r.ts,lat:r.lat||null,lng:r.lng||null,ack:Date.now()});}catch{}
+      toast("Тохиолдлыг «1.2. Онцгой ба тусгай ажиллагааны бүртгэл»-д бүртгэнэ үү","tw");};});
+}
+setInterval(()=>{try{sosUI();}catch{}},1500);
+setInterval(()=>{sosPoll();},40000);setTimeout(()=>{sosPoll();},5000);
+// Ахлах: «Миний хийх ажил» дээрх SOS утасны карт
+function aSosCard(w,u,R,ppl){
+  const s=dObj(R.sos),card=mk("div","card");card.style.cssText+=";border-left:4px solid #DC2626;border-radius:0 14px 14px 0";w.appendChild(card);
+  let np="denied";try{np="Notification"in window?Notification.permission:"unsupported";}catch{}
+  card.innerHTML="<h2 style='margin-bottom:4px'>🚨 SOS — яаралтай дохио</h2><p class='dlead'>Шийдвэр гүйцэтгэгч утасныхаа улаан SOS товчийг дарахад энд дуут дохио, байршил ирж, <b>доорх утас руу шууд залгах</b> товч гарна. Сайт нээлттэй байх үед 40 секунд тутам шалгана.</p>"
+   +"<div style='display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px'><input id='sos_nm' placeholder='Нэр (жишээ нь Б.Бат)' value='"+esc(s.nm||"")+"' style='flex:1;min-width:160px'><input id='sos_ph' inputmode='tel' placeholder='Утасны дугаар' value='"+esc(s.ph||"")+"' style='width:170px'><button class='btn bp' id='sos_sv'>💾 Хадгалах</button></div>"
+   +(np==="default"?"<button class='btn bx' id='sos_np' style='margin-top:10px'>🔔 Энэ компьютерт мэдэгдэл зөвшөөрөх</button>":np==="granted"?"<div class='dz' style='margin-top:8px'>🔔 Мэдэгдэл зөвшөөрөгдсөн</div>":"");
+  card.querySelectorAll("input").forEach(i=>i.style.cssText+=";padding:9px;border:1px solid #CBD5E1;border-radius:8px;font:inherit");
+  const npb=card.querySelector("#sos_np");if(npb)npb.onclick=async()=>{try{await Notification.requestPermission();}catch{}aSosCard.re&&aSosCard.re();};
+  card.querySelector("#sos_sv").onclick=async()=>{const ph=card.querySelector("#sos_ph").value.trim(),nm=card.querySelector("#sos_nm").value.trim();
+    if(ph&&sosTel(ph).length<6){toast("Утасны дугаараа шалгана уу","te");return;}const v=ph?{ph,nm,ts:Date.now()}:null;
+    try{await dbSet("dreg/"+u+"/sos",v);await aSosSync(u,v,ppl);toast("✅ SOS утас хадгалагдаж, шийдвэр гүйцэтгэгчдэд хуваарилагдлаа","ts");}catch(e){toast("Хадгалж чадсангүй: "+(e&&e.message||e),"te");}};
+  if(s.ph)aSosSync(u,s,ppl);
+}
+
 </script>
 </body>
 </html>
