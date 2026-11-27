@@ -5188,6 +5188,13 @@ function aSosCard(w,u,R,ppl){
   if(s.ph)aSosSync(u,s,ppl);
 }
 
+// Нэг хөтөч дээр өөр цонхонд өөр эрхээр нэвтэрвэл анхааруулна (Firebase нэвтрэлт хөтөч даяар нэг байдаг)
+setInterval(()=>{try{const cu=window._authMod&&_authMod.auth&&_authMod.auth.currentUser;if(!S.user){S._uid=undefined;return;}
+  if(S._uid===undefined){if(cu)S._uid=cu.uid;return;}
+  const bad=!cu||cu.uid!==S._uid;let b=document.getElementById("authwarn");
+  if(bad&&!b){b=document.createElement("div");b.id="authwarn";b.style.cssText="position:fixed;left:0;right:0;top:0;z-index:100005;background:#B91C1C;color:#fff;padding:12px 16px;font:600 14px system-ui;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.3)";
+    b.innerHTML="⚠️ Энэ хөтчийн өөр цонхонд <b>өөр эрхээр нэвтэрсэн</b> тул энэ цонхонд хадгалах, мэдэгдэл авах боломжгүй боллоо. Нэг хөтөч дээр нэг л эрхээр ажиллана (өөр эрхийг өөр хөтөч, утсаар нээнэ үү). <button style='margin-left:10px;padding:5px 12px;border-radius:8px;border:0;font-weight:700;cursor:pointer' onclick='location.reload()'>🔄 Дахин ачаалах</button>";document.body.appendChild(b);}
+  else if(!bad&&b)b.remove();}catch{}},3000);
 </script>
 </body>
 </html>
